@@ -6,11 +6,15 @@ import MonthlySalesChart from "@/components/ecommerce/MonthlySalesChart";
 import StatisticsChart from "@/components/ecommerce/StatisticsChart";
 import RecentOrders from "@/components/ecommerce/RecentOrders";
 import DemographicCard from "@/components/ecommerce/DemographicCard";
-
+import DoughnutLoginChart from "@/components/ecommerce/DoughnutLoginChart";
+import TotalGuestsChart from "@/components/ecommerce/TotalGuestsChart";
 export const metadata: Metadata = {
   title:
-    "Quatomeds",
+    "PASAPO",
   description: "This is Next.js Home for TailAdmin Dashboard Template",
+  icons: {
+    icon: "/images/Pasapo.svg"
+  },
 };
 
 export default function Ecommerce() {
@@ -23,20 +27,20 @@ export default function Ecommerce() {
       </div>
 
       <div className="col-span-12 xl:col-span-5">
-        <MonthlyTarget />
+        <DoughnutLoginChart />
       </div>
 
-      <div className="col-span-12">
-        <StatisticsChart />
+      <div className="col-span-10">
+        <TotalGuestsChart />
       </div>
 
-      <div className="col-span-12 xl:col-span-5">
+      {/* <div className="col-span-12 xl:col-span-5">
         <DemographicCard />
       </div>
 
       <div className="col-span-12 xl:col-span-7">
         <RecentOrders />
-      </div>
+      </div> */}
     </div>
   );
 }

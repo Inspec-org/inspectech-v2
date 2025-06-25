@@ -11,7 +11,7 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function MonthlySalesChart() {
+export default function TotalGuestsChart() {
   const options: ApexOptions = {
     colors: ["#465fff"],
     chart: {
@@ -111,7 +111,7 @@ export default function MonthlySalesChart() {
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
       <div className="flex items-center justify-between">
         <h3 className="font-raleway text-lg font-semibold text-gray-800 dark:text-white/90">
-          Total Generated Links
+          Total Guests Chart
         </h3>
 
         <div className="relative inline-block">
@@ -145,7 +145,7 @@ export default function MonthlySalesChart() {
             options={options}
             series={series}
             type="bar"
-            height={180}
+            height={280}
           />
         </div>
       </div>
