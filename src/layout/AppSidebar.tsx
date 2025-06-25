@@ -33,28 +33,28 @@ const navItems: NavItem[] = [
     path: "/",  
   },
   {
-    icon: <Image src="/images/User.png" alt="Dashboard" width={24} height={24} />,
+    icon: <Image src="/images/User.png" alt="All Users" width={24} height={24} />,
     name: "All Users",
-    path: "/profile",
+    path: "/allUsers",
   },
   {
-    icon: <BoxCubeIcon/>,
+    icon: <Image src="/images/Properties.png" alt="Properties" width={24} height={24} />,
     name: "All Properties",
     path:"/allProperties",
   },
   {
-    icon:<CalenderIcon/>,
+    icon:<Image src="/images/Guests.png" alt="Guests" width={24} height={24} />,
     name : "All Guests",
     path:"/allGuests"
   }
   ,
   {
-    icon:<CalenderIcon/>,
+    icon:<Image src="/images/Rooms.png" alt="Rooms" width={24} height={24} />,
     name : "All Rooms",
     path:"/allRooms"
   },
   {
-    icon:<CalenderIcon/>,
+    icon:<Image src="/images/Generate Links.png" alt="Rooms" width={24} height={24} />,
     name : "Generated Links",
     path:"/generatedLinks"
   }
@@ -79,7 +79,7 @@ const AppSidebar: React.FC = () => {
     navItems: NavItem[],
     menuType: "main" | "others"
   ) => (
-    <ul className="flex flex-col gap-4">
+    <ul className="font-raleway flex flex-col gap-4">
       {navItems.map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
@@ -290,22 +290,22 @@ const AppSidebar: React.FC = () => {
             <>
               <Image
                 className="dark:hidden"
-                src="/images/Pasapo.png"
+                src="/images/Pasapo.svg"
                 alt=""
                 width={105}
                 height={40}
               />
               <Image
                 className="hidden dark:block"
-                src="/images/Pasapo.png"
+                src="/images/Pasapo.svg"
                 alt=""
-                width={150}
+                width={105}
                 height={40}
               />
             </>
           ) : (
             <Image
-              src="/images/Pasapo.png"
+              src="/images/Pasapo.svg"
               alt=""
               width={32}
               height={32}
