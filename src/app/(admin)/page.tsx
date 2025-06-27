@@ -8,9 +8,9 @@ import RecentOrders from "@/components/ecommerce/RecentOrders";
 import DemographicCard from "@/components/ecommerce/DemographicCard";
 import DoughnutLoginChart from "@/components/ecommerce/DoughnutLoginChart";
 import TotalGuestsChart from "@/components/ecommerce/TotalGuestsChart";
+
 export const metadata: Metadata = {
-  title:
-    "PASAPO",
+  title: "PASAPO",
   description: "This is Next.js Home for TailAdmin Dashboard Template",
   icons: {
     icon: "/images/Pasapo.svg"
@@ -19,28 +19,21 @@ export const metadata: Metadata = {
 
 export default function Ecommerce() {
   return (
-    <div className="grid grid-cols-12 gap-4 md:gap-6">
+    <div className="grid grid-cols-12 gap-4 md:gap-6 xl:gap-8">
       <div className="col-span-12 space-y-6 xl:col-span-7">
         <EcommerceMetrics />
-
         <MonthlySalesChart />
       </div>
 
+      {/* Set col-span-12 to make it match the width of TotalGuestsChart */}
       <div className="col-span-12 xl:col-span-5">
         <DoughnutLoginChart />
       </div>
 
-      <div className="col-span-10">
+      {/* Adjusted to col-span-12 to avoid extra whitespace */}
+      <div className="col-span-12">
         <TotalGuestsChart />
       </div>
-
-      {/* <div className="col-span-12 xl:col-span-5">
-        <DemographicCard />
-      </div>
-
-      <div className="col-span-12 xl:col-span-7">
-        <RecentOrders />
-      </div> */}
     </div>
   );
 }

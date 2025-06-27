@@ -36,7 +36,7 @@ const tableData: UserOrder[] = [
   {
     id: 1,
     user: {
-      image: "/images/users/user1.jpg",
+      image: "/images/user/user-01.jpg",
       name: "Ammar Farooq",
       role: "Admin",
     },
@@ -50,7 +50,7 @@ const tableData: UserOrder[] = [
   {
     id: 2,
     user: {
-      image: "/images/users/user2.jpg",
+      image: "/images/user/user-03.jpg",
       name: "Muneeba Sarfaraz",
       role: "Manager",
     },
@@ -64,7 +64,7 @@ const tableData: UserOrder[] = [
   {
     id: 3,
     user: {
-      image: "/images/users/user3.jpg",
+      image: "/images/user/user-02.jpg",
       name: "Usman Ali",
       role: "Receptionist",
     },
@@ -78,7 +78,7 @@ const tableData: UserOrder[] = [
   {
     id: 4,
     user: {
-      image: "/images/users/user4.jpg",
+      image: "/images/user/user-04.jpg",
       name: "Zainab Khan",
       role: "Support",
     },
@@ -92,7 +92,7 @@ const tableData: UserOrder[] = [
   {
     id: 5,
     user: {
-      image: "/images/users/user5.jpg",
+      image: "/images/user/user-05.jpg",
       name: "Ali Raza",
       role: "Moderator",
     },
@@ -129,7 +129,7 @@ export default function OrdersPage() {
           />
           <div>
             <div className="font-medium">{row.user.name}</div>
-            <div className="text-xs text-gray-500">{row.user.role}</div>
+            <div className="text-xs text-gray-500">#{row.id}</div>
           </div>
         </div>
       ),
@@ -159,7 +159,10 @@ export default function OrdersPage() {
 
   return (
     <div className="p-6">
-      <GenericDataTable title="All Users" data={tableData} columns={columns} pageSize={5} />
+      <GenericDataTable title="All Users" data={tableData} columns={columns} pageSize={5}   emptyStateImages={{
+    "All Users": "/images/No Users.svg"
+  }}
+ />
     </div>
   );
 }

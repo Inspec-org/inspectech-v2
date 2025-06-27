@@ -18,6 +18,7 @@ type User = {
   PhoneNumber: number;
   AddedRooms: number;
   AddedGuests: number;
+  Date:string;
   Action: string;
 };
 
@@ -44,7 +45,7 @@ export default function UserKBSCred({ user }: Props) {
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-7 2xl:gap-x-32">
               <div>
-                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
                   Name
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
@@ -53,7 +54,7 @@ export default function UserKBSCred({ user }: Props) {
               </div>
 
               <div>
-                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
                   Role
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
@@ -62,7 +63,7 @@ export default function UserKBSCred({ user }: Props) {
               </div>
 
               <div>
-                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
                   TC ID Number
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
@@ -71,7 +72,7 @@ export default function UserKBSCred({ user }: Props) {
               </div>
 
               <div>
-                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
                   Email Address
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
@@ -80,7 +81,7 @@ export default function UserKBSCred({ user }: Props) {
               </div>
 
               <div>
-                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
                   Phone Number
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">

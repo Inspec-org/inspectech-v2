@@ -134,12 +134,12 @@
 
   --color-theme-purple-500: #7a5af8;
 
-    --primary:#FFFFFF;
+    /* --primary:#FFFFFF;
   --accent:#4958E9;
   --background:#F9FAFB;
-  --secondary: #0D0F2B;
+  --secondary: #0D0F2B80;
   --primary10:#4958E91A;
-  --secondary60:#0D0F2B99;
+  --secondary60:#0D0F2B99; */
 
   --shadow-theme-md:
     0px 4px 8px -2px rgba(16, 24, 40, 0.1),
@@ -184,6 +184,7 @@
 */
 :root {
   --accent: #4958E9;
+  --secondary: #0D0F2B80;
 }
 
 @layer components {
@@ -255,6 +256,9 @@
   }
   body {
     @apply relative font-normal font-outfit z-1 bg-gray-50;
+    
+  font-family: 'Raleway', sans-serif;
+
   }
 }
 
