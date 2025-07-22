@@ -1,6 +1,7 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import { FaSearch } from "react-icons/fa";
+import { ClipLoader } from "react-spinners"
 
 // Reusable column definition
 export interface Column<T> {
@@ -21,6 +22,7 @@ interface GenericDataTableProps<T> {
   emptyStateImages?: { [title: string]: string };
   currentPage: number
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
+  loading: boolean
 }
 
 function GenericDataTable<T extends { id: number; tab?: string }>({
@@ -34,7 +36,8 @@ function GenericDataTable<T extends { id: number; tab?: string }>({
   emptyStateImages,
   pageSize = 10,
   currentPage,
-  setCurrentPage
+  setCurrentPage,
+  loading
 }: GenericDataTableProps<T>) {
   // const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -111,13 +114,18 @@ function GenericDataTable<T extends { id: number; tab?: string }>({
         </div>
       </div>
 
-
-      {isEmpty ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <ClipLoader />
+        </div>
+      ) : isEmpty ? (
         <div className="flex flex-col items-center justify-center py-20">
           {emptyImage && (
             <img src={emptyImage} alt="No data" className="w-52 h-52 mb-4 object-contain" />
           )}
-          <p className="text-lg text-gray-600 font-medium">{entityLabel?.toLowerCase()} added yet!!</p>
+          <p className="text-lg text-gray-600 font-medium">
+            {entityLabel?.toLowerCase()} added yet!!
+          </p>
         </div>
       ) : (
         <>

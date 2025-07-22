@@ -187,6 +187,7 @@ export default function DetailRoomPage() {
             title="All Guests"
             tabs={["Added By Scan Documents", "Added By Passport", "Added By TCK"]}
             activeTab={activeTab}
+            loading={false}
             onTabChange={setActiveTab}
             data={allGuests}
             columns={guestColumns}

@@ -4,6 +4,7 @@ import GenericDataTable, { Column } from "../../../../components/tables/GenericD
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState } from "react";
+import { toast } from 'react-toastify';
 
 type UserOrder = {
   id: number;
@@ -115,6 +116,7 @@ export default function OrdersPage() {
   const [tableData, setTableData] = useState<UserOrder[]>([]);
   const [totaluser, setTotaluser] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false)
   const limit = 5
   const pageTabs = useMemo(() => {
     const totalPages = Math.ceil(totaluser / limit);
@@ -122,7 +124,8 @@ export default function OrdersPage() {
   }, [totaluser, limit]);
   const fetchData = async () => {
     try {
-      const response = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/get_all_users", {
+      setLoading(true)
+      const response = await fetch("/api/get_all_users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,9 +141,13 @@ export default function OrdersPage() {
         }),
 
       });
+
       const result = await response.json();
-      setTotaluser(result.data.total_users);
-      const apiData = result.data.users || [];
+      if (!response.ok) {
+        throw new Error(result.error)
+      }
+      setTotaluser(result.data.data.total_users);
+      const apiData = result.data.data.users || [];
       const transformed: UserOrder[] = apiData.map((item: any) => ({
         id: item.id,
         user: {
@@ -158,15 +165,17 @@ export default function OrdersPage() {
 
       return transformed;
     } catch (error) {
+      toast.error((error as Error)?.message || "Something went wrong");
       console.error("Error fetching data:", error);
       return [];
+    }finally{
+      setLoading(false)
     }
   }
 
   useEffect(() => {
     fetchData().then((data) => {
       setTableData(data);
-      console.log("useEffect data:", data);
     });
   }, [currentPage]);
   const columns: Column<UserOrder>[] = [
@@ -231,7 +240,7 @@ export default function OrdersPage() {
 
   return (
     <div className="p-6">
-      <GenericDataTable title="All Users" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} setCurrentPage={setCurrentPage} emptyStateImages={{
+      <GenericDataTable title="All Users" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} setCurrentPage={setCurrentPage} loading={loading} emptyStateImages={{
         "All Users": "/images/No Users.svg"
       }}
       />
