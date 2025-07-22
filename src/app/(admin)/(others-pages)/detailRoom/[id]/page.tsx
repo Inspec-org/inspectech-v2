@@ -124,7 +124,7 @@ const allGuests: Guest[] = [
 export default function DetailRoomPage() {
 
   const router = useRouter(); // Access the router
-  
+  const [currentPage, setCurrentPage] = useState(1);
    
   const params = useParams();
   const roomId = parseInt(params.id as string);
@@ -191,6 +191,8 @@ export default function DetailRoomPage() {
             data={allGuests}
             columns={guestColumns}
             pageSize={5}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
             emptyStateImages={{
               "All Guests": "/images/No Guests.svg"
             }}

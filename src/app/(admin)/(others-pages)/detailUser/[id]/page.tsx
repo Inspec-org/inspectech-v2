@@ -262,7 +262,7 @@ const router = useRouter(); // Access the router
   };
   const params = useParams();
   const userId = parseInt(params.id as string);
-
+  const [currentPage, setCurrentPage] = useState(1);
   //   const userId = parseInt(params.id);
   const user = users.find((u) => u.id === userId);
   const [activeTab, setActiveTab] = useState("overview");
@@ -326,6 +326,8 @@ const router = useRouter(); // Access the router
             data={rooms} // your Room[] array
             columns={roomColumns}
             pageSize={5}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
             tabs={["All Rooms", "Full Rooms", "Empty Rooms"]}
             activeTab={roomactiveTab}
             onTabChange={handleTabChange}
@@ -344,8 +346,11 @@ const router = useRouter(); // Access the router
           <GenericDataTable
             data={links}
             columns={linkColumns}
+            tabs={["1"]}
             pageSize={5}
             title="All Links"
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
             emptyStateImages={{
               "All Links": "/images/No Links.svg"
             }}

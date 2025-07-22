@@ -9,7 +9,7 @@ import { FaArrowLeft } from "react-icons/fa";
 // 🧾 Types
 interface Link {
   id: number;
-  generatedLink:string;
+  generatedLink: string;
   generatedOn: string;
   checkInDate: string;
   checkOutDate: string;
@@ -32,7 +32,7 @@ interface Guest {
 
 
 const links: Link[] = [
- {
+  {
     id: 1,
     generatedOn: "Apr 10, 2025",
     checkInDate: "Apr 10, 2025",
@@ -99,11 +99,11 @@ const scannedGuests: Guest[] = [
 ];
 
 export default function DetailedLinkPage() {
-    const router = useRouter(); // Access the router
-      
-        const handleBack = () => {
-          router.back(); // This takes the user to the previous page
-        };
+  const router = useRouter(); // Access the router
+  const [currentPage, setCurrentPage] = useState(1);
+  const handleBack = () => {
+    router.back(); // This takes the user to the previous page
+  };
   const params = useParams();
   const linkId = parseInt(params.id as string);
 
@@ -125,67 +125,70 @@ export default function DetailedLinkPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="border rounded-2xl p-6 ">
-     <div className="flex items-center mb-5 border-b border-gray-200 pb-4">
-             {/* Back Button alongside Title */}
-             <button
-               onClick={handleBack}
-               className="text-gray-800 dark:text-white mr-3 text-xl" // Same color as title
-             >
-               <FaArrowLeft className="w-4 h-4" /> {/* Arrow Icon */}
-             </button>
-             <h2 className="text-2xl font-weight-600 text-gray-800 dark:text-white">
-               User Details
-             </h2>
-           </div>
+        <div className="flex items-center mb-5 border-b border-gray-200 pb-4">
+          {/* Back Button alongside Title */}
+          <button
+            onClick={handleBack}
+            className="text-gray-800 dark:text-white mr-3 text-xl" // Same color as title
+          >
+            <FaArrowLeft className="w-4 h-4" /> {/* Arrow Icon */}
+          </button>
+          <h2 className="text-2xl font-weight-600 text-gray-800 dark:text-white">
+            User Details
+          </h2>
+        </div>
 
-       <div className="border border-gray-300 bg-white p-6 mb-6 rounded-xl">
-  {/* 🔹 Full-width heading */}
-  <h3 className="text-xl font-weight-600 text-gray-800 mb-4">
-    Basic Details
-  </h3>
+        <div className="border border-gray-300 bg-white p-6 mb-6 rounded-xl">
+          {/* 🔹 Full-width heading */}
+          <h3 className="text-xl font-weight-600 text-gray-800 mb-4">
+            Basic Details
+          </h3>
 
-  {/* 🔹 Responsive 3-column grid for fields */}
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-    <div>
-      <p className="text-sm text-gray-500 mb-1">Generated Link</p>
-      <p className="text-sm font-medium text-blue-600 truncate">
-        {link.generatedLink}
-      </p>
-    </div>
-    <div>
-      <p className="text-sm text-gray-500 mb-1">Generated On</p>
-      <p className="text-sm font-medium">{link.generatedOn}</p>
-    </div>
-    <div>
-      <p className="text-sm text-gray-500 mb-1">Check-in Date</p>
-      <p className="text-sm font-medium">{link.checkInDate}</p>
-    </div>
-    <div>
-      <p className="text-sm text-gray-500 mb-1">Check-out Date</p>
-      <p className="text-sm font-medium">{link.checkOutDate}</p>
-    </div>
-    <div>
-      <p className="text-sm text-gray-500 mb-1">Room Name</p>
-      <p className="text-sm font-medium">{link.roomName}</p>
-    </div>
-  </div>
-</div>
+          {/* 🔹 Responsive 3-column grid for fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Generated Link</p>
+              <p className="text-sm font-medium text-blue-600 truncate">
+                {link.generatedLink}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Generated On</p>
+              <p className="text-sm font-medium">{link.generatedOn}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Check-in Date</p>
+              <p className="text-sm font-medium">{link.checkInDate}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Check-out Date</p>
+              <p className="text-sm font-medium">{link.checkOutDate}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Room Name</p>
+              <p className="text-sm font-medium">{link.roomName}</p>
+            </div>
+          </div>
+        </div>
 
 
-         <GenericDataTable
+        <GenericDataTable
           title="Scanned Documents"
+          tabs={["1"]}
           data={scannedGuests}
           columns={guestColumns}
           pageSize={5}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
           emptyStateImages={{
             "Scanned Documents": "/images/No Docs.svg",
           }}
-        
+
         />
       </div>
 
-  
-    
+
+
     </div>
   );
 }
