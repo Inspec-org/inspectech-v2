@@ -325,6 +325,7 @@ const router = useRouter(); // Access the router
 
             data={rooms} // your Room[] array
             columns={roomColumns}
+            loading={false}
             pageSize={5}
             currentPage={currentPage}
             setCurrentPage={setCurrentPage}
@@ -346,6 +347,7 @@ const router = useRouter(); // Access the router
           <GenericDataTable
             data={links}
             columns={linkColumns}
+            loading={false}
             tabs={["1"]}
             pageSize={5}
             title="All Links"

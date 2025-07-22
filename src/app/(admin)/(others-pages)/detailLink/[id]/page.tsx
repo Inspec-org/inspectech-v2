@@ -175,6 +175,7 @@ export default function DetailedLinkPage() {
         <GenericDataTable
           title="Scanned Documents"
           tabs={["1"]}
+          loading={false}
           data={scannedGuests}
           columns={guestColumns}
           pageSize={5}
