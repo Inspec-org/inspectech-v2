@@ -122,7 +122,7 @@ export default function OrdersPage() {
   }, [totaluser, limit]);
   const fetchData = async () => {
     try {
-      const response = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/get_all_users", {
+      const response = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/get_all_users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
