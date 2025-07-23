@@ -6,7 +6,7 @@ export default function GridShape() {
     <>
       <div className="absolute z-1 w-full">
         <Image
-          width={720}
+          width={1020}
           height={254}
           src="/images/grid.svg"
           alt="grid"
