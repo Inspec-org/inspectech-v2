@@ -8,6 +8,8 @@ import RecentOrders from "@/components/ecommerce/RecentOrders";
 import DemographicCard from "@/components/ecommerce/DemographicCard";
 import DoughnutLoginChart from "@/components/ecommerce/DoughnutLoginChart";
 import TotalGuestsChart from "@/components/ecommerce/TotalGuestsChart";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "PASAPO",
@@ -17,7 +19,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Ecommerce() {
+export default async function Ecommerce() {
+  const cookieStore = await cookies(); // use await
+  const sessionId = cookieStore.get("session_id")?.value;
+
+  if (!sessionId) {
+    redirect("/signin"); 
+  }
   return (
     <div className="grid grid-cols-12 gap-4 md:gap-6 xl:gap-8">
       <div className="col-span-12 space-y-6 xl:col-span-7">

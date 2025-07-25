@@ -1,26 +1,80 @@
 "use client";
-import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
+import { EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
+import { buildRequestBody } from "@/utils/apiWrapper";
+import { UserContext } from "@/context/authContext";
+import { useRouter } from "next/navigation";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useContext(UserContext);
+  const router = useRouter();
+  const [formdata, setFormdata] = useState({
+    email: "",
+    password: ""
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormdata((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const payload = buildRequestBody(formdata);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Server Error:", result.message);
+        return;
+      }
+
+      const sessionId = result.data.data.session_id;
+      if (sessionId) {
+        login(sessionId);
+
+        setFormdata({
+          email: "",
+          password: ""
+        });
+
+        // Redirect after successful login
+        router.push("/");
+
+        console.log("Login successful");
+      } else {
+        console.error("No session_id found in response");
+      }
+
+    } catch (error) {
+      console.error("Network Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-      {/* <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-        >
-          <ChevronLeftIcon />
-          Back to dashboard
-        </Link>
-      </div> */}
+    <div className="flex flex-col flex-1 min-h-screen lg:w-1/2 w-full">
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
@@ -32,14 +86,20 @@ export default function SignInForm() {
             </p>
           </div>
           <div>
-
-            <form>
+            <form onSubmit={handleSubmit}>
               <div className="space-y-6">
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input placeholder="info@gmail.com" type="email" />
+                  <Input
+                    name="email"
+                    placeholder="info@gmail.com"
+                    type="email"
+                    value={formdata.email}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div>
                   <Label>
@@ -47,8 +107,12 @@ export default function SignInForm() {
                   </Label>
                   <div className="relative">
                     <Input
+                      name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
+                      value={formdata.password}
+                      onChange={handleChange}
+                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -58,7 +122,6 @@ export default function SignInForm() {
                         <div className="opacity-50">
                           <EyeIcon />
                         </div>
-
                       ) : (
                         <div className="opacity-50">
                           <EyeCloseIcon />
@@ -69,15 +132,19 @@ export default function SignInForm() {
                 </div>
                 <div className="flex items-center justify-end">
                   <Link
-                    href="/reset-password"
+                    href="/forget-password"
                     className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
                   >
                     Forgot password?
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm">
-                    Sign in
+                  <Button
+                    className="w-full"
+                    size="sm"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing in..." : "Sign in"}
                   </Button>
                 </div>
               </div>
