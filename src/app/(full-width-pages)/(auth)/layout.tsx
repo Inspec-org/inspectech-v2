@@ -25,7 +25,7 @@ export default function AuthLayout({
                   <Image
                     width={105}
                     height={20}
-                    className="dark:hidden"
+                    className=""
                     src="/images/pasapo_logo_white.svg"
                     alt="Logo"
                   />

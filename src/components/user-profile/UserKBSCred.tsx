@@ -36,55 +36,55 @@ export default function UserKBSCred({ user }: Props) {
 
   return (
     <>
-      <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+      <div className="p-5 border border-gray-200 rounded-2xl  lg:p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">
+            <h4 className="text-lg font-semibold text-gray-800  lg:mb-6">
               KBS Credentials
             </h4>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-7 2xl:gap-x-32">
               <div>
-                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 ">
                   Name
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                <p className="text-sm font-medium text-gray-800 ">
                   {user.user.name}
                 </p>
               </div>
 
               <div>
-                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 ">
                   Role
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                <p className="text-sm font-medium text-gray-800 ">
                   {user.user.role}
                 </p>
               </div>
 
               <div>
-                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 ">
                   TC ID Number
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                <p className="text-sm font-medium text-gray-800 ">
                   {user.id}
                 </p>
               </div>
 
               <div>
-                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 ">
                   Email Address
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                <p className="text-sm font-medium text-gray-800 ">
                   {user.emailAddress}
                 </p>
               </div>
 
               <div>
-                <p className="mb-2 text-md text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-md text-gray-500 ">
                   Phone Number
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                <p className="text-sm font-medium text-gray-800 ">
                   {user.PhoneNumber}
                 </p>
               </div>
@@ -94,12 +94,12 @@ export default function UserKBSCred({ user }: Props) {
       </div>
 
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
-        <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
+        <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl  lg:p-11">
           <div className="px-2 pr-14">
-            <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+            <h4 className="mb-2 text-2xl font-semibold text-gray-800 ">
               Edit Address
             </h4>
-            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
+            <p className="mb-6 text-sm text-gray-500  lg:mb-7">
               Update your details to keep your profile up-to-date.
             </p>
           </div>
