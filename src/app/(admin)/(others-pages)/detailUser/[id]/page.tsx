@@ -278,11 +278,11 @@ const router = useRouter(); // Access the router
         {/* Back Button alongside Title */}
         <button
           onClick={handleBack}
-          className="text-gray-800 dark:text-white mr-3 text-xl" // Same color as title
+          className="text-gray-800  mr-3 text-xl" // Same color as title
         >
           <FaArrowLeft className="w-4 h-4" /> {/* Arrow Icon */}
         </button>
-        <h2 className="text-2xl font-weight-600 text-gray-800 dark:text-white">
+        <h2 className="text-2xl font-weight-600 text-gray-800 ">
           User Details
         </h2>
       </div>

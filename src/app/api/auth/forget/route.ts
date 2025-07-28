@@ -4,7 +4,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log(body)
     try {
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/update_forgot_password", {
+        const backendRes = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/update_forgot_password", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

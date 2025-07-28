@@ -153,11 +153,11 @@ export default function DetailRoomPage() {
         <div className="flex items-center mb-5 border-b border-gray-200 pb-4">
           <button
             onClick={handleBack}
-            className="text-gray-800 dark:text-white mr-3 text-xl"
+            className="text-gray-800 mr-3 text-xl"
           >
             <FaArrowLeft className="w-4 h-4" /> {/* Arrow icon */}
           </button>
-          <h2 className="text-2xl font-weight-600 text-gray-800 dark:text-white">
+          <h2 className="text-2xl font-weight-600 text-gray-800 ">
             Room Details
           </h2>
         </div>

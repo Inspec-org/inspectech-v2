@@ -47,7 +47,7 @@ export default function ModalBasedAlerts() {
         <div className="text-center">
           <div className="relative flex items-center justify-center z-1 mb-7">
             <svg
-              className="fill-success-50 dark:fill-success-500/15"
+              className="fill-success-50 "
               width="90"
               height="90"
               viewBox="0 0 90 90"
@@ -63,7 +63,7 @@ export default function ModalBasedAlerts() {
 
             <span className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
               <svg
-                className="fill-success-600 dark:fill-success-500"
+                className="fill-success-600 "
                 width="38"
                 height="38"
                 viewBox="0 0 38 38"
@@ -79,10 +79,10 @@ export default function ModalBasedAlerts() {
               </svg>
             </span>
           </div>
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90 sm:text-title-sm">
+          <h4 className="mb-2 text-2xl font-semibold text-gray-800  sm:text-title-sm">
             Well Done!
           </h4>
-          <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
+          <p className="text-sm leading-6 text-gray-500 ">
             Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
             felis risus nisi non. Quisque eu ut tempor curabitur.
           </p>
@@ -106,7 +106,7 @@ export default function ModalBasedAlerts() {
         <div className="text-center">
           <div className="relative flex items-center justify-center z-1 mb-7">
             <svg
-              className="fill-blue-light-50 dark:fill-blue-light-500/15"
+              className="fill-blue-light-50 "
               width="90"
               height="90"
               viewBox="0 0 90 90"
@@ -122,7 +122,7 @@ export default function ModalBasedAlerts() {
 
             <span className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
               <svg
-                className="fill-blue-light-500 dark:fill-blue-light-500"
+                className="fill-blue-light-500 "
                 width="38"
                 height="38"
                 viewBox="0 0 38 38"
@@ -139,10 +139,10 @@ export default function ModalBasedAlerts() {
             </span>
           </div>
 
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90 sm:text-title-sm">
+          <h4 className="mb-2 text-2xl font-semibold text-gray-800  sm:text-title-sm">
             Information Alert!
           </h4>
-          <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
+          <p className="text-sm leading-6 text-gray-500 ">
             Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
             felis risus nisi non. Quisque eu ut tempor curabitur.
           </p>
@@ -166,7 +166,7 @@ export default function ModalBasedAlerts() {
         <div className="text-center">
           <div className="relative flex items-center justify-center z-1 mb-7">
             <svg
-              className="fill-warning-50 dark:fill-warning-500/15"
+              className="fill-warning-50 "
               width="90"
               height="90"
               viewBox="0 0 90 90"
@@ -182,7 +182,7 @@ export default function ModalBasedAlerts() {
 
             <span className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
               <svg
-                className="fill-warning-600 dark:fill-orange-400"
+                className="fill-warning-600 "
                 width="38"
                 height="38"
                 viewBox="0 0 38 38"
@@ -199,10 +199,10 @@ export default function ModalBasedAlerts() {
             </span>
           </div>
 
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90 sm:text-title-sm">
+          <h4 className="mb-2 text-2xl font-semibold text-gray-800  sm:text-title-sm">
             Warning Alert!
           </h4>
-          <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
+          <p className="text-sm leading-6 text-gray-500 ">
             Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
             felis risus nisi non. Quisque eu ut tempor curabitur.
           </p>
@@ -226,7 +226,7 @@ export default function ModalBasedAlerts() {
         <div className="text-center">
           <div className="relative flex items-center justify-center z-1 mb-7">
             <svg
-              className="fill-error-50 dark:fill-error-500/15"
+              className="fill-error-50"
               width="90"
               height="90"
               viewBox="0 0 90 90"
@@ -242,7 +242,7 @@ export default function ModalBasedAlerts() {
 
             <span className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
               <svg
-                className="fill-error-600 dark:fill-error-500"
+                className="fill-error-600"
                 width="38"
                 height="38"
                 viewBox="0 0 38 38"
@@ -259,10 +259,10 @@ export default function ModalBasedAlerts() {
             </span>
           </div>
 
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90 sm:text-title-sm">
+          <h4 className="mb-2 text-2xl font-semibold text-gray-800  sm:text-title-sm">
             Danger Alert!
           </h4>
-          <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
+          <p className="text-sm leading-6 text-gray-500 ">
             Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
             felis risus nisi non. Quisque eu ut tempor curabitur.
           </p>
