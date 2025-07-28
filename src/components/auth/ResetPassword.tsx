@@ -17,7 +17,6 @@ export default function ResetPassword() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isChecked, setIsChecked] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
