@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
   {
     icon: <Image src="/images/User.png" alt="All Users" width={24} height={24} />,
     name: "All Users",
-    path: "/allUsers",
+    path: "/allUsers/1",
   },
   {
     icon: <Image src="/images/Properties.png" alt="Properties" width={24} height={24} />,

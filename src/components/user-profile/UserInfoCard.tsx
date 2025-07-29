@@ -7,23 +7,15 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 
 type User = {
-  id: number;
-  user: {
-    image: string;
-    name: string;
-    role: string;
-  };
-  userName: string;
-  emailAddress: string;
-  PhoneNumber: number;
-  AddedRooms: number;
-  AddedGuests: number;
-  Date:string;
-  Action: string;
+  id: string;
+  profile_image_url: string;
+  full_name: string;
+  email: string;
+  phone: number;
 };
 
 interface Props {
-  user: User;
+  user: User | null;
 }
 
 export default function UserInfoCard({ user }: Props) {
@@ -33,7 +25,7 @@ export default function UserInfoCard({ user }: Props) {
     console.log("Saving changes...");
     closeModal();
   };
-
+  if (!user) return null;
   return (
     <div className="p-5 border border-gray-200 rounded-2xl  lg:p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -46,21 +38,21 @@ export default function UserInfoCard({ user }: Props) {
             <div>
               <p className="mb-2 text-md text-gray-500  font-raleway">User Name</p>
               <p className="text-sm font-medium text-gray-800  font-raleway">
-                {user.userName} 
+                {user.full_name} 
               </p>
             </div>
 
             <div>
               <p className="mb-2 text-md text-gray-500 ">Email address</p>
               <p className="text-sm font-medium text-gray-800 ">
-                {user.emailAddress}
+                {user.email}
               </p>
             </div>
 
             <div>
               <p className="mb-2 text-md text-gray-500 ">Phone</p>
               <p className="text-sm font-medium text-gray-800 ">
-                {user.PhoneNumber}
+                {user.phone}
               </p>
             </div>
           </div>
@@ -80,9 +72,9 @@ export default function UserInfoCard({ user }: Props) {
 
           <form className="flex flex-col">
             <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
-              
 
-              
+
+
             </div>
 
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">

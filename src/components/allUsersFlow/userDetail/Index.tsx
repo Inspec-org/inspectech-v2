@@ -4,12 +4,16 @@ import UserInfoCard from "@/components/user-profile/UserInfoCard";
 import UserMetaCard from "@/components/user-profile/UserMetaCard";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import { useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa";
-
+import ActionButton from "@/components/common/ActionButton";
+import { UserContext } from "@/context/authContext";
+import { buildRequestBody } from "@/utils/apiWrapper";
+import { toast } from "react-toastify";
+import Rooms from "../allRooms/Index";
 // export const metadata: Metadata = {
 //   title: "User Profile | TailAdmin",
 //   description: "Detailed user profile page.",
@@ -28,7 +32,7 @@ const users = [
     PhoneNumber: 923001112233,
     AddedRooms: 3,
     AddedGuests: 6,
-    Date:"Apr 10,2025",
+    Date: "Apr 10,2025",
     Action: "ViewDetails",
   },
   {
@@ -43,7 +47,7 @@ const users = [
     PhoneNumber: 923004445566,
     AddedRooms: 2,
     AddedGuests: 4,
-    Date:"Apr 10,2025",
+    Date: "Apr 10,2025",
     Action: "ViewDetails",
   },
   {
@@ -58,7 +62,7 @@ const users = [
     PhoneNumber: 923007778899,
     AddedRooms: 5,
     AddedGuests: 10,
-    Date:"Apr 10,2025",
+    Date: "Apr 10,2025",
     Action: "ViewDetails",
   },
   {
@@ -73,7 +77,7 @@ const users = [
     PhoneNumber: 923003336699,
     AddedRooms: 1,
     AddedGuests: 2,
-    Date:"Apr 10,2025",
+    Date: "Apr 10,2025",
     Action: "ViewDetails",
   },
   {
@@ -88,62 +92,26 @@ const users = [
     PhoneNumber: 923009995544,
     AddedRooms: 4,
     AddedGuests: 8,
-    Date:"Apr 10,2025",
+    Date: "Apr 10,2025",
     Action: "ViewDetails",
   },
 ];
 
-interface Room {
-  id: number;
-  serialNumber: number;
-  roomName: string;
-  roomId: string;
-  guests: number;
-  addedOn: string;
-  isFull: boolean;
-  Action: string;
-
-}
 
 
-const rooms: Room[] = [
-  {
-    id: 1,
-    serialNumber: 1,
-    roomName: "Deluxe Suite",
-    roomId: "R101",
-    guests: 2,
-    addedOn: "2025-06-25",
-    Action: "View Details",
-    isFull: true
-  },
-  {
-    id: 2,
-    serialNumber: 2,
-    roomName: "Executive Room",
-    roomId: "R102",
-    guests: 3,
-    addedOn: "2025-06-24",
-    Action: "View Details",
-    isFull: false
+type User = {
+  id: string;
+  profile_image_url: string;
+  full_name: string;
+  email: string;
+  phone: number;
+};
 
-  },
-  {
-    id: 3,
-    serialNumber: 3,
-    roomName: "Standard Room",
-    roomId: "R103",
-    guests: 1,
-    addedOn: "2025-06-23",
-    Action: "View Details",
-    isFull: false
 
-  },
-];
 
 interface GeneratedLink {
   id: number;
-  generatedLink:string;
+  generatedLink: string;
   generatedOn: string;
   checkInDate: string;
   checkOutDate: string;
@@ -182,59 +150,17 @@ interface PageProps {
 }
 
 
-function ViewDetailsButton({ id }: { id: number }) {
-  const router = useRouter();
-  // console.log("View Details");
 
-  return (
-    <button
-      onClick={() => router.push(`/detailRoom/${id}`)}
-      className="text-blue-600 hover:underline"
-    >
-      View Details
-    </button>
-  );
-}
-
-function ViewLinkDetailsButton({ id }: { id: number }) {
-  const router = useRouter();
-
-
-  return (
-    <button
-      onClick={() => router.push(`/detailLink/${id}`)}
-      className="text-blue-600 hover:underline"
-    >
-      View Details
-    </button>
-  );
-}
-
-
-
-
-export default function Profile() {
-const router = useRouter(); // Access the router
+export default function Index({ sessionId }: { sessionId: string }) {
+  const router = useRouter(); // Access the router
 
   const handleBack = () => {
-    router.push('/allUsers');
+    const page = params.page
+    router.push(`/allUsers/${page}`);
   };
 
 
-  const roomColumns: Column<Room>[] = [
-
-    { header: "Serial Number", accessor: "serialNumber" },
-    { header: "Room Name", accessor: "roomName" },
-    { header: "Room ID", accessor: "roomId" },
-    { header: "Guests", accessor: "guests" },
-    { header: "Added on", accessor: "addedOn" },
-    {
-      header: "Action",
-      accessor: "Action", // still needed for default access, won't be used in cell
-
-      cell: (row) => <ViewDetailsButton id={row.id} />,
-    },
-  ];
+  
 
   const linkColumns: Column<GeneratedLink>[] = [
     { header: "Generated On", accessor: "generatedOn" },
@@ -245,15 +171,9 @@ const router = useRouter(); // Access the router
     {
       header: "Action",
       accessor: "Action",
-      cell: (row) => <ViewLinkDetailsButton id={row.id} />
+      cell: (row) => <ActionButton link={`/detailLink/${row.id}`} />
     },
   ];
-
-
-
-
-
-
 
   const [roomactiveTab, setRoomActiveTab] = useState("Active");
 
@@ -261,31 +181,83 @@ const router = useRouter(); // Access the router
     setRoomActiveTab(tab); // Update the current active tab
   };
   const params = useParams();
-  const userId = parseInt(params.id as string);
+  const userId = params.id as string;
+  const { user } = useContext(UserContext);
+
+  const [userDetails, setUserDetails] = useState<User | null>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
+  const FetchedRef = useRef(false);
   //   const userId = parseInt(params.id);
-  const user = users.find((u) => u.id === userId);
+  // const user = users.find((u) => u.id === userId);
   const [activeTab, setActiveTab] = useState("overview");
-
-  if (!user) return notFound();
-
+  useEffect(() => {
+    if (user?.email && !FetchedRef.current && userId) {
+      const builtPayload = buildRequestBody({
+        email: user.email,
+        user_id: userId
+      });
+      fetchUser(builtPayload);
+      FetchedRef.current = true;
+    }
+  }, [user, userId]);
+  // if (!user) return notFound();
+  const fetchUser = async (payload: any) => {
+    try {
+      const response = await fetch('/api/allUsersFlow/get_user_detail', {
+        method: 'POST',
+        headers: {
+          'Session': sessionId,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+      setUserDetails(data.data.data);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      return null;
+    }
+  }
+  const handleDelete = async () => {
+    const builtPayload = buildRequestBody({
+      email: user?.email,
+      user_id: userId
+    });
+    try {
+      const response = await fetch('/api/allUsersFlow/delete_user', {
+        method: 'POST',
+        headers: {
+          'Session': sessionId,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(builtPayload),
+      });
+      const data = await response.json();
+      if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+      toast.success(data.data.message);
+      handleBack();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return null;
+    }
+  }
   return (
     <div>
-
-
       <div className="rounded-2xl border border-gray-200 bg-white p-5 lg:p-6">
         <div className="flex items-center mb-5 border-b border-gray-200 pb-4">
-        {/* Back Button alongside Title */}
-        <button
-          onClick={handleBack}
-          className="text-gray-800  mr-3 text-xl" // Same color as title
-        >
-          <FaArrowLeft className="w-4 h-4" /> {/* Arrow Icon */}
-        </button>
-        <h2 className="text-2xl font-weight-600 text-gray-800 ">
-          User Details
-        </h2>
-      </div>
+          {/* Back Button alongside Title */}
+          <button
+            onClick={handleBack}
+            className="text-gray-800  mr-3 text-xl" // Same color as title
+          >
+            <FaArrowLeft className="w-4 h-4" /> {/* Arrow Icon */}
+          </button>
+          <h2 className="text-2xl font-weight-600 text-gray-800 ">
+            User Details
+          </h2>
+        </div>
 
         {/* Tabs */}
         <div className="mb-6">
@@ -313,37 +285,18 @@ const router = useRouter(); // Access the router
         {/* Tab Panels */}
         {activeTab === "overview" && (
           <div className="space-y-6">
-            <UserMetaCard user={user} />
-            <UserInfoCard user={user} />
-            <UserAddressCard user={user} />
+            <UserMetaCard user={userDetails} handleDelete={handleDelete} />
+            <UserInfoCard user={userDetails} />
+            {/* <UserAddressCard user={user} /> */}
           </div>
         )}
 
         {activeTab === "rooms" && (
 
-          <GenericDataTable
-
-            data={rooms} // your Room[] array
-            columns={roomColumns}
-            loading={false}
-            pageSize={5}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            tabs={["All Rooms", "Full Rooms", "Empty Rooms"]}
-            activeTab={roomactiveTab}
-            onTabChange={handleTabChange}
-            emptyStateImages={{
-              "Rooms": "/images/No Rooms.svg"
-            }}
-            customTabFilter={(room, tab) => {
-              if (tab === "Full Rooms") return room.isFull;
-              if (tab === "Empty Rooms") return !room.isFull;
-              return true; // All Rooms
-            }}
-          />
+          <Rooms sessionId={sessionId}/>
         )}
 
-        {activeTab === "links" && (
+        {/* {activeTab === "links" && (
           <GenericDataTable
             data={links}
             columns={linkColumns}
@@ -357,7 +310,7 @@ const router = useRouter(); // Access the router
               "All Links": "/images/No Links.svg"
             }}
           />
-        )}
+        )} */}
       </div>
     </div>
   );

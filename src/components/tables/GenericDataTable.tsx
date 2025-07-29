@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import React, { useMemo, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import { ClipLoader } from "react-spinners"
@@ -13,6 +14,7 @@ export interface Column<T> {
 interface GenericDataTableProps<T> {
   title?: string;
   tabs: string[];
+  custom_tabs?: string[];
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   data: T[]; // Make sure each item includes a `tab` field if using tab filtering
@@ -25,9 +27,10 @@ interface GenericDataTableProps<T> {
   loading: boolean
 }
 
-function GenericDataTable<T extends { id: number; tab?: string }>({
+function GenericDataTable<T extends { id: string; tab?: string }>({
   title,
   tabs,
+  custom_tabs,
   activeTab,
   onTabChange,
   customTabFilter,
@@ -41,9 +44,6 @@ function GenericDataTable<T extends { id: number; tab?: string }>({
 }: GenericDataTableProps<T>) {
   // const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
-
-
-  // 🔸 Filter by active tab (optional)
   const tabFilteredData = useMemo(() => {
     if (!activeTab || !customTabFilter) return data;
     return data.filter((item) => customTabFilter(item, activeTab));
@@ -78,15 +78,15 @@ function GenericDataTable<T extends { id: number; tab?: string }>({
   }
 
   // 📄 Paginate the filtered data
-  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const totalPages = tabs.length;
   const currentData = filteredData;
-
+  console.log(data)
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
       {/* Header: Title + Tabs + Search */}
 
       <div
-        className={`flex items-center justify-between flex-wrap gap-4 ${tabs?.length ? "mb-4" : "mb-6"
+        className={`flex items-center justify-between flex-wrap gap-4 ${custom_tabs?.length ? "mb-4" : "mb-6"
           }`}
       >
         {/* Title*/}
@@ -95,6 +95,22 @@ function GenericDataTable<T extends { id: number; tab?: string }>({
             <h1 className="text-2xl font-weight-600 text-gray-800  font-raleway">
               {title}
             </h1>
+          )}
+          {custom_tabs && custom_tabs.length > 0 && (
+            <div className="flex items-center gap-2 bg-gray-100 p-2  rounded-lg shadow-sm">
+              {custom_tabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => onTabChange?.(tab)}
+                  className={`px-3 py-1 rounded-md text-sm border ${tab === activeTab
+                    ? "bg-[var(--accent)] text-white"
+                    : "text-gray-600 hover:bg-gray-200"
+                    }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
@@ -157,34 +173,36 @@ function GenericDataTable<T extends { id: number; tab?: string }>({
 
           {/* Pagination */}
           <div className="flex justify-between items-center mt-4">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
-            >
-              ← Previous
-            </button>
+            <Link href={`/allUsers/${Math.max(1, currentPage - 1)}`}>
+              <button
+                disabled={currentPage === 1}
+                className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
+              >
+                ← Previous
+              </button>
+            </Link>
             <div className="flex gap-2">
-              {tabs.map((tab, i) => (
-                <button
-                  key={tab}
-                  onClick={() => setCurrentPage(Number(tab))}
-                  className={`w-8 h-8 rounded-md text-sm ${currentPage === Number(tab)
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-200"
-                    }`}
-                >
-                  {tab}
-                </button>
+              {tabs.map((tab) => (
+                <Link key={tab} href={`/allUsers/${tab}`}>
+                  <button
+                    className={`w-8 h-8 rounded-md text-sm ${currentPage === Number(tab)
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-200"
+                      }`}
+                  >
+                    {tab}
+                  </button>
+                </Link>
               ))}
             </div>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
-            >
-              Next →
-            </button>
+            <Link href={`/allUsers/${Math.min(totalPages, currentPage + 1)}`}>
+              <button
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
+              >
+                Next →
+              </button>
+            </Link>
           </div>
         </>
       )}
