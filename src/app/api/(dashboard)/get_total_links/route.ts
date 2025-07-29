@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     const body = await req.json();
+    console.log(body)
+    const sessionId = req.headers.get("session");
+    if (!sessionId) {
+        throw new Error("No session ID provided");
+    }
     try {
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/get_all_users", {
+        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/get_links_count", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Session": "c4491c0329e76575cad2cfc474a4f39b"
+                "Session": sessionId
             },
             body: JSON.stringify(body),
         });

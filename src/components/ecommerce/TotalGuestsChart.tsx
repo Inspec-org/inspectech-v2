@@ -11,13 +11,34 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function TotalGuestsChart() {
+type GuestProps = {
+  scan: number[];
+  manually: number[];
+  tck: number[];
+};
+
+export default function TotalGuestsChart({ scan, manually, tck }: GuestProps) {
+  const getLast12Months = (): string[] => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const result: string[] = [];
+
+    const currentDate = new Date();
+    currentDate.setMonth(currentDate.getMonth() - 11); // Go 11 months back from current
+
+    for (let i = 0; i < 12; i++) {
+      result.push(months[currentDate.getMonth()]);
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+
+    return result;
+  };
   const options: ApexOptions = {
-    colors: ["#465fff"],
+    colors: ["#465fff", "#758bff", "#b5c1ff"], // base colors for the stacked bars
     chart: {
       fontFamily: "Outfit, sans-serif",
       type: "bar",
       height: 180,
+      stacked: true,
       toolbar: {
         show: false,
       },
@@ -34,109 +55,72 @@ export default function TotalGuestsChart() {
       enabled: false,
     },
     stroke: {
-      show: true,
-      width: 4,
-      colors: ["transparent"],
+      show: false,
     },
     xaxis: {
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
-      axisBorder: {
-        show: false,
-      },
-      axisTicks: {
-        show: false,
-      },
+      categories: getLast12Months(),
+      axisBorder: { show: false },
+      axisTicks: { show: false },
     },
     legend: {
       show: true,
       position: "top",
-      horizontalAlign: "left",
+      horizontalAlign: "right",
       fontFamily: "Outfit",
     },
     yaxis: {
-      title: {
-        text: undefined,
-      },
+      title: { text: undefined },
     },
     grid: {
       yaxis: {
-        lines: {
-          show: true,
-        },
+        lines: { show: true },
       },
     },
     fill: {
       opacity: 1,
     },
-
     tooltip: {
-      x: {
-        show: false,
-      },
+      x: { show: false },
       y: {
         formatter: (val: number) => `${val}`,
       },
     },
+    states: {
+      hover: {
+        filter: {
+          type: "lighten", 
+        },
+      },
+      active: {
+        allowMultipleDataPointsSelection: false,
+        filter: {
+          type: "darken",  // 'value' not allowed here
+        },
+      },
+    },
+
   };
+
   const series = [
     {
-      name: "Sales",
-      data: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+      name: "Scanned Documents",
+      data: scan
+    },
+    {
+      name: "With Passwords",
+      data: manually
+    },
+    {
+      name: "With TCK",
+      data: tck
     },
   ];
-  const [isOpen, setIsOpen] = useState(false);
-
-  function toggleDropdown() {
-    setIsOpen(!isOpen);
-  }
-
-  function closeDropdown() {
-    setIsOpen(false);
-  }
-
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5  sm:px-6 sm:pt-6">
       <div className="flex items-center justify-between">
         <h3 className="font-raleway text-lg font-semibold text-gray-800 ">
           Total Guests Chart
         </h3>
-
-        <div className="relative inline-block">
-          <button onClick={toggleDropdown} className="dropdown-toggle">
-            <MoreDotIcon className="text-gray-400 hover:text-gray-700 " />
-          </button>
-          <Dropdown
-            isOpen={isOpen}
-            onClose={closeDropdown}
-            className="w-40 p-2"
-          >
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700  "
-            >
-              View More
-            </DropdownItem>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700  "
-            >
-              Delete
-            </DropdownItem>
-          </Dropdown>
-        </div>
       </div>
 
       <div className="max-w-full overflow-x-auto custom-scrollbar">

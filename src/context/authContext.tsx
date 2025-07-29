@@ -6,7 +6,7 @@ import { buildRequestBody } from "@/utils/apiWrapper";
 
 // Types
 export interface User {
-  _id: string;
+  id: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -66,9 +66,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         throw new Error("Failed to fetch Admin");
       }
 
-      const data: User = await response.json();
-      console.log("data",data)
-      setUser(data);
+      const data = await response.json();
+      setUser(data.data.data);
     } catch (err) {
       console.error("User fetch failed:", err);
       // Clear invalid session
