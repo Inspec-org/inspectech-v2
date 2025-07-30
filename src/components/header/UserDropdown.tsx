@@ -1,25 +1,70 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { UserContext } from "@/context/authContext";
+import { buildRequestBody } from "@/utils/apiWrapper";
+import { ClipLoader } from "react-spinners";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-
-function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-  e.stopPropagation();
-  setIsOpen((prev) => !prev);
-}
+  const { logout, user, session_id } = useContext(UserContext);
+  const [loading, setLoading] = useState(false);
+  function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    e.stopPropagation();
+    setIsOpen((prev) => !prev);
+  }
 
   function closeDropdown() {
     setIsOpen(false);
   }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (user?.email) {
+      const email = user?.email
+      setLoading(true);
+
+      const payload = buildRequestBody({ email });
+
+      try {
+        const response = await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: {
+            Session: session_id,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.data.status === false) {
+          console.error("Server Error:", result.message);
+          return;
+        }
+        logout();
+
+
+
+      } catch (error) {
+        console.error("Network Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
   return (
     <div className="relative">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-60">
+          <ClipLoader color="#ffffff" size={50} />
+        </div>
+      )}
+
       <button
-        onClick={toggleDropdown} 
+        onClick={toggleDropdown}
         className="flex items-center text-gray-700  dropdown-toggle"
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
@@ -34,9 +79,8 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         <span className="block mr-1 font-medium text-theme-sm">Musharof</span>
 
         <svg
-          className={`stroke-gray-500  transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`stroke-gray-500  transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+            }`}
           width="18"
           height="20"
           viewBox="0 0 18 20"
@@ -52,6 +96,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
           />
         </svg>
       </button>
+
 
       <Dropdown
         isOpen={isOpen}
@@ -144,8 +189,8 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
             </DropdownItem>
           </li>
         </ul>
-        <Link
-          href="/signin"
+        <div
+          onClick={handleSubmit}
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700  "
         >
           <svg
@@ -164,7 +209,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
             />
           </svg>
           Sign out
-        </Link>
+        </div>
       </Dropdown>
     </div>
   );
