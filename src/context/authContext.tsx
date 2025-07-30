@@ -109,7 +109,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     localStorage.removeItem("session_id");
     setSession_id("");
     setUser(null);
-    router.push("/auth/login");
+    router.push("/signin");
   };
 
   return (
