@@ -123,7 +123,7 @@ interface GeneratedLink {
 
 const links: GeneratedLink[] = [
   {
-    id: 1,
+    id: "1",
     generatedOn: "Apr 10, 2025",
     checkInDate: "Apr 10, 2025",
     checkOutDate: "Apr 15, 2025",
@@ -133,7 +133,7 @@ const links: GeneratedLink[] = [
     Action: "View Details"
   },
   {
-    id: 2,
+    id: "2",
     generatedOn: "Apr 12, 2025",
     checkInDate: "Apr 12, 2025",
     checkOutDate: "Apr 16, 2025",
