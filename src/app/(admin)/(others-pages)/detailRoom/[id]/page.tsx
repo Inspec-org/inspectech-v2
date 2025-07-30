@@ -183,7 +183,7 @@ export default function DetailRoomPage() {
         </div>
 
         <div>
-          <GenericDataTable
+          {/* <GenericDataTable
             title="All Guests"
             tabs={["Added By Scan Documents", "Added By Passport", "Added By TCK"]}
             activeTab={activeTab}
@@ -198,7 +198,7 @@ export default function DetailRoomPage() {
               "All Guests": "/images/No Guests.svg"
             }}
             customTabFilter={(guest, tab) => guest.tab === tab}
-          />
+          /> */}
         </div>
       </div>
 

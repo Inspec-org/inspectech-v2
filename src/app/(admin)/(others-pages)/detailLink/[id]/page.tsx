@@ -172,7 +172,7 @@ export default function DetailedLinkPage() {
         </div>
 
 
-        <GenericDataTable
+        {/* <GenericDataTable
           title="Scanned Documents"
           tabs={["1"]}
           loading={false}
@@ -185,7 +185,7 @@ export default function DetailedLinkPage() {
             "Scanned Documents": "/images/No Docs.svg",
           }}
 
-        />
+        /> */}
       </div>
 
 
