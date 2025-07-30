@@ -3,11 +3,11 @@
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { buildRequestBody } from "@/utils/apiWrapper";
 import Image from "next/image";
-import { redirect, useRouter } from "next/navigation";
+import { redirect, usePathname, useRouter } from "next/navigation";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from 'react-toastify';
 import { UserContext } from "@/context/authContext";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import ActionButton from "../../common/ActionButton";
 interface Room {
     id: string;
@@ -57,14 +57,19 @@ interface Room {
 
 export default function Rooms({ sessionId }: { sessionId: string }) {
     const params = useParams();
+    const router = useRouter();
+    const pathname = usePathname();
     // const [tableData, setTableData] = useState<UserOrder[]>([]);
+    const searchParams = useSearchParams();
     const [totalRooms, setTotalRooms] = useState(0);
-    const [currentPage, setCurrentPage] = useState(() => Number(params.page) || 1);
+    const currentPage = parseInt(searchParams.get("room_page") || "1", 10);
     const [loading, setLoading] = useState(false)
     const { user } = useContext(UserContext);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [roomStatus, setRoomStatus] = useState<string>("all");
-    const [roomactiveTab, setRoomActiveTab] = useState("Active");
+    const tabParam = searchParams.get("activeTab") || "All Rooms";
+    const [roomactiveTab, setRoomActiveTab] = useState("All Rooms");
+    const [initialized, setInitialized] = useState(false);
     const hasFetchedRef = useRef(false);
     const limit = 5;
     const pageTabs = useMemo(() => {
@@ -76,19 +81,34 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
         redirect("/signin");
     }
     useEffect(() => {
-        if (user?.email && !hasFetchedRef.current) {
-            const builtPayload = buildRequestBody({
-                email: user.email,
-                user_id: params.id,
-                room_status: roomStatus,
-                limit,
-                page: currentPage,
-            });
-            fetchData(builtPayload);
-            console.log("fetchData", builtPayload);
-            hasFetchedRef.current = true;
+        if (!initialized) {
+            const tabParam = searchParams.get("activeTab") || "All Rooms";
+            setRoomActiveTab(tabParam);
+
+            const status = tabParam.split(" ")[0].toLowerCase();
+            setRoomStatus(status);
+
+            setInitialized(true); // only once
         }
-    }, [user, currentPage, roomStatus]);
+    }, [searchParams, initialized]);
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (user?.email && initialized) {
+                const builtPayload = buildRequestBody({
+                    email: user.email,
+                    user_id: params.user_id,
+                    room_status: roomStatus,
+                    limit,
+                    page: currentPage,
+                });
+
+                fetchData(builtPayload);
+            }
+        }, 1500); // slight delay to prevent double run
+
+        return () => clearTimeout(timeout);
+    }, [user, currentPage, roomStatus, initialized]);
+
     const fetchData = async (payload: any) => {
         try {
             const response = await fetch("/api/allUsersFlow/get_all_rooms_of_user", {
@@ -117,6 +137,7 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             toast.error(errorMessage);
             console.log("error", err);
+            setRooms([]);
         }
     };
 
@@ -124,7 +145,9 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
         setRoomActiveTab(tab);
         const firstWord = tab.split(" ")[0].toLowerCase();
         setRoomStatus(firstWord);
-        hasFetchedRef.current = false
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("room_page", "1");
+        router.push(`${pathname}?${params.toString()}`);
     };
 
     const roomColumns: Column<Room>[] = [
@@ -133,18 +156,21 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
         { header: "Room Name", accessor: "name" },
         { header: "Room ID", accessor: "external_id" },
         { header: "Guests", accessor: "number_of_guests" },
-        { header: "Added on", accessor: "created_at" },
+        {
+            header: "Added on", accessor: "created_at",
+            cell: (row) => row.created_at.substring(0, 10)
+        },
         {
             header: "Action",
             accessor: "Action", // still needed for default access, won't be used in cell
 
-            cell: (row) => <ActionButton link={`/detailRoom/${row.id}`} />,
+            cell: (row) => <ActionButton link={`/allUsers/detailUser/${params.user_id}/${params.user_tab}/detailRoom/${row.id}/?room_page=${currentPage}&activeTab=${roomactiveTab}`} />,
         },
     ];
 
     return (
         <div className="p-6">
-            <GenericDataTable data={rooms} tabs={pageTabs} columns={roomColumns} pageSize={limit} currentPage={currentPage} setCurrentPage={setCurrentPage} loading={loading}
+            <GenericDataTable data={rooms} tabs={pageTabs} columns={roomColumns} pageSize={limit} currentPage={currentPage} loading={loading}
                 custom_tabs={customTabs}
                 emptyStateImages={{
                     "Rooms": "/images/No Rooms.svg"
@@ -156,6 +182,7 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
                 // }}
                 activeTab={roomactiveTab}
                 onTabChange={handleTabChange}
+                querykey="room_page"
             />
         </div>
     );

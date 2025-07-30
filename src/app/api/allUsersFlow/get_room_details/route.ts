@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     const body = await req.json();
-    
     const sessionId = req.headers.get("session");
     if (!sessionId) {
         throw new Error("No session ID provided");
     }
     try {
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LiVE_URL + "/admin/get_links_count", {
+        const backendRes = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/get_guests_of_room_of_user", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -26,7 +25,7 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json(
-            { message: "users fetched successfully", data },
+            { message: "Room Details fetched successfully", data },
             { status: 200 }
         );
     } catch (error) {

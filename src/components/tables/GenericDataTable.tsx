@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import { ClipLoader } from "react-spinners"
@@ -23,8 +24,9 @@ interface GenericDataTableProps<T> {
   customTabFilter?: (item: T, tab: string) => boolean;
   emptyStateImages?: { [title: string]: string };
   currentPage: number
-  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
-  loading: boolean
+  setCurrentPage?: React.Dispatch<React.SetStateAction<number>>;
+  loading: boolean,
+  querykey?: string
 }
 
 function GenericDataTable<T extends { id: string; tab?: string }>({
@@ -40,7 +42,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   pageSize = 10,
   currentPage,
   setCurrentPage,
-  loading
+  loading,
+  querykey
 }: GenericDataTableProps<T>) {
   // const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -48,6 +51,16 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
     if (!activeTab || !customTabFilter) return data;
     return data.filter((item) => customTabFilter(item, activeTab));
   }, [data, activeTab, customTabFilter]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const goToPage = (page: number) => {
+    if (querykey) {
+      const params = new URLSearchParams(searchParams);
+      // setCurrentPage(page)
+      params.set(querykey, String(page)); // update dynamic key
+      router.push(`?${params.toString()}`);
+    }
+  };
 
   // 🔍 Filter by search
   const filteredData = useMemo(() => {
@@ -123,7 +136,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setCurrentPage(1);
+              // setCurrentPage(1);
             }}
           />
           <FaSearch className="absolute left-3 top-2.5 text-gray-400" />
@@ -173,36 +186,35 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
 
           {/* Pagination */}
           <div className="flex justify-between items-center mt-4">
-            <Link href={`/allUsers/${Math.max(1, currentPage - 1)}`}>
-              <button
-                disabled={currentPage === 1}
-                className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
-              >
-                ← Previous
-              </button>
-            </Link>
+            <button
+              onClick={() => goToPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage <= 1}
+              className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
+            >
+              ← Previous
+            </button>
             <div className="flex gap-2">
               {tabs.map((tab) => (
-                <Link key={tab} href={`/allUsers/${tab}`}>
-                  <button
-                    className={`w-8 h-8 rounded-md text-sm ${currentPage === Number(tab)
+                <button
+                  key={tab}
+                  onClick={() => goToPage(Number(tab))}
+                  className={`w-8 h-8 rounded-md text-sm ${currentPage === Number(tab)
                       ? "bg-blue-600 text-white"
                       : "text-gray-600 hover:bg-gray-200"
-                      }`}
-                  >
-                    {tab}
-                  </button>
-                </Link>
+                    }`}
+                >
+                  {tab}
+                </button>
               ))}
             </div>
-            <Link href={`/allUsers/${Math.min(totalPages, currentPage + 1)}`}>
-              <button
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
-              >
-                Next →
-              </button>
-            </Link>
+
+            <button
+              onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage >= totalPages}
+              className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
+            >
+              Next →
+            </button>
           </div>
         </>
       )}

@@ -138,7 +138,6 @@ export default function ResetPassword() {
                                         type="submit"
                                         className="w-full"
                                         disabled={isLoading}
-                                        onClick={() => console.log("jhgf")}
                                     >
                                         {isLoading ? (
                                             <>
