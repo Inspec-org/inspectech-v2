@@ -1,6 +1,16 @@
 import React from 'react';
+type User = {
+    id: number;
+    full_name: string;
+    email: string;
+    avatar: string;
+};
 
-const RecentlyAddedUsers = () => {
+type RecentlyAddedUsersProps = {
+    recentUsers: User[];
+};
+
+const RecentlyAddedUsers: React.FC<RecentlyAddedUsersProps> = ({ recentUsers }) => {
     const users = [
         {
             id: 1,
@@ -59,7 +69,7 @@ const RecentlyAddedUsers = () => {
 
             {/* Scrollable user list */}
             <div className="flex-1 overflow-y-auto h-[400px] space-y-2 custom-scrollbar">
-                {users.map((user) => (
+                {recentUsers.map((user) => (
                     <div
                         key={`${user.id}-${user.email}`}
                         className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -67,14 +77,14 @@ const RecentlyAddedUsers = () => {
                         <div className="flex-shrink-0">
                             <img
                                 src={user.avatar}
-                                alt={`${user.name}'s avatar`}
+                                alt={`${user.full_name}'s avatar`}
                                 className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
                             />
                         </div>
 
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">
-                                {user.name}
+                                {user.full_name}
                             </p>
                             <p className="text-sm text-gray-500 truncate">
                                 {user.email}

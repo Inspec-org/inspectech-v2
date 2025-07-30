@@ -34,6 +34,14 @@ type GuestCounts = {
     tck: number[];
 };
 
+type User = {
+    id: number;
+    full_name: string;
+    email: string;
+    avatar: string;
+};
+
+
 
 export default function Index({ sessionId }: { sessionId: string }) {
     const [roomStats, setRoomStats] = useState<RoomStats | null>(null);
@@ -43,6 +51,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         manually: Array(12).fill(0),
         tck: Array(12).fill(0),
     });
+    const [recentUsers, setRecentUsers] = useState<User[]>([]);
     const [links, setLinks] = useState<number[]>([]);
     const { user } = React.useContext(UserContext);
     const [payload, setPayload] = useState<any>(null);
@@ -61,12 +70,13 @@ export default function Index({ sessionId }: { sessionId: string }) {
             getRooms()
             getGeneratedLinks()
             getTotalGuest()
+            getRecentlyAddedUsers()
         }
     }, [payload])
 
     const getUsers = async () => {
         try {
-            const response = await fetch("/api/get_total_users", {
+            const response = await fetch("/api/dashboard/get_total_users", {
                 method: "POST",
                 headers: {
                     "Session": sessionId,
@@ -89,7 +99,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
     const getRooms = async () => {
         try {
-            const response = await fetch("/api/get_total_rooms", {
+            const response = await fetch("/api/dashboard/get_total_rooms", {
                 method: "POST",
                 headers: {
                     "Session": sessionId,
@@ -112,7 +122,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
     const getGeneratedLinks = async () => {
         try {
-            const response = await fetch("/api/get_total_links", {
+            const response = await fetch("/api/dashboard/get_total_links", {
                 method: "POST",
                 headers: {
                     "Session": sessionId,
@@ -135,7 +145,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
     const getTotalGuest = async () => {
         try {
-            const response = await fetch("/api/get_total_guests", {
+            const response = await fetch("/api/dashboard/get_total_guests", {
                 method: "POST",
                 headers: {
                     "Session": sessionId,
@@ -156,6 +166,30 @@ export default function Index({ sessionId }: { sessionId: string }) {
         }
     }
 
+    const getRecentlyAddedUsers = async () => {
+        try {
+            const response = await fetch("/api/dashboard/get_recent_users", {
+                method: "POST",
+                headers: {
+                    "Session": sessionId,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+
+            })
+            const result = await response.json()
+            if (!response.ok || result.data.status === false) {
+                throw new Error(result.data.message)
+            }
+            setRecentUsers(result.data.data);
+
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            toast.error(errorMessage);
+            console.log("error", err);
+        }
+    }
+
     return (
         <div className="grid grid-cols-12 gap-4 md:gap-6 xl:gap-8">
             <div className="col-span-12 xl:col-span-7 flex flex-col space-y-6">
@@ -164,12 +198,10 @@ export default function Index({ sessionId }: { sessionId: string }) {
             </div>
 
             <div className="col-span-12 xl:col-span-5">
-                {/* <div className="h-full"> */}
-                    <RecentlyAddedUsers />
+                <RecentlyAddedUsers recentUsers={recentUsers} />
                 {/* </div> */}
             </div>
 
-            {/* Adjusted to col-span-12 to avoid extra whitespace */}
             <div className="col-span-12">
                 <TotalGuestsChart scan={guestCounts.scan} manually={guestCounts.manually} tck={guestCounts.tck} />
             </div>
