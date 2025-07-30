@@ -132,6 +132,7 @@ const links: GeneratedLink[] = [
     generatedLink: "www.scannedroom.pk",
     Action: "View Details"
   },
+  
   {
     id: "2",
     generatedOn: "Apr 12, 2025",
