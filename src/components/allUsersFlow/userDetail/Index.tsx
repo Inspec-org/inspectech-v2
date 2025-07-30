@@ -2,7 +2,7 @@
 import UserAddressCard from "@/components/user-profile/UserKBSCred";
 import UserInfoCard from "@/components/user-profile/UserInfoCard";
 import UserMetaCard from "@/components/user-profile/UserMetaCard";
-import { notFound } from "next/navigation";
+import { notFound, usePathname, useSearchParams } from "next/navigation";
 import { Metadata } from "next";
 import { useContext, useEffect, useRef, useState } from "react";
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
@@ -153,14 +153,14 @@ interface PageProps {
 
 export default function Index({ sessionId }: { sessionId: string }) {
   const router = useRouter(); // Access the router
-
+  const searchParams = useSearchParams();
   const handleBack = () => {
-    const page = params.page
-    router.push(`/allUsers/${page}`);
+    const user_page=searchParams.get("user_page") || "1";
+    router.push(`/allUsers/?user_page=${user_page}`);
   };
 
 
-  
+
 
   const linkColumns: Column<GeneratedLink>[] = [
     { header: "Generated On", accessor: "generatedOn" },
@@ -177,11 +177,21 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
   const [roomactiveTab, setRoomActiveTab] = useState("Active");
 
-  const handleTabChange = (tab: string) => {
-    setRoomActiveTab(tab); // Update the current active tab
+  const pathname = usePathname(); 
+  const handleTabChange = (newTab: string) => {
+    const segments = pathname.split("/");
+    segments[segments.length - 1] = newTab; // Replace last segment (the tab name)
+    const newPath = segments.join("/");
+
+    const query = searchParams.toString(); // e.g., page=2&activeTab=Rooms
+    const fullPath = query ? `${newPath}?${query}` : newPath;
+
+    router.push(fullPath); // preserves query params
+    setActiveTab(newTab);  // update tab state
   };
   const params = useParams();
-  const userId = params.id as string;
+  const userId = params.user_id as string;
+  const tab = params.user_tab
   const { user } = useContext(UserContext);
 
   const [userDetails, setUserDetails] = useState<User | null>(null);
@@ -190,7 +200,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
   const FetchedRef = useRef(false);
   //   const userId = parseInt(params.id);
   // const user = users.find((u) => u.id === userId);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(tab);
   useEffect(() => {
     if (user?.email && !FetchedRef.current && userId) {
       const builtPayload = buildRequestBody({
@@ -203,6 +213,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
   }, [user, userId]);
   // if (!user) return notFound();
   const fetchUser = async (payload: any) => {
+    console.log(payload)
     try {
       const response = await fetch('/api/allUsersFlow/get_user_detail', {
         method: 'POST',
@@ -269,7 +280,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
                   ? "bg-[var(--accent)] text-white"
                   : "text-gray-700 hover:bg-gray-200"
                   }`}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleTabChange(tab)}
               >
                 {tab === "overview"
                   ? "Overview"
@@ -293,7 +304,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
         {activeTab === "rooms" && (
 
-          <Rooms sessionId={sessionId}/>
+          <Rooms sessionId={sessionId} />
         )}
 
         {/* {activeTab === "links" && (

@@ -7,7 +7,7 @@ import { redirect, useRouter } from "next/navigation";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from 'react-toastify';
 import { UserContext } from "@/context/authContext";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import ActionButton from "../../common/ActionButton";
 type UserOrder = {
   id: string;
@@ -24,13 +24,14 @@ type UserOrder = {
 
 export default function Index({ sessionId }: { sessionId: string }) {
   const params = useParams();
+  const searchParams = useSearchParams();
   const [tableData, setTableData] = useState<UserOrder[]>([]);
   const [totaluser, setTotaluser] = useState(0);
-  const [currentPage, setCurrentPage] = useState(() => Number(params.page) || 1);
+  const currentPage = parseInt(searchParams.get("user_page") || "1", 10);
   const [loading, setLoading] = useState(false)
   const { user } = useContext(UserContext);
   const hasFetchedRef = useRef(false);
-  const limit = 10;
+  const limit = 5;
   const pageTabs = useMemo(() => {
     const totalPages = Math.ceil(totaluser / limit);
     return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
@@ -40,14 +41,13 @@ export default function Index({ sessionId }: { sessionId: string }) {
     redirect("/signin");
   }
   useEffect(() => {
-    if (user?.email && !hasFetchedRef.current) {
+    if (user?.email) {
       const builtPayload = buildRequestBody({
         email: user.email,
         limit,
         page: currentPage,
       });
       fetchData(builtPayload);
-      hasFetchedRef.current = true;
     }
   }, [user, currentPage]);
   const fetchData = async (payload: any) => {
@@ -143,7 +143,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
       accessor: "Action",
       cell: (row) => (
         <div className="text-center">
-          <ActionButton link={`/allUsers/${currentPage}/detailUser/${row.id}`} />
+          <ActionButton link={`/allUsers/detailUser/${row.id}/${"overview"}/?user_page=${currentPage}`} />
         </div>
       ),
     },
@@ -151,7 +151,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="p-6">
-      <GenericDataTable title="All Users" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} setCurrentPage={setCurrentPage} loading={loading} emptyStateImages={{
+      <GenericDataTable title="All Users" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage}  loading={loading} querykey= "user_page" emptyStateImages={{
         "All Users": "/images/No Users.svg"
       }}
       />

@@ -34,6 +34,7 @@ export default function UserMetaCard({ user, handleDelete }: Props) {
                 height={80}
                 src={user.profile_image_url || "/images/avatar.png"}
                 alt={user.full_name}
+                className="w-full h-full object-cover"
               />
             </div>
             <div className="order-3 xl:order-2">

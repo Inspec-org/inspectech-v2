@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     const body = await req.json();
-    console.log(body)
+    
     const sessionId = req.headers.get("session");
     if (!sessionId) {
         throw new Error("No session ID provided");
