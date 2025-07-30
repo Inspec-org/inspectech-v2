@@ -14,6 +14,7 @@ import { UserContext } from "@/context/authContext";
 import { buildRequestBody } from "@/utils/apiWrapper";
 import { toast } from "react-toastify";
 import Rooms from "../allRooms/Index";
+import { ClipLoader } from "react-spinners";
 // export const metadata: Metadata = {
 //   title: "User Profile | TailAdmin",
 //   description: "Detailed user profile page.",
@@ -110,7 +111,7 @@ type User = {
 
 
 interface GeneratedLink {
-  id: number;
+  id: string;
   generatedLink: string;
   generatedOn: string;
   checkInDate: string;
@@ -154,53 +155,18 @@ interface PageProps {
 export default function Index({ sessionId }: { sessionId: string }) {
   const router = useRouter(); // Access the router
   const searchParams = useSearchParams();
-  const handleBack = () => {
-    const user_page=searchParams.get("user_page") || "1";
-    router.push(`/allUsers/?user_page=${user_page}`);
-  };
-
-
-
-
-  const linkColumns: Column<GeneratedLink>[] = [
-    { header: "Generated On", accessor: "generatedOn" },
-    { header: "Check-in Date", accessor: "checkInDate" },
-    { header: "Check-Out Date", accessor: "checkOutDate" },
-    { header: "Room Name", accessor: "roomName" },
-    { header: "Scanned Documents", accessor: "scannedDocs" },
-    {
-      header: "Action",
-      accessor: "Action",
-      cell: (row) => <ActionButton link={`/detailLink/${row.id}`} />
-    },
-  ];
-
-  const [roomactiveTab, setRoomActiveTab] = useState("Active");
-
-  const pathname = usePathname(); 
-  const handleTabChange = (newTab: string) => {
-    const segments = pathname.split("/");
-    segments[segments.length - 1] = newTab; // Replace last segment (the tab name)
-    const newPath = segments.join("/");
-
-    const query = searchParams.toString(); // e.g., page=2&activeTab=Rooms
-    const fullPath = query ? `${newPath}?${query}` : newPath;
-
-    router.push(fullPath); // preserves query params
-    setActiveTab(newTab);  // update tab state
-  };
+  const pathname = usePathname();
   const params = useParams();
   const userId = params.user_id as string;
   const tab = params.user_tab
   const { user } = useContext(UserContext);
-
   const [userDetails, setUserDetails] = useState<User | null>(null);
-
   const [currentPage, setCurrentPage] = useState(1);
-  const FetchedRef = useRef(false);
-  //   const userId = parseInt(params.id);
-  // const user = users.find((u) => u.id === userId);
+  const FetchedRef = useRef(false);;
   const [activeTab, setActiveTab] = useState(tab);
+  const [loading, setLoading] = useState(true);
+
+
   useEffect(() => {
     if (user?.email && !FetchedRef.current && userId) {
       const builtPayload = buildRequestBody({
@@ -211,7 +177,6 @@ export default function Index({ sessionId }: { sessionId: string }) {
       FetchedRef.current = true;
     }
   }, [user, userId]);
-  // if (!user) return notFound();
   const fetchUser = async (payload: any) => {
     console.log(payload)
     try {
@@ -229,6 +194,10 @@ export default function Index({ sessionId }: { sessionId: string }) {
     } catch (error) {
       console.error("Error fetching user:", error);
       return null;
+    }
+    finally
+    {
+      setLoading(false)
     }
   }
   const handleDelete = async () => {
@@ -254,6 +223,35 @@ export default function Index({ sessionId }: { sessionId: string }) {
       return null;
     }
   }
+  const handleBack = () => {
+    const user_page = searchParams.get("user_page") || "1";
+    router.push(`/allUsers/?user_page=${user_page}`);
+  };
+  const handleTabChange = (newTab: string) => {
+    const segments = pathname.split("/");
+    segments[segments.length - 1] = newTab; // Replace last segment (the tab name)
+    const newPath = segments.join("/");
+
+    const query = searchParams.toString(); // e.g., page=2&activeTab=Rooms
+    const fullPath = query ? `${newPath}?${query}` : newPath;
+
+    router.push(fullPath); // preserves query params
+    setActiveTab(newTab);  // update tab state
+  };
+
+  const linkColumns: Column<GeneratedLink>[] = [
+    { header: "Generated On", accessor: "generatedOn" },
+    { header: "Check-in Date", accessor: "checkInDate" },
+    { header: "Check-Out Date", accessor: "checkOutDate" },
+    { header: "Room Name", accessor: "roomName" },
+    { header: "Scanned Documents", accessor: "scannedDocs" },
+    {
+      header: "Action",
+      accessor: "Action",
+      cell: (row) => <ActionButton link={`/detailLink/${row.id}`} />
+    },
+  ];
+
   return (
     <div>
       <div className="rounded-2xl border border-gray-200 bg-white p-5 lg:p-6">
@@ -296,6 +294,11 @@ export default function Index({ sessionId }: { sessionId: string }) {
         {/* Tab Panels */}
         {activeTab === "overview" && (
           <div className="space-y-6">
+            {loading && (
+              <div className="flex justify-center items-center">
+                <ClipLoader color="#465fff" size={30} />
+              </div>
+            )}
             <UserMetaCard user={userDetails} handleDelete={handleDelete} />
             <UserInfoCard user={userDetails} />
             {/* <UserAddressCard user={user} /> */}
@@ -307,7 +310,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
           <Rooms sessionId={sessionId} />
         )}
 
-        {/* {activeTab === "links" && (
+        {activeTab === "links" && (
           <GenericDataTable
             data={links}
             columns={linkColumns}
@@ -321,7 +324,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
               "All Links": "/images/No Links.svg"
             }}
           />
-        )} */}
+        )}
       </div>
     </div>
   );

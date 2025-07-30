@@ -1,8 +1,9 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Badge from "../ui/badge/Badge";
 import { ArrowDownIcon, ArrowUpIcon, BoxIconLine, GroupIcon, UserIcon } from "@/icons";
 import Image from "next/image";
+import { ClipLoader } from "react-spinners";
 
 type UserStats = {
   total_users: number;
@@ -23,9 +24,12 @@ type Props = {
 };
 
 export const EcommerceMetrics: React.FC<Props> = ({ UserStats, RoomStats }) => {
-  if (!RoomStats || !UserStats) {
-    return <p>Loading metrics...</p>;
-  }
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (UserStats && RoomStats) {
+      setLoading(false);
+    }
+  }, [UserStats, RoomStats]);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
       {/* <!-- Metric Item Start --> */}
@@ -38,6 +42,11 @@ export const EcommerceMetrics: React.FC<Props> = ({ UserStats, RoomStats }) => {
             height={24}
           />
         </div>
+        {loading && (
+          <div className="flex justify-center items-center">
+            <ClipLoader color="#465fff" size={30} />
+          </div>
+        )}
 
         <div className="flex items-end justify-between mt-5">
           <div>
@@ -45,10 +54,10 @@ export const EcommerceMetrics: React.FC<Props> = ({ UserStats, RoomStats }) => {
               All Users
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm ">
-              {UserStats.total_users}
+              {UserStats?.total_users}
             </h4>
           </div>
-          {UserStats.percent_change >= 0 ? (
+          {UserStats?.percent_change && UserStats.percent_change >= 0 ? (
             <Badge color="success">
               <ArrowUpIcon className="mr-1" />
               {UserStats.percent_change}%
@@ -56,7 +65,7 @@ export const EcommerceMetrics: React.FC<Props> = ({ UserStats, RoomStats }) => {
           ) : (
             <Badge color="error">
               <ArrowDownIcon className="mr-1 text-error-500" />
-              {UserStats.percent_change}%
+              {UserStats?.percent_change}%
             </Badge>
           )}
         </div>
@@ -73,25 +82,30 @@ export const EcommerceMetrics: React.FC<Props> = ({ UserStats, RoomStats }) => {
             height={24}
           />
         </div>
+        {loading && (
+          <div className="flex justify-center items-center">
+            <ClipLoader color="#465fff" size={30} />
+          </div>
+        )}
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="font-raleway text-sm text-gray-500 ">
               All Rooms
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm ">
-              {RoomStats.total_rooms}
+              {RoomStats?.total_rooms}
             </h4>
           </div>
 
-          {RoomStats.percent_change >= 0 ? (
+          {RoomStats?.percent_change && RoomStats?.percent_change >= 0 ? (
             <Badge color="success">
               <ArrowUpIcon className="mr-1" />
-              {RoomStats.percent_change}%
+              {RoomStats?.percent_change}%
             </Badge>
           ) : (
             <Badge color="error">
               <ArrowDownIcon className="mr-1 text-error-500" />
-              {RoomStats.percent_change}%
+              {RoomStats?.percent_change}%
             </Badge>
           )}
         </div>

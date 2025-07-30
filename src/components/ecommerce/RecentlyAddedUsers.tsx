@@ -1,9 +1,11 @@
-import React from 'react';
+import Image from 'next/image';
+import React, { useEffect, useState } from 'react';
+import { ClipLoader } from 'react-spinners';
 type User = {
     id: number;
     full_name: string;
     email: string;
-    avatar: string;
+    profile_image_url: string;
 };
 
 type RecentlyAddedUsersProps = {
@@ -11,62 +13,23 @@ type RecentlyAddedUsersProps = {
 };
 
 const RecentlyAddedUsers: React.FC<RecentlyAddedUsersProps> = ({ recentUsers }) => {
-    const users = [
-        {
-            id: 1,
-            name: "Alex Saprun",
-            email: "alexsaprun123@gmail.com",
-            avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
-        },
-        {
-            id: 2,
-            name: "Ester Haword",
-            email: "Esterhaword123@gmail.com",
-            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-        },
-        {
-            id: 3,
-            name: "Elenor Pena",
-            email: "elenorpena123@gmail.com",
-            avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face"
-        },
-        {
-            id: 4,
-            name: "Sameer Saim",
-            email: "sameersaim123@gmail.com",
-            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
-        },
-        {
-            id: 5,
-            name: "Ester Haword",
-            email: "Esterhaword123@gmail.com",
-            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-        },
-        {
-            id: 6,
-            name: "Alex Saprun",
-            email: "alexsaprun123@gmail.com",
-            avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
-        },
-        {
-            id: 6,
-            name: "Alex Saprun",
-            email: "alexsaprun123@gmail.com",
-            avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
-        },
-        {
-            id: 6,
-            name: "Alex Saprun",
-            email: "alexsaprun123@gmail.com",
-            avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
-        },
-    ];
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        if (recentUsers) {
+            setLoading(false);
+        }
+    }, [recentUsers]);
+
 
     return (
-        <div className="bg-white rounded-2xl shadow-md p-6 w-full flex-col h-[460px] ">
-            <h4 className="text-sm font-semibold text-gray-900 mb-4">Users Logged In By</h4>
+        <div className="bg-white rounded-2xl shadow-md p-6 w-full flex flex-col h-[460px] ">
+            <h4 className="text-sm font-semibold text-gray-900 mb-4">Recent Users</h4>
 
-
+            {loading && (
+                <div className="flex justify-center items-center">
+                    <ClipLoader color="#465fff" size={30} />
+                </div>
+            )}
             {/* Scrollable user list */}
             <div className="flex-1 overflow-y-auto h-[400px] space-y-2 custom-scrollbar">
                 {recentUsers.map((user) => (
@@ -74,11 +37,13 @@ const RecentlyAddedUsers: React.FC<RecentlyAddedUsersProps> = ({ recentUsers }) 
                         key={`${user.id}-${user.email}`}
                         className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                     >
-                        <div className="flex-shrink-0">
-                            <img
-                                src={user.avatar}
-                                alt={`${user.full_name}'s avatar`}
-                                className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
+                        <div className="flex-shrink-0 w-10 h-10">
+                            <Image
+                                src={user.profile_image_url || "/images/avatar.png"}
+                                alt={user.full_name}
+                                width={32}
+                                height={32}
+                                className="rounded-full h-full w-full object-cover"
                             />
                         </div>
 
