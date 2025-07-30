@@ -28,7 +28,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
   const [tableData, setTableData] = useState<UserOrder[]>([]);
   const [totaluser, setTotaluser] = useState(0);
   const currentPage = parseInt(searchParams.get("user_page") || "1", 10);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const { user } = useContext(UserContext);
   const hasFetchedRef = useRef(false);
   const limit = 5;
@@ -52,6 +52,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
   }, [user, currentPage]);
   const fetchData = async (payload: any) => {
     try {
+      setLoading(true)
       const response = await fetch("/api/allUsersFlow/get_all_users", {
         method: "POST",
         headers: {
@@ -85,6 +86,8 @@ export default function Index({ sessionId }: { sessionId: string }) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       toast.error(errorMessage);
       console.log("error", err);
+    }finally{
+      setLoading(false)
     }
   };
 
@@ -151,7 +154,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="p-6">
-      <GenericDataTable title="All Users" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage}  loading={loading} querykey= "user_page" emptyStateImages={{
+      <GenericDataTable title="All Users" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage}  loading={loading} setLoading={setLoading} querykey= "user_page" emptyStateImages={{
         "All Users": "/images/No Users.svg"
       }}
       />

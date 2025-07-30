@@ -20,63 +20,27 @@ interface Room {
 
 }
 
-// const rooms: Room[] = [
-//     {
-//         id: "1",
-//         serialNumber: 1,
-//         roomName: "Deluxe Suite",
-//         roomId: "R101",
-//         guests: 2,
-//         addedOn: "2025-06-25",
-//         Action: "View Details",
-//         isFull: true
-//     },
-//     {
-//         id: "2",
-//         serialNumber: 2,
-//         roomName: "Executive Room",
-//         roomId: "R102",
-//         guests: 3,
-//         addedOn: "2025-06-24",
-//         Action: "View Details",
-//         isFull: false
-
-//     },
-//     {
-//         id: "3",
-//         serialNumber: 3,
-//         roomName: "Standard Room",
-//         roomId: "R103",
-//         guests: 1,
-//         addedOn: "2025-06-23",
-//         Action: "View Details",
-//         isFull: false
-
-//     },
-// ];
-
 export default function Rooms({ sessionId }: { sessionId: string }) {
     const params = useParams();
     const router = useRouter();
     const pathname = usePathname();
-    // const [tableData, setTableData] = useState<UserOrder[]>([]);
     const searchParams = useSearchParams();
     const [totalRooms, setTotalRooms] = useState(0);
     const currentPage = parseInt(searchParams.get("room_page") || "1", 10);
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
     const { user } = useContext(UserContext);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [roomStatus, setRoomStatus] = useState<string>("all");
-    const tabParam = searchParams.get("activeTab") || "All Rooms";
     const [roomactiveTab, setRoomActiveTab] = useState("All Rooms");
     const [initialized, setInitialized] = useState(false);
-    const hasFetchedRef = useRef(false);
     const limit = 5;
     const pageTabs = useMemo(() => {
         const totalPages = Math.ceil(totalRooms / limit);
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
     }, [totalRooms, limit]);
+    
     const customTabs = ["All Rooms", "Full Rooms", "Empty Rooms"];
+    
     if (!sessionId) {
         redirect("/signin");
     }
@@ -91,6 +55,7 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
             setInitialized(true); // only once
         }
     }, [searchParams, initialized]);
+    
     useEffect(() => {
         const timeout = setTimeout(() => {
             if (user?.email && initialized) {
@@ -138,10 +103,14 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
             toast.error(errorMessage);
             console.log("error", err);
             setRooms([]);
+        }finally
+        {
+            setLoading(false)
         }
     };
 
     const handleTabChange = (tab: string) => {
+        setLoading(true)
         setRoomActiveTab(tab);
         const firstWord = tab.split(" ")[0].toLowerCase();
         setRoomStatus(firstWord);
@@ -183,6 +152,7 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
                 activeTab={roomactiveTab}
                 onTabChange={handleTabChange}
                 querykey="room_page"
+                setLoading={setLoading}
             />
         </div>
     );

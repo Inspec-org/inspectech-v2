@@ -26,6 +26,7 @@ interface GenericDataTableProps<T> {
   currentPage: number
   setCurrentPage?: React.Dispatch<React.SetStateAction<number>>;
   loading: boolean,
+  setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   querykey?: string
 }
 
@@ -43,6 +44,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   currentPage,
   setCurrentPage,
   loading,
+  setLoading,
   querykey
 }: GenericDataTableProps<T>) {
   // const [currentPage, setCurrentPage] = useState(1);
@@ -55,6 +57,9 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   const searchParams = useSearchParams();
   const goToPage = (page: number) => {
     if (querykey) {
+      if (setLoading) {
+        setLoading(true);
+      }
       const params = new URLSearchParams(searchParams);
       // setCurrentPage(page)
       params.set(querykey, String(page)); // update dynamic key
@@ -93,11 +98,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   // 📄 Paginate the filtered data
   const totalPages = tabs.length;
   const currentData = filteredData;
-  console.log(data)
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-      {/* Header: Title + Tabs + Search */}
-
       <div
         className={`flex items-center justify-between flex-wrap gap-4 ${custom_tabs?.length ? "mb-4" : "mb-6"
           }`}
@@ -144,10 +146,10 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <ClipLoader />
+        <div className="flex justify-center items-center h-[200px]">
+          <ClipLoader color="#465fff" size={30} />
         </div>
-      ) : isEmpty ? (
+      ) : !loading && isEmpty ? (
         <div className="flex flex-col items-center justify-center py-20">
           {emptyImage && (
             <img src={emptyImage} alt="No data" className="w-52 h-52 mb-4 object-contain" />
@@ -199,8 +201,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                   key={tab}
                   onClick={() => goToPage(Number(tab))}
                   className={`w-8 h-8 rounded-md text-sm ${currentPage === Number(tab)
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-600 hover:bg-gray-200"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-200"
                     }`}
                 >
                   {tab}

@@ -39,23 +39,10 @@ export default function Index({ sessionId }: { sessionId: string }) {
     const [guests, setGuests] = useState<Guest[]>([]);
     const [totalGuests, setTotalGuests] = useState(0);
     const params = useParams();
-    const pathname = usePathname();
     const searchParams = useSearchParams();
     const roomId = (params.room_id as string);
     const userId = (params.user_id as string);
-    const handleBack = () => {
-        // Extract userId and page from the path
-        const pathSegments = pathname.split("/");
-        const userId = params.user_id; // e.g., 'bdb236fe...'
-        const user_page = searchParams.get("user_page") || "1";
-        const room_page = searchParams.get("room_page") || "1";
-        const activeTab = searchParams.get("activeTab") || "All Rooms";
-
-        const backPath = `/allUsers/detailUser/${userId}/rooms?user_page=${user_page}&room_page=${room_page}&activeTab=${encodeURIComponent(activeTab)}`;
-
-        router.push(backPath);
-    };
-    // const room = rooms?.find((r) => r.id === roomId);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("Added By Scan Documents");
     const [guestType, setGuestType] = useState<string>("scan");
     const { user } = useContext(UserContext);
@@ -78,6 +65,16 @@ export default function Index({ sessionId }: { sessionId: string }) {
         },
     ];
 
+    const handleBack = () => {
+        const userId = params.user_id;
+        const user_page = searchParams.get("user_page") || "1";
+        const room_page = searchParams.get("room_page") || "1";
+        const activeTab = searchParams.get("activeTab") || "All Rooms";
+
+        const backPath = `/allUsers/detailUser/${userId}/rooms?user_page=${user_page}&room_page=${room_page}&activeTab=${encodeURIComponent(activeTab)}`;
+
+        router.push(backPath);
+    };
     useEffect(() => {
         if (user?.email && !FetchedRef.current && userId && roomId) {
             const builtPayload = buildRequestBody({
@@ -122,9 +119,13 @@ export default function Index({ sessionId }: { sessionId: string }) {
             toast.error(errorMessage);
             console.error("Error fetching user:", err);
             setGuests([]);
+        }finally
+        {
+            setLoading(false)
         }
     }
     const handleTabChange = (tab: string) => {
+        setLoading(true)
         setActiveTab(tab);
         const tabToGuestTypeMap: Record<string, string> = {
             "Added By Scan Documents": "scan",
@@ -179,7 +180,8 @@ export default function Index({ sessionId }: { sessionId: string }) {
                         custom_tabs={["Added By Scan Documents", "Added By Passport", "Added By TCK"]}
                         activeTab={activeTab}
                         tabs={pageTabs}
-                        loading={false}
+                        loading={loading}
+                        setLoading={setLoading}
                         onTabChange={handleTabChange}
                         data={guests}
                         columns={guestColumns}

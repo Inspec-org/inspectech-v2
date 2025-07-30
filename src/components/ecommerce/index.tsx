@@ -38,7 +38,7 @@ type User = {
     id: number;
     full_name: string;
     email: string;
-    avatar: string;
+    profile_image_url: string;
 };
 
 
@@ -182,6 +182,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
                 throw new Error(result.data.message)
             }
             setRecentUsers(result.data.data);
+            console.log(result.data.data)
 
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);

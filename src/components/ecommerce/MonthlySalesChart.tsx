@@ -3,8 +3,9 @@ import { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
 import { MoreDotIcon } from "@/icons";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
+import { ClipLoader } from "react-spinners";
 
 // Dynamically import the ReactApexChart component
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
@@ -30,6 +31,12 @@ export default function MonthlySalesChart({ links }: MonthlySalesChartProps) {
 
     return result;
   };
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (links) {
+      setLoading(false);
+    }
+  }, [links]);
 
   const options: ApexOptions = {
     colors: ["#465fff"],
@@ -87,6 +94,11 @@ export default function MonthlySalesChart({ links }: MonthlySalesChartProps) {
 
       <div className="max-w-full overflow-x-auto custom-scrollbar">
         <div className="-ml-5 min-w-[650px] xl:min-w-full pl-2">
+          {loading && (
+            <div className="flex justify-center items-center h-[200px]">
+              <ClipLoader color="#465fff" size={30} />
+            </div>
+          )}
           <ReactApexChart
             options={options}
             series={series}
