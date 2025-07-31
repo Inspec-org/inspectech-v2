@@ -15,6 +15,7 @@ import { buildRequestBody } from "@/utils/apiWrapper";
 import { toast } from "react-toastify";
 import Rooms from "../allRooms/Index";
 import { ClipLoader } from "react-spinners";
+import Links from "../AllLinks/Links";
 // export const metadata: Metadata = {
 //   title: "User Profile | TailAdmin",
 //   description: "Detailed user profile page.",
@@ -112,38 +113,15 @@ type User = {
 
 interface GeneratedLink {
   id: string;
-  generatedLink: string;
-  generatedOn: string;
-  checkInDate: string;
-  checkOutDate: string;
-  roomName: string;
-  scannedDocs: number;
+  check_in: string;
+  check_out: string;
+  number_of_guests: number;
+  created_at: string;
+  status: string;
+  room_name: string;
   Action: string;
 }
 
-const links: GeneratedLink[] = [
-  {
-    id: "1",
-    generatedOn: "Apr 10, 2025",
-    checkInDate: "Apr 10, 2025",
-    checkOutDate: "Apr 15, 2025",
-    roomName: "Living room 01",
-    scannedDocs: 12,
-    generatedLink: "www.scannedroom.pk",
-    Action: "View Details"
-  },
-  
-  {
-    id: "2",
-    generatedOn: "Apr 12, 2025",
-    checkInDate: "Apr 12, 2025",
-    checkOutDate: "Apr 16, 2025",
-    roomName: "Living room 02",
-    scannedDocs: 10,
-    generatedLink: "www.scannedroom2.pk",
-    Action: "View Details"
-  }
-];
 
 interface PageProps {
   params: {
@@ -196,8 +174,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
       console.error("Error fetching user:", error);
       return null;
     }
-    finally
-    {
+    finally {
       setLoading(false)
     }
   }
@@ -240,18 +217,6 @@ export default function Index({ sessionId }: { sessionId: string }) {
     setActiveTab(newTab);  // update tab state
   };
 
-  const linkColumns: Column<GeneratedLink>[] = [
-    { header: "Generated On", accessor: "generatedOn" },
-    { header: "Check-in Date", accessor: "checkInDate" },
-    { header: "Check-Out Date", accessor: "checkOutDate" },
-    { header: "Room Name", accessor: "roomName" },
-    { header: "Scanned Documents", accessor: "scannedDocs" },
-    {
-      header: "Action",
-      accessor: "Action",
-      cell: (row) => <ActionButton link={`/detailLink/${row.id}`} />
-    },
-  ];
 
   return (
     <div>
@@ -312,19 +277,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         )}
 
         {activeTab === "links" && (
-          <GenericDataTable
-            data={links}
-            columns={linkColumns}
-            loading={false}
-            tabs={["1"]}
-            pageSize={5}
-            title="All Links"
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            emptyStateImages={{
-              "All Links": "/images/No Links.svg"
-            }}
-          />
+          <Links sessionId={sessionId} />
         )}
       </div>
     </div>
