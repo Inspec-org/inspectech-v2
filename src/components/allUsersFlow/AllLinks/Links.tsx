@@ -26,15 +26,17 @@ export default function Links({ sessionId }: { sessionId: string }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [totalLinks, setTotalLinks] = useState(0);
-    const currentPage = parseInt(searchParams.get("room_page") || "1", 10);
+    const currentPage = parseInt(searchParams.get("link_page") || "1", 10);
     const [loading, setLoading] = useState(true)
     const { user } = useContext(UserContext);
     const [links, setLinks] = useState<Link[]>([]);
-    const limit = 5;
+    const limit = 10;
     const pageTabs = useMemo(() => {
         const totalPages = Math.ceil(totalLinks / limit);
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
     }, [totalLinks, limit]);
+    const hasFetched = useRef(false);
+    const prevPageRef = useRef(currentPage);
 
 
     if (!sessionId) {
@@ -43,20 +45,25 @@ export default function Links({ sessionId }: { sessionId: string }) {
 
 
     useEffect(() => {
-        if (user?.email) {
+        if (prevPageRef.current !== currentPage) {
+            hasFetched.current = false;
+        }
+        if (user?.email && !hasFetched.current) {
             const builtPayload = buildRequestBody({
                 email: user.email,
                 user_id: params.user_id,
                 limit,
                 page: currentPage,
             });
-
             fetchData(builtPayload);
+            hasFetched.current = true;
         }
+        prevPageRef.current = currentPage;
     }, [user, currentPage]);
 
     const fetchData = async (payload: any) => {
         try {
+
             const response = await fetch("/api/allUsersFlow/get_all_links_of_user", {
                 method: "POST",
                 headers: {
@@ -68,10 +75,12 @@ export default function Links({ sessionId }: { sessionId: string }) {
 
             const result = await response.json();
 
+            // Check if the response is not ok or the status is false in data
             if (!response.ok || result.data.status === false) {
-                throw new Error(result.data.message);
+                throw new Error(result.data.message); // Throw an error if conditions are met
             }
 
+            // Process data if no error occurred
             const roomsWithSerial = result.data.data.links.map((room: any, index: number) => ({
                 ...room,
                 serialNumber: index + 1,
@@ -81,13 +90,15 @@ export default function Links({ sessionId }: { sessionId: string }) {
             setLinks(roomsWithSerial);
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
-            toast.error(errorMessage);
-            console.log("error", err);
-            setLinks([]);
+            toast.error(errorMessage); // Display error message to user
+            console.error("Error occurred during data fetch:", err); // Log error for debugging
+
+            setLinks([]); // Clear links or handle state as needed on error
         } finally {
-            setLoading(false)
+            setLoading(false); // Set loading state to false whether success or error
         }
     };
+
 
 
 
