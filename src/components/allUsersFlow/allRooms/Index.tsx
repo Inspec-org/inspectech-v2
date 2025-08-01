@@ -38,9 +38,9 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
         const totalPages = Math.ceil(totalRooms / limit);
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
     }, [totalRooms, limit]);
-    
+
     const customTabs = ["All Rooms", "Full Rooms", "Empty Rooms"];
-    
+
     if (!sessionId) {
         redirect("/signin");
     }
@@ -55,7 +55,7 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
             setInitialized(true); // only once
         }
     }, [searchParams, initialized]);
-    
+
     useEffect(() => {
         const timeout = setTimeout(() => {
             if (user?.email && initialized) {
@@ -103,8 +103,7 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
             toast.error(errorMessage);
             console.log("error", err);
             setRooms([]);
-        }finally
-        {
+        } finally {
             setLoading(false)
         }
     };
