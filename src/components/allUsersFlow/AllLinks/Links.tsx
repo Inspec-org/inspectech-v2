@@ -36,7 +36,6 @@ export default function Links({ sessionId }: { sessionId: string }) {
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
     }, [totalLinks, limit]);
     const hasFetched = useRef(false);
-    const prevPageRef = useRef(currentPage);
 
 
     if (!sessionId) {
@@ -45,20 +44,20 @@ export default function Links({ sessionId }: { sessionId: string }) {
 
 
     useEffect(() => {
-        if (prevPageRef.current !== currentPage) {
-            hasFetched.current = false;
-        }
-        if (user?.email && !hasFetched.current) {
-            const builtPayload = buildRequestBody({
-                email: user.email,
-                user_id: params.user_id,
-                limit,
-                page: currentPage,
-            });
-            fetchData(builtPayload);
-            hasFetched.current = true;
-        }
-        prevPageRef.current = currentPage;
+        const timeout = setTimeout(() => {
+            if (user?.email && !hasFetched.current) {
+                const builtPayload = buildRequestBody({
+                    email: user.email,
+                    user_id: params.user_id,
+                    limit,
+                    page: currentPage,
+                });
+                fetchData(builtPayload);
+                hasFetched.current = true;
+            }
+        }, 1500); // slight delay to prevent double run
+
+        return () => clearTimeout(timeout);
     }, [user, currentPage]);
 
     const fetchData = async (payload: any) => {

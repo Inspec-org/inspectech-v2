@@ -157,7 +157,6 @@ export default function Index({ sessionId }: { sessionId: string }) {
     }
   }, [user, userId]);
   const fetchUser = async (payload: any) => {
-    console.log(payload)
     try {
       const response = await fetch('/api/allUsersFlow/get_user_detail', {
         method: 'POST',
