@@ -9,6 +9,9 @@ import { toast } from 'react-toastify';
 import { UserContext } from "@/context/authContext";
 import { useParams, useSearchParams } from "next/navigation";
 import ActionButton from "../../common/ActionButton";
+import Button from "@/components/ui/button/Button";
+import { useModal } from "@/hooks/useModal";
+import { Modal } from "@/components/ui/modal";
 interface Link {
     id: string;
     check_in: string;
@@ -22,14 +25,14 @@ interface Link {
 
 export default function Links({ sessionId }: { sessionId: string }) {
     const params = useParams();
-    const router = useRouter();
-    const pathname = usePathname();
+    const { isOpen, openModal, closeModal } = useModal();
     const searchParams = useSearchParams();
     const [totalLinks, setTotalLinks] = useState(0);
     const currentPage = parseInt(searchParams.get("link_page") || "1", 10);
     const [loading, setLoading] = useState(true)
     const { user } = useContext(UserContext);
     const [links, setLinks] = useState<Link[]>([]);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
     const limit = 10;
     const pageTabs = useMemo(() => {
         const totalPages = Math.ceil(totalLinks / limit);
@@ -98,7 +101,34 @@ export default function Links({ sessionId }: { sessionId: string }) {
         }
     };
 
-
+    const handleDelete = async (id: string) => {
+        const builtPayload = buildRequestBody({
+            email: user?.email,
+            link_id: id
+        });
+        try {
+            closeModal();
+            setLoading(true)
+            const response = await fetch('/api/allUsersFlow/delete_link', {
+                method: 'POST',
+                headers: {
+                    'Session': sessionId,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(builtPayload),
+            });
+            const data = await response.json();
+            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+            setLinks((prevLinks) => prevLinks.filter((link) => link.id !== id));
+            toast.success(data.data.message);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(errorMessage);
+        }
+        finally{
+            setLoading(false)
+        }
+    };
 
 
     const linkColumns: Column<Link>[] = [
@@ -115,24 +145,53 @@ export default function Links({ sessionId }: { sessionId: string }) {
             header: "Action",
             accessor: "Action", // still needed for default access, won't be used in cell
 
-            cell: (row) => <ActionButton link={`/allUsers/detailUser/${params.user_id}/${params.user_tab}/detailRoom/${row.id}/?room_page=${currentPage}`} />,
+            cell: (row) => <button className="text-[#F90404]  hover:underline" onClick={() => { openModal(); setSelectedId(row.id) }}>Delete</button>,
         },
     ];
 
     return (
-        <div className="p-6">
-            <GenericDataTable title="All Links" data={links} tabs={pageTabs} columns={linkColumns} pageSize={limit} currentPage={currentPage} loading={loading}
-                emptyStateImages={{
-                    "Rooms": "/images/No Rooms.svg"
-                }}
-                // customTabFilter={(room, tab) => {
-                //     if (tab === "Full Rooms") return room.isFull;
-                //     if (tab === "Empty Rooms") return !room.isFull;
-                //     return true; // All Rooms
-                // }}
-                querykey="link_page"
-                setLoading={setLoading}
-            />
-        </div>
+        <>
+            <div className="p-6">
+                <GenericDataTable title="All Links" data={links} tabs={pageTabs} columns={linkColumns} pageSize={limit} currentPage={currentPage} loading={loading}
+                    emptyStateImages={{
+                        "Rooms": "/images/No Rooms.svg"
+                    }}
+                    // customTabFilter={(room, tab) => {
+                    //     if (tab === "Full Rooms") return room.isFull;
+                    //     if (tab === "Empty Rooms") return !room.isFull;
+                    //     return true; // All Rooms
+                    // }}
+                    querykey="link_page"
+                    setLoading={setLoading}
+                />
+            </div>
+            <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[500px] p-6 lg:p-10">
+                <div className="text-center">
+                    <h2 className="text-xl font-semibold mb-4">Are you sure?</h2>
+                    <p className="text-gray-600 mb-6">This action cannot be undone. Do you really want to delete this item?</p>
+
+                    <div className="flex justify-center gap-4">
+                        <button
+                            onClick={(e) => {
+                                if (selectedId) {
+                                    e.preventDefault();
+                                    handleDelete(selectedId);
+                                }
+                            }}
+                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                        >
+                            Yes, Delete
+                        </button>
+                        <button
+                            onClick={closeModal}
+                            className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+        </>
     );
 }

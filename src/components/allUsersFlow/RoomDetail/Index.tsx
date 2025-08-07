@@ -27,8 +27,8 @@ type Guest = {
     sex: string;
     document_type: string;
     document_number: string;
-    issuing_country: string;
-    created_at: string;
+    room_no: number;
+    property: string;
 };
 
 export default function Index({ sessionId }: { sessionId: string }) {
@@ -54,15 +54,12 @@ export default function Index({ sessionId }: { sessionId: string }) {
     }, [totalGuests, limit]);
     const guestColumns: Column<Guest>[] = [
         { header: "Guest Name", accessor: "name" },
-        { header: "Sex", accessor: "sex" },
         { header: "DOB", accessor: "date_of_birth" },
+        { header: "Gender", accessor: "sex" },
+        { header: "Room no", accessor: "room_no" },
+        { header: "Property", accessor: "property" },
         { header: "Document No", accessor: "document_number" },
         { header: "Document type", accessor: "document_type" },
-        { header: "Issuing Country", accessor: "issuing_country" },
-        {
-            header: "Added on", accessor: "created_at",
-            cell: (row) => row.created_at.substring(0, 10)
-        },
     ];
 
     const handleBack = () => {
@@ -107,10 +104,10 @@ export default function Index({ sessionId }: { sessionId: string }) {
                 date_of_birth: g.date_of_birth,
                 document_number: g.document_number,
                 document_type: g.document_type,
-                issuing_country: g.issuing_country,
-                created_at: g.created_at,
+                room_no : g.room_no,
+                property: g.property
             }));
-            console.log(resData.total_guests)
+            console.log(resData.guests)
             setRooms(resData.room);
             setTotalGuests(resData.total_guests);
             setGuests(transformedGuests);
