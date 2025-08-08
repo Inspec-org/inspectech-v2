@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
         throw new Error("No session ID provided");
     }
     try {
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/get_all_users", {
+        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/get_all_users", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

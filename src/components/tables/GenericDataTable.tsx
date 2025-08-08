@@ -28,6 +28,8 @@ interface GenericDataTableProps<T> {
   loading: boolean,
   setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   querykey?: string
+  search: string
+  setSearch: React.Dispatch<React.SetStateAction<string>>
 }
 
 function GenericDataTable<T extends { id: string; tab?: string }>({
@@ -45,16 +47,19 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   setCurrentPage,
   loading,
   setLoading,
-  querykey
+  querykey,
+  search,
+  setSearch
 }: GenericDataTableProps<T>) {
-  // const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState("");
+  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const tabFilteredData = useMemo(() => {
     if (!activeTab || !customTabFilter) return data;
     return data.filter((item) => customTabFilter(item, activeTab));
   }, [data, activeTab, customTabFilter]);
-  const router = useRouter();
-  const searchParams = useSearchParams();
+
   const goToPage = (page: number) => {
     if (querykey) {
       if (setLoading) {
@@ -66,15 +71,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
       router.push(`?${params.toString()}`);
     }
   };
-
-  // 🔍 Filter by search
-  const filteredData = useMemo(() => {
-    return tabFilteredData.filter((item) =>
-      JSON.stringify(item).toLowerCase().includes(search.toLowerCase())
-    );
-  }, [tabFilteredData, search]);
-
-  const isEmpty = filteredData.length === 0;
+  
+  const isEmpty = tabFilteredData.length === 0;
 
   // 🔸 Derive fallback key if title is missing
   const fallbackTitle = !title && emptyStateImages
@@ -97,7 +95,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
 
   // 📄 Paginate the filtered data
   const totalPages = tabs.length;
-  const currentData = filteredData;
+  const currentData = tabFilteredData;
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
       <div
@@ -166,7 +164,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
               <thead>
                 <tr className="text-left font-raleway text-[var(--secondary)] border-b">
                   {columns.map((col, i) => (
-                    <th key={i} className="py-2 px-4 font-medium">
+                    <th key={i} className="py-2 px-4 font-medium text-center">
                       {col.header}
                     </th>
                   ))}
@@ -176,7 +174,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                 {currentData.map((row) => (
                   <tr key={row.id} className="border-b hover:bg-gray-50">
                     {columns.map((col, i) => (
-                      <td key={i} className="py-3 px-4 font-raleway">
+                      <td key={i} className="py-3 px-4 font-raleway text-center">
                         {col.cell ? col.cell(row) : (row as any)[col.accessor]}
                       </td>
                     ))}

@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     const body = await req.json();
+    console.log(body);
     const sessionId = req.headers.get("session");
     if (!sessionId) {
         throw new Error("No session ID provided");
     }
     try {
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/get_links_of_user", {
+        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/get_all_guests_of_all_properties", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -24,9 +25,8 @@ export async function POST(req: NextRequest) {
             );
         }
 
-
         return NextResponse.json(
-            { message: "Links fetched successfully", data },
+            { message: "users fetched successfully", data },
             { status: 200 }
         );
     } catch (error) {

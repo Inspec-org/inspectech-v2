@@ -3,7 +3,7 @@
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { buildRequestBody } from "@/utils/apiWrapper";
 import Image from "next/image";
-import { redirect, useRouter } from "next/navigation";
+import { redirect, usePathname, useRouter } from "next/navigation";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from 'react-toastify';
 import { UserContext } from "@/context/authContext";
@@ -23,14 +23,15 @@ type UserOrder = {
 };
 
 export default function Index({ sessionId }: { sessionId: string }) {
-  const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [tableData, setTableData] = useState<UserOrder[]>([]);
   const [totaluser, setTotaluser] = useState(0);
   const currentPage = parseInt(searchParams.get("user_page") || "1", 10);
   const [loading, setLoading] = useState(true)
   const { user } = useContext(UserContext);
-  const hasFetchedRef = useRef(false);
+  const [search, setSearch] = useState("");
   const limit = 5;
   const pageTabs = useMemo(() => {
     const totalPages = Math.ceil(totaluser / limit);
@@ -40,16 +41,32 @@ export default function Index({ sessionId }: { sessionId: string }) {
   if (!sessionId) {
     redirect("/signin");
   }
+
   useEffect(() => {
-    if (user?.email) {
-      const builtPayload = buildRequestBody({
-        email: user.email,
-        limit,
-        page: currentPage,
-      });
-      fetchData(builtPayload);
-    }
-  }, [user, currentPage]);
+  if (search) {
+    console.log("search")
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("user_page", "1");
+    router.push(`${pathname}?${params.toString()}`);
+  }
+}, [search]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (user?.email) {
+        const builtPayload = buildRequestBody({
+          email: user.email,
+          limit,
+          page: currentPage,
+          search_query: search
+        });
+        console.log(builtPayload)
+        fetchData(builtPayload);
+      }
+    }, 1000); // slight delay to prevent double run
+
+    return () => clearTimeout(timeout);
+  }, [user, currentPage, search]);
   const fetchData = async (payload: any) => {
     try {
       setLoading(true)
@@ -86,7 +103,9 @@ export default function Index({ sessionId }: { sessionId: string }) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       toast.error(errorMessage);
       console.log("error", err);
-    }finally{
+      setTotaluser(0);
+      setTableData([]);
+    } finally {
       setLoading(false)
     }
   };
@@ -99,13 +118,13 @@ export default function Index({ sessionId }: { sessionId: string }) {
         <div className="flex items-center gap-2 ">
           {/* {row.user?.image ? row.user.image :  || "User"} */}
           <div className="w-8 h-8">
-            <Image
+            {/* <Image
               src={row.user?.image || "/images/avatar.png"}
               alt={row.user?.full_name}
               width={32}
               height={32}
               className="rounded-full h-full w-full object-cover"
-            />
+            /> */}
           </div>
           <div>
             <div className="font-medium">{row.user.full_name}</div>
@@ -146,7 +165,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
       accessor: "Action",
       cell: (row) => (
         <div className="text-center">
-          <ActionButton link={`/allUsers/detailUser/${row.id}/${"overview"}/?user_page=${currentPage}`} />
+          <ActionButton link={`/allUsers/detailUser/${row.id}/?user_page=${currentPage}&user_tab=overview`} />
         </div>
       ),
     },
@@ -154,7 +173,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="p-6">
-      <GenericDataTable title="All Users" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage}  loading={loading} setLoading={setLoading} querykey= "user_page" emptyStateImages={{
+      <GenericDataTable title="All Users" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
         "All Users": "/images/No Users.svg"
       }}
       />

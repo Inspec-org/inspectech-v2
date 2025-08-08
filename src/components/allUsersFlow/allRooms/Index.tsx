@@ -20,20 +20,29 @@ interface Room {
 
 }
 
-export default function Rooms({ sessionId }: { sessionId: string }) {
+interface RoomsProps {
+    sessionId: string;
+    apiEndpoint: string;
+    idKey: "user_id" | "property_id";
+}
+
+export default function Rooms({ sessionId, apiEndpoint, idKey }: RoomsProps) {
     const params = useParams();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [totalRooms, setTotalRooms] = useState(0);
-    const currentPage = parseInt(searchParams.get("room_page") || "1", 10);
-    const [loading, setLoading] = useState(true)
     const { user } = useContext(UserContext);
+    const [search, setSearch] = useState("");
     const [rooms, setRooms] = useState<Room[]>([]);
+    const [totalRooms, setTotalRooms] = useState(0);
     const [roomStatus, setRoomStatus] = useState<string>("all");
     const [roomactiveTab, setRoomActiveTab] = useState("All Rooms");
     const [initialized, setInitialized] = useState(false);
-    const limit = 5;
+    const [loading, setLoading] = useState(true);
+
+    const currentPage = parseInt(searchParams.get("room_page") || "1", 10);
+    const limit = 10;
+
     const pageTabs = useMemo(() => {
         const totalPages = Math.ceil(totalRooms / limit);
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
@@ -44,15 +53,21 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
     if (!sessionId) {
         redirect("/signin");
     }
+
+    useEffect(() => {
+        if (search) {
+            setLoading(true);
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("room_page", "1");
+            router.push(`${pathname}?${params.toString()}`);
+        }
+    }, [search]);
     useEffect(() => {
         if (!initialized) {
             const tabParam = searchParams.get("activeTab") || "All Rooms";
             setRoomActiveTab(tabParam);
-
-            const status = tabParam.split(" ")[0].toLowerCase();
-            setRoomStatus(status);
-
-            setInitialized(true); // only once
+            setRoomStatus(tabParam.split(" ")[0].toLowerCase());
+            setInitialized(true);
         }
     }, [searchParams, initialized]);
 
@@ -61,22 +76,22 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
             if (user?.email && initialized) {
                 const builtPayload = buildRequestBody({
                     email: user.email,
-                    user_id: params.user_id,
+                    [idKey]: params[idKey], // dynamic key here
                     room_status: roomStatus,
                     limit,
                     page: currentPage,
+                    search_query: search
                 });
-
                 fetchData(builtPayload);
             }
-        }, 1500); // slight delay to prevent double run
+        }, 1500);
 
         return () => clearTimeout(timeout);
-    }, [user, currentPage, roomStatus, initialized]);
+    }, [user, currentPage, roomStatus, initialized, idKey, params, apiEndpoint, search]);
 
     const fetchData = async (payload: any) => {
         try {
-            const response = await fetch("/api/allUsersFlow/get_all_rooms_of_user", {
+            const response = await fetch(apiEndpoint, {
                 method: "POST",
                 headers: {
                     Session: sessionId,
@@ -101,25 +116,22 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             toast.error(errorMessage);
-            console.log("error", err);
             setRooms([]);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     };
 
     const handleTabChange = (tab: string) => {
-        setLoading(true)
+        setLoading(true);
         setRoomActiveTab(tab);
-        const firstWord = tab.split(" ")[0].toLowerCase();
-        setRoomStatus(firstWord);
+        setRoomStatus(tab.split(" ")[0].toLowerCase());
         const params = new URLSearchParams(searchParams.toString());
         params.set("room_page", "1");
         router.push(`${pathname}?${params.toString()}`);
     };
 
     const roomColumns: Column<Room>[] = [
-
         { header: "Serial Number", accessor: "serialNumber" },
         { header: "Room Name", accessor: "name" },
         { header: "Room ID", accessor: "external_id" },
@@ -130,29 +142,37 @@ export default function Rooms({ sessionId }: { sessionId: string }) {
         },
         {
             header: "Action",
-            accessor: "Action", // still needed for default access, won't be used in cell
+            accessor: "Action",
+            cell: (row) =>
+                <ActionButton
+                    link={`/${params.user_id
+                        ? `allUsers/detailUser/${params.user_id}`
+                        : `allProperties/detailProperty/${params.property_id}`
+                        }/detailRoom/${row.id}/?room_page=${currentPage}&activeTab=${roomactiveTab}`}
+                />
 
-            cell: (row) => <ActionButton link={`/allUsers/detailUser/${params.user_id}/${params.user_tab}/detailRoom/${row.id}/?room_page=${currentPage}&activeTab=${roomactiveTab}`} />,
         },
     ];
 
     return (
         <div className="p-6">
-            <GenericDataTable data={rooms} tabs={pageTabs} columns={roomColumns} pageSize={limit} currentPage={currentPage} loading={loading}
+            <GenericDataTable
+                data={rooms}
+                tabs={pageTabs}
+                columns={roomColumns}
+                pageSize={limit}
+                currentPage={currentPage}
+                loading={loading}
                 custom_tabs={customTabs}
-                emptyStateImages={{
-                    "Rooms": "/images/No Rooms.svg"
-                }}
-                // customTabFilter={(room, tab) => {
-                //     if (tab === "Full Rooms") return room.isFull;
-                //     if (tab === "Empty Rooms") return !room.isFull;
-                //     return true; // All Rooms
-                // }}
+                emptyStateImages={{ "Rooms": "/images/No Rooms.svg" }}
                 activeTab={roomactiveTab}
                 onTabChange={handleTabChange}
                 querykey="room_page"
                 setLoading={setLoading}
+                search={search}
+                setSearch={setSearch}
             />
         </div>
     );
 }
+
