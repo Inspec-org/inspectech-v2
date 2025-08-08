@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { use, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { notFound } from "next/navigation";
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { FaArrowLeft } from "react-icons/fa";
@@ -38,10 +38,13 @@ export default function Index({ sessionId }: { sessionId: string }) {
     const [rooms, setRooms] = useState<Room | null>(null);
     const [guests, setGuests] = useState<Guest[]>([]);
     const [totalGuests, setTotalGuests] = useState(0);
+    const [search, setSearch] = useState("");
     const params = useParams();
     const searchParams = useSearchParams();
+    const pathname = usePathname();
     const roomId = (params.room_id as string);
     const userId = (params.user_id as string);
+    const propertyId = (params.property_id as string);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("Added By Scan Documents");
     const [guestType, setGuestType] = useState<string>("scan");
@@ -63,31 +66,67 @@ export default function Index({ sessionId }: { sessionId: string }) {
     ];
 
     const handleBack = () => {
-        const userId = params.user_id;
-        const user_page = searchParams.get("user_page") || "1";
-        const room_page = searchParams.get("room_page") || "1";
-        const activeTab = searchParams.get("activeTab") || "All Rooms";
+        const paramsString = searchParams.toString();
 
-        const backPath = `/allUsers/detailUser/${userId}/rooms?user_page=${user_page}&room_page=${room_page}&activeTab=${encodeURIComponent(activeTab)}`;
-
-        router.push(backPath);
-    };
-    useEffect(() => {
-        if (user?.email && !FetchedRef.current && userId && roomId) {
-            const builtPayload = buildRequestBody({
-                email: user.email,
-                user_id: userId,
-                room_id: roomId,
-                guest_add_type: guestType
-            });
-            fetchRoom(builtPayload);
-            FetchedRef.current = true;
+        let basePath = "";
+        if (params.user_id) {
+            basePath = `/allUsers/detailUser/${params.user_id}`;
+        } else if (params.property_id) {
+            basePath = `/allProperties/detailProperty/${params.property_id}`;
         }
-    }, [user, userId, guestType, roomId]);
 
-    const fetchRoom = async (payload: any) => {
+        router.push(`${basePath}?${paramsString}`);
+    };
+
+    useEffect(() => {
+        if (search) {
+            setLoading(true);
+            setCurrentPage(1)
+        }
+    }, [search]);
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (user?.email && (userId || propertyId) && roomId) {
+
+                // Define type so TS knows about optional fields
+                interface Payload {
+                    email: string;
+                    room_id: string;
+                    guest_add_type: string;
+                    user_id?: string;
+                    property_id?: string;
+                    search_query?: string;
+                }
+
+                const payloadData: Payload = {
+                    email: user.email,
+                    room_id: roomId,
+                    guest_add_type: guestType,
+                    search_query: search
+                };
+
+                let endpoint = "";
+
+                if (userId) {
+                    payloadData.user_id = userId;
+                    endpoint = "/api/allUsersFlow/get_room_details";
+                } else if (propertyId) {
+                    payloadData.property_id = propertyId;
+                    endpoint = "/api/allPropertiesFlow/get_room_details";
+                }
+                const builtPayload = buildRequestBody(payloadData);
+                fetchRoom(endpoint, builtPayload);
+            }
+        }, 1500); // slight delay to prevent double run
+
+        return () => clearTimeout(timeout);
+    }, [user, userId, guestType, roomId, propertyId, search]);
+
+
+
+    const fetchRoom = async (endpoint: string, payload: any) => {
         try {
-            const response = await fetch('/api/allUsersFlow/get_room_details', {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Session': sessionId,
@@ -104,10 +143,9 @@ export default function Index({ sessionId }: { sessionId: string }) {
                 date_of_birth: g.date_of_birth,
                 document_number: g.document_number,
                 document_type: g.document_type,
-                room_no : g.room_no,
+                room_no: g.room_no,
                 property: g.property
             }));
-            console.log(resData.guests)
             setRooms(resData.room);
             setTotalGuests(resData.total_guests);
             setGuests(transformedGuests);
@@ -116,8 +154,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
             toast.error(errorMessage);
             console.error("Error fetching user:", err);
             setGuests([]);
-        }finally
-        {
+        } finally {
             setLoading(false)
         }
     }
@@ -185,6 +222,8 @@ export default function Index({ sessionId }: { sessionId: string }) {
                         pageSize={5}
                         currentPage={currentPage}
                         setCurrentPage={setCurrentPage}
+                        search={search}
+                        setSearch={setSearch}
                         emptyStateImages={{
                             "All Guests": "/images/No Guests.svg"
                         }}

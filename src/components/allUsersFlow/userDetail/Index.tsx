@@ -137,7 +137,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
   const pathname = usePathname();
   const params = useParams();
   const userId = params.user_id as string;
-  const tab = params.user_tab
+  const tab = searchParams.get("user_tab")
   const { user } = useContext(UserContext);
   const [userDetails, setUserDetails] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -204,17 +204,14 @@ export default function Index({ sessionId }: { sessionId: string }) {
     const user_page = searchParams.get("user_page") || "1";
     router.push(`/allUsers/?user_page=${user_page}`);
   };
-  const handleTabChange = (newTab: string) => {
-    const segments = pathname.split("/");
-    segments[segments.length - 1] = newTab; // Replace last segment (the tab name)
-    const newPath = segments.join("/");
+  const handleTabChange = (tab: string) => {
+    const params = new URLSearchParams(searchParams.toString()); // keep existing params
+    params.set("user_tab", tab); // change tab value
 
-    const query = searchParams.toString(); // e.g., page=2&activeTab=Rooms
-    const fullPath = query ? `${newPath}?${query}` : newPath;
-
-    router.push(fullPath); // preserves query params
-    setActiveTab(newTab);  // update tab state
+    router.push(`?${params.toString()}`);
+    setActiveTab(tab);
   };
+
 
 
   return (
@@ -272,7 +269,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
 
         {activeTab === "rooms" && (
 
-          <Rooms sessionId={sessionId} />
+          <Rooms sessionId={sessionId} apiEndpoint="/api/allUsersFlow/get_all_rooms_of_user" idKey="user_id" />
         )}
 
         {activeTab === "links" && (

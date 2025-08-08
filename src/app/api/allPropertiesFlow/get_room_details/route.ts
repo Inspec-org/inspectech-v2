@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
         throw new Error("No session ID provided");
     }
     try {
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/delete_link", {
+        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/get_guests_of_room_of_property", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json(
-            { message: "users fetched successfully", data },
+            { message: "Room Details fetched successfully", data },
             { status: 200 }
         );
     } catch (error) {

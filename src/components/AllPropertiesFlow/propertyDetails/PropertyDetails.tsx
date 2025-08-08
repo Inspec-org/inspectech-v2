@@ -18,13 +18,13 @@ import Rooms from "@/components/allUsersFlow/allRooms/Index";
 
 
 type Property = {
-  id: number;
-  property_name: string;
-  host_name: string;
-  kbs_email: string;
-  kbs_password: string;
-  created_at:string;
-  Action: string;
+    id: number;
+    property_name: string;
+    host_name: string;
+    kbs_email: string;
+    kbs_password: string;
+    created_at: string;
+    Action: string;
 };
 
 export default function PropertyDetails({ sessionId }: { sessionId: string }) {
@@ -64,7 +64,6 @@ export default function PropertyDetails({ sessionId }: { sessionId: string }) {
             });
             const data = await response.json();
             if (!response.ok || data.data.status === false) throw new Error(data.data.message)
-            console.log(data.data.data)
             setPropertyDetails(data.data.data);
         } catch (error) {
             console.error("Error fetching user:", error);
@@ -74,43 +73,17 @@ export default function PropertyDetails({ sessionId }: { sessionId: string }) {
             setLoading(false)
         }
     }
-    const handleDelete = async () => {
-        const builtPayload = buildRequestBody({
-            email: user?.email,
-            user_id: propertyId
-        });
-        try {
-            const response = await fetch('/api/allUsersFlow/delete_user', {
-                method: 'POST',
-                headers: {
-                    'Session': sessionId,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(builtPayload),
-            });
-            const data = await response.json();
-            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
-            toast.success(data.data.message);
-            handleBack();
-        } catch (error) {
-            console.error("Error deleting user:", error);
-            return null;
-        }
-    }
+
     const handleBack = () => {
-        const user_page = searchParams.get("user_page") || "1";
-        router.push(`/allUsers/?user_page=${user_page}`);
+        const property_page = searchParams.get("property_page") || "1";
+        router.push(`/allProperties/?property_page=${property_page}`);
     };
-    const handleTabChange = (newTab: string) => {
-        const segments = pathname.split("/");
-        segments[segments.length - 1] = newTab; // Replace last segment (the tab name)
-        const newPath = segments.join("/");
+    const handleTabChange = (tab: string) => {
+        const params = new URLSearchParams(searchParams.toString()); // keep existing params
+        params.set("tab", tab); // change tab value
 
-        const query = searchParams.toString(); // e.g., page=2&activeTab=Rooms
-        const fullPath = query ? `${newPath}?${query}` : newPath;
-
-        router.push(fullPath); // preserves query params
-        setActiveTab(newTab);  // update tab state
+        router.push(`?${params.toString()}`);
+        setActiveTab(tab);
     };
 
 
@@ -155,18 +128,21 @@ export default function PropertyDetails({ sessionId }: { sessionId: string }) {
                 {/* Tab Panels */}
                 {activeTab === "overview" && (
                     <div className="space-y-6">
-                        {loading && (
+                        {loading ? (
                             <div className="flex justify-center items-center">
                                 <ClipLoader color="#465fff" size={30} />
                             </div>
-                        )}
-                        <UserAddressCard propertyDetails={propertyDetails} />
+                        ) :
+                            (
+                                <UserAddressCard propertyDetails={propertyDetails} />
+                            )}
+
                     </div>
                 )}
 
                 {activeTab === "rooms" && (
 
-                    <Rooms sessionId={sessionId} />
+                    <Rooms sessionId={sessionId} idKey="property_id" apiEndpoint="/api/allPropertiesFlow/get_rooms_by_property_id" />
                 )}
 
                 {/* {activeTab === "links" && (

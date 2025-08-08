@@ -3,7 +3,7 @@
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { buildRequestBody } from "@/utils/apiWrapper";
 import Image from "next/image";
-import { redirect, useRouter } from "next/navigation";
+import { redirect, usePathname, useRouter } from "next/navigation";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from 'react-toastify';
 import { UserContext } from "@/context/authContext";
@@ -21,15 +21,17 @@ type PropertyOrder = {
 };
 
 export default function Properties({ sessionId }: { sessionId: string }) {
-  const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname()
   const searchParams = useSearchParams();
   const [tableData, setTableData] = useState<PropertyOrder[]>([]);
   const [totaluser, setTotaluser] = useState(0);
+  const [search, setSearch] = useState("");
   const currentPage = parseInt(searchParams.get("property_page") || "1", 10);
   const [loading, setLoading] = useState(true)
   const { user } = useContext(UserContext);
   const hasFetchedRef = useRef(false);
-  const limit = 5;
+  const limit = 10;
   const pageTabs = useMemo(() => {
     const totalPages = Math.ceil(totaluser / limit);
     return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
@@ -38,16 +40,31 @@ export default function Properties({ sessionId }: { sessionId: string }) {
   if (!sessionId) {
     redirect("/signin");
   }
+
   useEffect(() => {
-    if (user?.email) {
-      const builtPayload = buildRequestBody({
-        email: user.email,
-        limit,
-        page: currentPage,
-      });
-      fetchData(builtPayload);
+    if (search) {
+      setLoading(true);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("property_page", "1");
+      router.push(`${pathname}?${params.toString()}`);
     }
-  }, [user, currentPage]);
+  }, [search]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (user?.email) {
+        const builtPayload = buildRequestBody({
+          email: user.email,
+          limit,
+          page: currentPage,
+          search_query: search
+        });
+        fetchData(builtPayload);
+      }
+    }, 1500); // slight delay to prevent double run
+
+    return () => clearTimeout(timeout);
+  }, [user, currentPage, search]);
   const fetchData = async (payload: any) => {
     try {
       setLoading(true)
@@ -65,7 +82,6 @@ export default function Properties({ sessionId }: { sessionId: string }) {
       if (!response.ok || result.data.status === false) {
         throw new Error(result.data.message);
       }
-      console.log(result.data.data)
 
       setTotaluser(result.data.data.total_properties);
       setTableData(result.data.data.properties);
@@ -73,7 +89,7 @@ export default function Properties({ sessionId }: { sessionId: string }) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       toast.error(errorMessage);
       console.log("error", err);
-    }finally{
+    } finally {
       setLoading(false)
     }
   };
@@ -97,7 +113,7 @@ export default function Properties({ sessionId }: { sessionId: string }) {
       header: <div className="text-center">Added On</div>,
       accessor: "AddedRooms",
       cell: (row) => (
-        <div className="text-center text-[var(--secondary)]">{row.created_at}</div>
+        <div className="text-center text-[var(--secondary)]">{row.created_at.substring(0, 10)}</div>
       ),
     },
     {
@@ -134,7 +150,7 @@ export default function Properties({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="p-6">
-      <GenericDataTable title="All Properties" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage}  loading={loading} setLoading={setLoading} querykey= "user_page" emptyStateImages={{
+      <GenericDataTable title="All Properties" data={tableData} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="property_page" search={search} setSearch={setSearch} emptyStateImages={{
         "All Users": "/images/No Users.svg"
       }}
       />

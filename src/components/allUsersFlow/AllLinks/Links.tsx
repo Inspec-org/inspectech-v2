@@ -25,6 +25,8 @@ interface Link {
 
 export default function Links({ sessionId }: { sessionId: string }) {
     const params = useParams();
+    const router = useRouter();
+    const pathname = usePathname()
     const { isOpen, openModal, closeModal } = useModal();
     const searchParams = useSearchParams();
     const [totalLinks, setTotalLinks] = useState(0);
@@ -33,6 +35,7 @@ export default function Links({ sessionId }: { sessionId: string }) {
     const { user } = useContext(UserContext);
     const [links, setLinks] = useState<Link[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [search, setSearch] = useState("");
     const limit = 10;
     const pageTabs = useMemo(() => {
         const totalPages = Math.ceil(totalLinks / limit);
@@ -44,24 +47,31 @@ export default function Links({ sessionId }: { sessionId: string }) {
     if (!sessionId) {
         redirect("/signin");
     }
-
+    useEffect(() => {
+        if (search) {
+            setLoading(true);
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("link_page", "1");
+            router.push(`${pathname}?${params.toString()}`);
+        }
+    }, [search]);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
-            if (user?.email && !hasFetched.current) {
+            if (user?.email) {
                 const builtPayload = buildRequestBody({
                     email: user.email,
                     user_id: params.user_id,
                     limit,
                     page: currentPage,
+                    search_query: search
                 });
                 fetchData(builtPayload);
-                hasFetched.current = true;
             }
         }, 1500); // slight delay to prevent double run
 
         return () => clearTimeout(timeout);
-    }, [user, currentPage]);
+    }, [user, currentPage, search]);
 
     const fetchData = async (payload: any) => {
         try {
@@ -152,7 +162,7 @@ export default function Links({ sessionId }: { sessionId: string }) {
     return (
         <>
             <div className="p-6">
-                <GenericDataTable title="All Links" data={links} tabs={pageTabs} columns={linkColumns} pageSize={limit} currentPage={currentPage} loading={loading}
+                <GenericDataTable title="All Links" data={links} tabs={pageTabs} columns={linkColumns} pageSize={limit} currentPage={currentPage} loading={loading} search={search} setSearch={setSearch}
                     emptyStateImages={{
                         "Rooms": "/images/No Rooms.svg"
                     }}
