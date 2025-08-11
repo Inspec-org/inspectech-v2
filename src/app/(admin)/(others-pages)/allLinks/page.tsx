@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Properties from "@/components/AllPropertiesFlow/AllProperties/Properties";
+import Links from "@/components/AllLinksFlow/allLinks/AllLinks";
 
 export default async function OrdersPage() {
   const cookieStore = await cookies(); // use await
@@ -11,6 +12,6 @@ export default async function OrdersPage() {
   }
 
   return (
-    <Properties sessionId={sessionId}/>
+    <Links sessionId={sessionId}/>
   );
 }

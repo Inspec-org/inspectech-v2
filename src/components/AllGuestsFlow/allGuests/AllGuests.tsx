@@ -61,7 +61,7 @@ export default function AllGuests({ sessionId }: { sessionId: string }) {
             header: "Action",
             accessor: "Action", // still needed for default access, won't be used in cell
 
-            cell: (row) => <button className="text-[#F90404]  hover:underline" onClick={() => { openModal(); setSelectedId(row.id) }}>Delete</button>,
+            cell: (row) => <button className="text-[#F90404]  hover:underline" onClick={() => { setSelectedId(row.id); openModal() }}>Delete</button>,
         },
     ];
 
@@ -105,8 +105,8 @@ export default function AllGuests({ sessionId }: { sessionId: string }) {
             const data = await response.json();
             if (!response.ok || data.data.status === false) throw new Error(data.data.message)
             const resData = data.data.data;
-            console.log(resData);
             const transformedGuests = resData.guests.map((g: Guest) => ({
+                id: g.id,
                 name: `${g.first_name} ${g.last_name}`,
                 sex: g.sex,
                 date_of_birth: g.date_of_birth,
@@ -133,28 +133,28 @@ export default function AllGuests({ sessionId }: { sessionId: string }) {
             email: user?.email,
             guest_id: id
         });
-        // try {
-        //     closeModal();
-        //     setLoading(true)
-        //     const response = await fetch('/api/allUsersFlow/delete_link', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Session': sessionId,
-        //             'Content-Type': 'application/json',
-        //         },
-        //         body: JSON.stringify(builtPayload),
-        //     });
-        //     const data = await response.json();
-        //     if (!response.ok || data.data.status === false) throw new Error(data.data.message)
-        //     // setLinks((prevLinks) => prevLinks.filter((link) => link.id !== id));
-        //     toast.success(data.data.message);
-        // } catch (error) {
-        //     const errorMessage = error instanceof Error ? error.message : String(error);
-        //     toast.error(errorMessage);
-        // }
-        // finally {
-        //     setLoading(false)
-        // }
+        try {
+            closeModal();
+            setLoading(true)
+            const response = await fetch('/api/allGuestsFlow/delete_guest', {
+                method: 'POST',
+                headers: {
+                    'Session': sessionId,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(builtPayload),
+            });
+            const data = await response.json();
+            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+            setGuests((prevGuests) => prevGuests.filter((guest) => guest.id !== id));
+            toast.success(data.data.message);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(errorMessage);
+        }
+        finally {
+            setLoading(false)
+        }
     };
 
     return (
@@ -195,6 +195,7 @@ export default function AllGuests({ sessionId }: { sessionId: string }) {
                     <div className="flex justify-center gap-4">
                         <button
                             onClick={(e) => {
+                                console.log(selectedId)
                                 if (selectedId) {
                                     e.preventDefault();
                                     handleDelete(selectedId);

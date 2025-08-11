@@ -12,6 +12,6 @@ export default async function DetailRoomPage() {
   }
 
   return (
-    <Index sessionId={sessionId} />
+    <Index sessionId={sessionId} flag={false}/>
   );
 }

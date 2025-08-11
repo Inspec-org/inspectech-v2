@@ -164,7 +164,7 @@ export default function Links({ sessionId }: { sessionId: string }) {
             <div className="p-6">
                 <GenericDataTable title="All Links" data={links} tabs={pageTabs} columns={linkColumns} pageSize={limit} currentPage={currentPage} loading={loading} search={search} setSearch={setSearch}
                     emptyStateImages={{
-                        "Rooms": "/images/No Rooms.svg"
+                        "Rooms": "/images/No Guests.svg"
                     }}
                     // customTabFilter={(room, tab) => {
                     //     if (tab === "Full Rooms") return room.isFull;

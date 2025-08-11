@@ -1,8 +1,9 @@
+import Index from "@/components/allUsersFlow/RoomDetail/Index";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import Properties from "@/components/AllPropertiesFlow/AllProperties/Properties";
 
-export default async function OrdersPage() {
+
+export default async function DetailRoomPage() {
   const cookieStore = await cookies(); // use await
   const sessionId = cookieStore.get("session_id")?.value;
 
@@ -11,6 +12,6 @@ export default async function OrdersPage() {
   }
 
   return (
-    <Properties sessionId={sessionId}/>
+    <Index sessionId={sessionId} flag={true}/>
   );
 }
