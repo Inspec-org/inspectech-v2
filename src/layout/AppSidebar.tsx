@@ -56,7 +56,7 @@ const navItems: NavItem[] = [
   {
     icon: <Image src="/images/Generate Links.png" alt="Rooms" width={24} height={24} />,
     name: "Generated Links",
-    path: "/generatedLinks"
+    path: "/allLinks"
   }
 ];
 

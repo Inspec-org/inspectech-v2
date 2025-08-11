@@ -31,7 +31,7 @@ type Guest = {
     property: string;
 };
 
-export default function Index({ sessionId }: { sessionId: string }) {
+export default function Index({ sessionId, flag }: { sessionId: string, flag: boolean }) {
 
     const router = useRouter(); // Access the router
     const [currentPage, setCurrentPage] = useState(1);
@@ -55,6 +55,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         const totalPages = Math.ceil(totalGuests / limit);
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
     }, [totalGuests, limit]);
+
     const guestColumns: Column<Guest>[] = [
         { header: "Guest Name", accessor: "name" },
         { header: "DOB", accessor: "date_of_birth" },
@@ -69,10 +70,13 @@ export default function Index({ sessionId }: { sessionId: string }) {
         const paramsString = searchParams.toString();
 
         let basePath = "";
-        if (params.user_id) {
+        if (params.user_id && !flag) {
             basePath = `/allUsers/detailUser/${params.user_id}`;
-        } else if (params.property_id) {
+        } else if (params.property_id && !flag) {
             basePath = `/allProperties/detailProperty/${params.property_id}`;
+        }
+        else if (params.room_id && flag) {
+            basePath = `/allRooms`;
         }
 
         router.push(`${basePath}?${paramsString}`);
@@ -86,7 +90,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
     }, [search]);
     useEffect(() => {
         const timeout = setTimeout(() => {
-            if (user?.email && (userId || propertyId) && roomId) {
+            if (user?.email && (userId || propertyId) && roomId && !flag) {
 
                 // Define type so TS knows about optional fields
                 interface Payload {
@@ -116,6 +120,16 @@ export default function Index({ sessionId }: { sessionId: string }) {
                 }
                 const builtPayload = buildRequestBody(payloadData);
                 fetchRoom(endpoint, builtPayload);
+            }
+            else if (user?.email && roomId && flag) {
+                const payloadData = {
+                    email: user.email,
+                    room_id: roomId,
+                    guest_add_type: guestType,
+                    search_query: search
+                };
+                const builtPayload = buildRequestBody(payloadData);
+                fetchRoom("/api/allRoomsFlow/get_room_details", builtPayload);
             }
         }, 1500); // slight delay to prevent double run
 
