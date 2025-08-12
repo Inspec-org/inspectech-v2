@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/fetch_admin", {
+        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/fetch_admin", {
             method: "POST",
             headers: {
                 "Session": sessionId,

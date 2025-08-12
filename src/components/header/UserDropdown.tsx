@@ -1,24 +1,106 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { UserContext } from "@/context/authContext";
 import { buildRequestBody } from "@/utils/apiWrapper";
 import { ClipLoader } from "react-spinners";
+import { Modal } from "../ui/modal";
+import { useModal } from "@/hooks/useModal";
+import { toast } from "react-toastify";
 
 export default function UserDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
-  const { logout, user, session_id } = useContext(UserContext);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { isOpen, openModal, closeModal } = useModal();
+  const { logout, user, session_id, setUser } = useContext(UserContext);
   const [loading, setLoading] = useState(false);
+  const [firstName, setFirstName] = useState<string>(user?.first_name || '');
+  const [lastName, setlastName] = useState<string>(user?.last_name || '');
+  const [email, setEmail] = useState<string>(user?.email || '');
+  const [profileImage, setProfileImage] = useState<string>("/images/default_image.svg");
+
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.first_name || '');
+      setlastName(user.last_name || '');
+      setEmail(user.email || '');
+    }
+  }, [user]);
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        if (e.target?.result) {
+          setProfileImage(e.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    let profileImageToSend: string | null = profileImage;
+    if (profileImage === "/images/default_image.svg") {
+      profileImageToSend = null;
+    }
+
+    const payload = buildRequestBody({
+      email: user?.email,
+      new_email: email,
+      first_name: firstName,
+      last_name: lastName,
+      ...(profileImageToSend ? { profileImage: profileImageToSend } : {}),
+    });
+    // Log the form data for debugging
+    try {
+      const response = await fetch("/api/profile_apis/edit_profile", {
+        method: "POST",
+        headers: {
+          Session: session_id,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.data.status === false) {
+        throw new Error(result.error);
+      }
+      console.log(result);
+      closeModal();
+      if (user) {
+        setUser({
+          id: user?.id,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          profile_image_url: result.data.data.path || profileImage
+        })
+      }
+
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.stopPropagation();
-    setIsOpen((prev) => !prev);
+    setIsDropdownOpen((prev) => !prev);
   }
 
   function closeDropdown() {
-    setIsOpen(false);
+    setIsDropdownOpen(false);
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +137,8 @@ export default function UserDropdown() {
       }
     }
   };
+  console.log(user)
+
   return (
     <div className="relative">
       {loading && (
@@ -71,15 +155,15 @@ export default function UserDropdown() {
           <Image
             width={44}
             height={44}
-            src="/images/user/owner.jpg"
+            src={user?.profile_image_url?.trim() || "/images/default_image.svg"}
             alt="User"
           />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">Musharof</span>
+        <span className="block mr-1 font-medium text-theme-sm">{user?.first_name}</span>
 
         <svg
-          className={`stroke-gray-500  transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+          className={`stroke-gray-500  transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
             }`}
           width="18"
           height="20"
@@ -99,26 +183,24 @@ export default function UserDropdown() {
 
 
       <Dropdown
-        isOpen={isOpen}
+        isOpen={isDropdownOpen}
         onClose={closeDropdown}
         className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg  "
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm ">
-            Musharof Chowdhury
+            {user?.first_name} {user?.last_name}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 ">
-            randomuser@pimjo.com
+            {user?.email}
           </span>
         </div>
 
         <ul className="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 ">
           <li>
             <DropdownItem
-              onItemClick={closeDropdown}
-              tag="a"
-              href="/profile"
-              className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700  "
+              onClick={openModal}
+              className="flex items-center gap-3  py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700  "
             >
               <svg
                 className="fill-gray-500 group-hover:fill-gray-700  "
@@ -141,9 +223,7 @@ export default function UserDropdown() {
           <li>
             <DropdownItem
               onItemClick={closeDropdown}
-              tag="a"
-              href="/profile"
-              className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700  "
+              className="flex items-center gap-3  py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700  "
             >
               <svg
                 className="fill-gray-500 group-hover:fill-gray-700  "
@@ -160,15 +240,13 @@ export default function UserDropdown() {
                   fill=""
                 />
               </svg>
-              Account settings
+              Change Password
             </DropdownItem>
           </li>
           <li>
             <DropdownItem
               onItemClick={closeDropdown}
-              tag="a"
-              href="/profile"
-              className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700  "
+              className="flex items-center gap-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700  "
             >
               <svg
                 className="fill-gray-500 group-hover:fill-gray-700  "
@@ -185,7 +263,7 @@ export default function UserDropdown() {
                   fill=""
                 />
               </svg>
-              Support
+              Enable Notification
             </DropdownItem>
           </li>
         </ul>
@@ -211,6 +289,104 @@ export default function UserDropdown() {
           Sign out
         </div>
       </Dropdown>
+
+      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[500px] p-6 lg:p-10">
+        <form onSubmit={handleEditSubmit} className="w-full">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Edit Profile</h2>
+
+            {/* Profile Avatar */}
+            <div className="relative inline-block mb-6">
+              <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                {profileImage ? (
+                  <Image
+                    width={20}
+                    height={20}
+                    src={profileImage}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <></>
+                )}
+              </div>
+              <label htmlFor="profileImageInput" className="absolute top-0 -right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors">
+                <Image
+                  width={20}
+                  height={20}
+                  src="/images/edit.svg"
+                  alt="Edit"
+                  className="w-full h-full"
+                />
+              </label>
+              <input
+                id="profileImageInput"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-6">
+            {/* User Name Field */}
+            <div className="flex gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFirstName(e.target.value)}
+                  placeholder="Enter First Name"
+                  required
+                  className="w-full px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setlastName(e.target.value)}
+                  placeholder="Enter Last Name"
+                  required
+                  className="w-full px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+                />
+              </div>
+            </div>
+
+            {/* Email Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-3">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                placeholder="Enter Email Address"
+                required
+                className="w-full px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+              />
+            </div>
+
+            {/* Update Button */}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-4 rounded-full font-medium hover:bg-blue-700 transition-colors mt-8"
+            >
+              Update
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
