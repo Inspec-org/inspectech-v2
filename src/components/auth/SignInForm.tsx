@@ -8,6 +8,7 @@ import React, { useContext, useState } from "react";
 import { buildRequestBody } from "@/utils/apiWrapper";
 import { UserContext } from "@/context/authContext";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,10 +44,10 @@ export default function SignInForm() {
       });
 
       const result = await response.json();
+      console.log(result.data)
 
-      if (!response.ok) {
-        console.error("Server Error:", result.message);
-        return;
+      if (!response.ok || result.data.status === false) {
+        throw new Error(result.data.message);
       }
 
       const sessionId = result.data.data.session_id;
@@ -67,6 +68,8 @@ export default function SignInForm() {
       }
 
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error(errorMessage);
       console.error("Network Error:", error);
     } finally {
       setIsLoading(false);

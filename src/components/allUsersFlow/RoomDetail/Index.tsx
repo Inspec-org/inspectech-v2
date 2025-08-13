@@ -1,35 +1,13 @@
 "use client";
 
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { use, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { notFound } from "next/navigation";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { FaArrowLeft } from "react-icons/fa";
 import { UserContext } from "@/context/authContext";
 import { buildRequestBody } from "@/utils/apiWrapper";
 import { toast } from "react-toastify";
-
-
-type Room = {
-    name: string;
-    external_id: number;
-    added_on: string;
-};
-
-
-type Guest = {
-    id: string;
-    guest_add_type: string;
-    tck_number: string;
-    first_name: string;
-    last_name: string;
-    date_of_birth: string;
-    sex: string;
-    document_type: string;
-    document_number: string;
-    room_no: number;
-    property: string;
-};
+import { Room, Guest } from "../../interfaces/types";
 
 export default function Index({ sessionId, flag }: { sessionId: string, flag: boolean }) {
 

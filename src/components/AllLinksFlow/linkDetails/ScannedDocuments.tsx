@@ -1,54 +1,70 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DocumentInfo } from './types';
+import GenericDataTable, { Column } from '@/components/tables/GenericDataTable';
 
 interface ScannedDocumentsProps {
-  documentInfo: DocumentInfo;
+  documentInfo: DocumentInfo[];
+  pageTabs: string[]
+  limit: number,
+  currentPage: number,
+  loading: boolean
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  search: string,
+  setSearch: React.Dispatch<React.SetStateAction<string>>
 }
 
-const ScannedDocuments: React.FC<ScannedDocumentsProps> = ({ documentInfo }) => {
+
+const ScannedDocuments: React.FC<ScannedDocumentsProps> = ({ documentInfo, pageTabs, limit, currentPage, loading, setLoading, search, setSearch }) => {
+  const columns: Column<DocumentInfo>[] = [
+      {
+        header: <div className="text-center">Guest Name</div>,
+        accessor: "emailAddress",
+        cell: (row) => (
+          <div className="text-center text-[var(--secondary)]">{row?.full_name}</div>
+        ),
+      },
+      {
+        header: <div className="text-center">DOB</div>,
+        accessor: "PhoneNumber",
+        cell: (row) => (
+          <div className="text-center text-[var(--secondary)]">{row?.date_of_birth}</div>
+        ),
+      },
+      {
+        header: <div className="text-center">Gender</div>,
+        accessor: "PhoneNumber",
+        cell: (row) => (
+          <div className="text-center text-[var(--secondary)]">{row?.sex}</div>
+        ),
+      },
+      {
+        header: <div className="text-center">Document Number</div>,
+        accessor: "AddedRooms",
+        cell: (row) => (
+          <div className="text-center text-[var(--secondary)]">{row?.document_number}</div>
+        ),
+      },
+      {
+        header: <div className="text-center">Document Type</div>,
+        accessor: "AddedRooms",
+        cell: (row) => (
+          <div className="text-center text-[var(--secondary)]">{row?.document_type}</div>
+        ),
+      },
+      {
+        header: <div className="text-center">Issuuing Country</div>,
+        accessor: "AddedGuests",
+        cell: (row) => (
+          <div className="text-center text-[var(--secondary)]">{row?.issuing_country}</div>
+        ),
+      },
+    ];
   return (
-    <div>
-      <h2 className="text-2xl font-semibold mb-6">Scanned Documents</h2>
-      
-      <div className="border border-gray-200 rounded-xl p-6 ">
-        <div className='max-w-2xl '>
-        <h3 className="text-xl font-semibold mb-6">
-          Host Name: <span className='text-lg font-medium'>{documentInfo.hostName}</span>
-        </h3>
-        
-        <div className="grid grid-cols-2 gap-y-4 ">
-          <div className="text-sm">
-            <span className=" font-medium">DOB: </span>
-            <span className="text-gray-700">{documentInfo.dob}</span>
-          </div>
-          
-          <div className="text-sm">
-            <span className=" font-medium">Gender: </span>
-            <span className="text-gray-700">{documentInfo.gender}</span>
-          </div>
-          
-          <div className="text-sm">
-            <span className=" font-medium">Document no: </span>
-            <span className="text-gray-700">{documentInfo.documentNo}</span>
-          </div>
-          
-          <div className="text-sm">
-            <span className=" font-medium">Document Type: </span>
-            <span className="text-gray-700">{documentInfo.documentType}</span>
-          </div>
-          
-          <div className="text-sm">
-            <span className=" font-medium">Issuing Country: </span>
-            <span className="text-gray-700">{documentInfo.issuingCountry}</span>
-          </div>
-          
-          <div className="text-sm">
-            <span className=" font-medium">Room no: </span>
-            <span className="text-gray-700">{documentInfo.roomNo}</span>
-          </div>
-        </div>
-        </div>
-      </div>
+    <div className="p-6">
+      <GenericDataTable title='All Guests' data={documentInfo} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="guest_page" search={search} setSearch={setSearch} emptyStateImages={{
+        "All Users": "/images/No Users.svg"
+      }}
+      />
     </div>
   );
 };
