@@ -2,18 +2,8 @@
 import React from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
-import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
-import Label from "../form/Label";
 import Image from "next/image";
-
-type User = {
-  id: string;
-  profile_image_url: string;
-  full_name: string;
-  email: string;
-  phone: number;
-};
+import {User} from "../interfaces/types"
 
 interface Props {
   user: User | null;

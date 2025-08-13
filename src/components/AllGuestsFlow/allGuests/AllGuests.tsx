@@ -10,27 +10,8 @@ import { buildRequestBody } from "@/utils/apiWrapper";
 import { toast } from "react-toastify";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
+import { Guest } from "../../interfaces/types";
 
-type Room = {
-    name: string;
-    external_id: number;
-    added_on: string;
-};
-
-
-type Guest = {
-    id: string;
-    guest_add_type: string;
-    tck_number: string;
-    first_name: string;
-    last_name: string;
-    date_of_birth: string;
-    sex: string;
-    document_type: string;
-    document_number: string;
-    room_no: number;
-    property: string;
-};
 
 export default function AllGuests({ sessionId }: { sessionId: string }) {
     const { isOpen, openModal, closeModal } = useModal();

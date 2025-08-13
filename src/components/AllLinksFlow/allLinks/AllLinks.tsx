@@ -135,7 +135,7 @@ export default function Links({ sessionId }: { sessionId: string }) {
       accessor: "Action",
       cell: (row) => (
         <div className="text-center">
-          <ActionButton link={`/allLinks/detailLink/${row.id}/link_page=${currentPage}`} />
+          <ActionButton link={`/allLinks/detailLink/${row.id}/?link_page=${currentPage}`} />
         </div>
       ),
     },
