@@ -96,8 +96,8 @@ export default function AllRooms({ sessionId }: { sessionId: string }) {
             const data = await response.json();
             if (!response.ok || data.data.status === false) throw new Error(data.data.message)
             const resData = data.data.data;
-
-            setTotalRooms(resData.total_guests);
+            console.log(resData)
+            setTotalRooms(resData.total_rooms);
             setRooms(resData.rooms);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : String(err);
