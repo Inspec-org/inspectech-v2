@@ -80,7 +80,7 @@ export default function Properties({ sessionId }: { sessionId: string }) {
       const result = await response.json();
 
       if (!response.ok || result.data.status === false) {
-        throw new Error(result.data.message);
+        throw new Error(result.data?.message || result.error)
       }
 
       setTotaluser(result.data.data.total_properties);

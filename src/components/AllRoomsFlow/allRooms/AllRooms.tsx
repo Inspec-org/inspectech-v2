@@ -94,7 +94,7 @@ export default function AllRooms({ sessionId }: { sessionId: string }) {
                 body: JSON.stringify(payload),
             });
             const data = await response.json();
-            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+            if (!response.ok || data.data.status === false) throw new Error(data.data?.message || data.error)
             const resData = data.data.data;
             console.log(resData)
             setTotalRooms(resData.total_rooms);

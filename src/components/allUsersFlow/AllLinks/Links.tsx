@@ -89,7 +89,7 @@ export default function Links({ sessionId }: { sessionId: string }) {
 
             // Check if the response is not ok or the status is false in data
             if (!response.ok || result.data.status === false) {
-                throw new Error(result.data.message); // Throw an error if conditions are met
+                throw new Error(result.data?.message || result.error) // Throw an error if conditions are met
             }
 
             // Process data if no error occurred
@@ -128,7 +128,7 @@ export default function Links({ sessionId }: { sessionId: string }) {
                 body: JSON.stringify(builtPayload),
             });
             const data = await response.json();
-            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+            if (!response.ok || data.data.status === false) throw new Error(data.data?.message || data.error)
             setLinks((prevLinks) => prevLinks.filter((link) => link.id !== id));
             toast.success(data.data.message);
         } catch (error) {

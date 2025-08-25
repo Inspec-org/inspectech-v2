@@ -84,7 +84,7 @@ export default function AllGuests({ sessionId }: { sessionId: string }) {
                 body: JSON.stringify(payload),
             });
             const data = await response.json();
-            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+            if (!response.ok || data.data.status === false) throw new Error(data.data?.message || data.error)
             const resData = data.data.data;
             const transformedGuests = resData.guests.map((g: Guest) => ({
                 id: g.id,
@@ -126,7 +126,7 @@ export default function AllGuests({ sessionId }: { sessionId: string }) {
                 body: JSON.stringify(builtPayload),
             });
             const data = await response.json();
-            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+            if (!response.ok || data.data.status === false) throw new Error(data.data?.message || data.error)
             setGuests((prevGuests) => prevGuests.filter((guest) => guest.id !== id));
             toast.success(data.data.message);
         } catch (error) {

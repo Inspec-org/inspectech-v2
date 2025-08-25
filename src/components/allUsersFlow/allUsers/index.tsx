@@ -82,7 +82,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
       const result = await response.json();
 
       if (!response.ok || result.data.status === false) {
-        throw new Error(result.data.message);
+        throw new Error(result.data?.message || result.error)
       }
 
       const transformedUsers: UserOrder[] = result.data.data.users.map((user: any) => ({

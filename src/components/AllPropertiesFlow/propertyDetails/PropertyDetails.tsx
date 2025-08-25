@@ -63,7 +63,7 @@ export default function PropertyDetails({ sessionId }: { sessionId: string }) {
                 body: JSON.stringify(payload),
             });
             const data = await response.json();
-            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+            if (!response.ok || data.data.status === false) throw new Error(data.data?.message || data.error)
             setPropertyDetails(data.data.data);
         } catch (error) {
             console.error("Error fetching user:", error);

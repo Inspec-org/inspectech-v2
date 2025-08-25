@@ -85,7 +85,7 @@ useEffect(() => {
       const result = await response.json();
 
       if (!response.ok || result.data.status === false) {
-        throw new Error(result.data.message);
+        throw new Error(result.data?.message || result.error)
       }
       console.log(result.data.data)
       setLinkInfo(result.data.data.link_info);
@@ -111,7 +111,7 @@ useEffect(() => {
       const result = await response.json();
 
       if (!response.ok || result.data.status === false) {
-        throw new Error(result.data.message);
+        throw new Error(result.data?.message || result.error)
       }
       console.log(result.data.data)
       setGuestInfo(result.data.data.guests);

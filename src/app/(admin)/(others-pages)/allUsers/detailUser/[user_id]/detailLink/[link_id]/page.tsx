@@ -5,6 +5,15 @@ import { notFound } from "next/navigation";
 import { useState } from "react";
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { FaArrowLeft } from "react-icons/fa";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "PASAPO",
+  description: "Pasapo Admin Dashboard for managing users, guests, rooms, properties, and links. View stats, details, and securely delete users, guests, or links",
+  icons: {
+    icon: "/images/Pasapo.svg"
+  },
+};
 
 // 🧾 Types
 interface Link {

@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 import Index from "@/components/ecommerce/index";
 export const metadata: Metadata = {
   title: "PASAPO",
-  description: "This is Next.js Home for TailAdmin Dashboard Template",
+  description: "Pasapo Admin Dashboard for managing users, guests, rooms, properties, and links. View stats, details, and securely delete users, guests, or links",
   icons: {
     icon: "/images/Pasapo.svg"
   },

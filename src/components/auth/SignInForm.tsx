@@ -47,7 +47,7 @@ export default function SignInForm() {
       console.log(result.data)
 
       if (!response.ok || result.data.status === false) {
-        throw new Error(result.data.message);
+        throw new Error(result.data?.message || result.error)
       }
 
       const sessionId = result.data.data.session_id;

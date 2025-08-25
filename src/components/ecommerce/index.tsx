@@ -179,10 +179,12 @@ export default function Index({ sessionId }: { sessionId: string }) {
             })
             const result = await response.json()
             if (!response.ok || result.data.status === false) {
-                throw new Error(result.data.message)
+                console.log(result)
+                throw new Error(result.data?.message || result.error)
             }
+
             setRecentUsers(result.data.data);
-            console.log(result.data.data)
+            console.log("recent",result.data.data)
 
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);

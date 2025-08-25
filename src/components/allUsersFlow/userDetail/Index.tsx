@@ -55,7 +55,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+      if (!response.ok || data.data.status === false) throw new Error(data.data?.message || data.error)
       setUserDetails(data.data.data);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -80,7 +80,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         body: JSON.stringify(builtPayload),
       });
       const data = await response.json();
-      if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+      if (!response.ok || data.data.status === false) throw new Error(data.data?.message || data.error)
       toast.success(data.data.message);
       handleBack();
     } catch (error) {

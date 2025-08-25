@@ -103,7 +103,7 @@ export default function Rooms({ sessionId, apiEndpoint, idKey }: RoomsProps) {
             const result = await response.json();
 
             if (!response.ok || result.data.status === false) {
-                throw new Error(result.data.message);
+                throw new Error(result.data?.message || result.error)
             }
 
             const roomsWithSerial = result.data.data.rooms.map((room: any, index: number) => ({

@@ -127,7 +127,7 @@ export default function Index({ sessionId, flag }: { sessionId: string, flag: bo
                 body: JSON.stringify(payload),
             });
             const data = await response.json();
-            if (!response.ok || data.data.status === false) throw new Error(data.data.message)
+            if (!response.ok || data.data.status === false) throw new Error(data.data?.message || data.error)
             const resData = data.data.data;
             const transformedGuests = resData.guests.map((g: Guest) => ({
                 name: `${g.first_name} ${g.last_name}`,
