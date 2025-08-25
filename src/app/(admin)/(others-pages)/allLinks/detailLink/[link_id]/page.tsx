@@ -3,6 +3,7 @@ import { DocumentInfo, GeneratedLinkInfo } from '@/components/AllLinksFlow/linkD
 import LinkDetails from '@/components/AllLinksFlow/linkDetails/LinkDetails';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: "PASAPO",

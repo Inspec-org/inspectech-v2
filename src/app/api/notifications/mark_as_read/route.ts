@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
             throw new Error("No session ID provided");
         }
 
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/mark_as_read", {
+        const backendRes = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/mark_as_read", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
