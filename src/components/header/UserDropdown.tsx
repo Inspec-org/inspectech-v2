@@ -10,6 +10,8 @@ import { useModal } from "@/hooks/useModal";
 import { toast } from "react-toastify";
 import { EditProfileModal } from "./EditProfileModal";
 import { ChangePasswordModal } from "./ChangePasswordModal";
+import { ref, set, onValue } from "firebase/database";
+import { database } from "@/utils/firebase";
 
 export default function UserDropdown() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -23,12 +25,8 @@ export default function UserDropdown() {
     openModal: openChangePassword,
     closeModal: closeChangePassword
   } = useModal();
-
+  const [enabled, setEnabled] = useState<boolean>(false);
   const { logout, user, session_id, setUser } = useContext(UserContext);
-  const [notification_setting, setNotification_setting] = useState(false);
-  useEffect(() => {
-    setNotification_setting(user?.notification_setting ?? false);
-  }, [user])
   const [loading, setLoading] = useState(false);
 
   function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
@@ -96,35 +94,25 @@ export default function UserDropdown() {
     toast.success(message);
   };
 
-  const handleEnableNotification = async (value: boolean) => {
-    if (user?.email) {
-      const email = user?.email;
-      setLoading(true);
+  useEffect(() => {
+    if (!user?.id) return; // wait until user is available
 
-      const payload = buildRequestBody({ email, notification_setting: value });
+    const toggleRef = ref(database, `${user.id}/settings/notificationsEnabled`);
 
-      try {
-        const response = await fetch("/api/profile_apis/enable_notification", {
-          method: "POST",
-          headers: {
-            Session: session_id,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
+    // Subscribe to changes
+    const unsubscribe = onValue(toggleRef, (snapshot) => {
+      setEnabled(snapshot.val() ?? false);
+    });
 
-        const result = await response.json();
+    // Cleanup on unmount
+    return () => unsubscribe();
+  }, [user?.id]);
 
-        if (!response.ok || result.data.status === false) {
-          console.error("Server Error:", result.message);
-          return;
-        }
-      } catch (error) {
-        console.error("Network Error:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
+  const handleToggle = () => {
+    if (!user?.id) return;
+
+    const toggleRef = ref(database, `${user.id}/settings/notificationsEnabled`);
+    set(toggleRef, !enabled);
   };
   return (
     <div className="relative">
@@ -208,22 +196,10 @@ export default function UserDropdown() {
             </DropdownItem>
           </li>
           <li>
-            <div
-              className="flex items-center justify-between py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700"
-            >
+            <div className="flex items-center justify-between py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700">
               <div className="flex items-center gap-3">
-                <Image
-                  src="/images/bell.svg"
-                  alt="bell"
-                  width={24}
-                  height={24}
-                />
+                <Image src="/images/bell.svg" alt="bell" width={24} height={24} />
                 Enable Notification
-                {loading && (
-                  <div className="fixed inset-0 z-50 flex justify-center items-center  ">
-                    <ClipLoader color="#ffffff" size={50} />
-                  </div>
-                )}
               </div>
 
               {/* Toggle Switch */}
@@ -231,18 +207,16 @@ export default function UserDropdown() {
                 <input
                   type="checkbox"
                   className="sr-only peer"
-                  checked={notification_setting}
-                  onChange={(e) => {
-                    e.preventDefault();
-                    console.log("Checkbox is now:", e.target.checked);
-                    const newValue = e.target.checked;
-                    setNotification_setting(newValue);
-                    handleEnableNotification(newValue);
-                  }}
+                  checked={enabled}
+                  onChange={handleToggle}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none  rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full 
+            peer peer-checked:after:translate-x-full peer-checked:after:border-white 
+            after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+            after:bg-white after:border-gray-300 after:border after:rounded-full 
+            after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                </div>
               </label>
-
             </div>
           </li>
         </ul>

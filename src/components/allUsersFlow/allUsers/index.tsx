@@ -118,13 +118,13 @@ export default function Index({ sessionId }: { sessionId: string }) {
         <div className="flex items-center gap-2 ">
           {/* {row.user?.image ? row.user.image :  || "User"} */}
           <div className="w-8 h-8">
-            {/* <Image
+            <Image
               src={row.user?.image || "/images/avatar.png"}
               alt={row.user?.full_name}
               width={32}
               height={32}
               className="rounded-full h-full w-full object-cover"
-            /> */}
+            />
           </div>
           <div>
             <div className="font-medium">{row.user.full_name}</div>
