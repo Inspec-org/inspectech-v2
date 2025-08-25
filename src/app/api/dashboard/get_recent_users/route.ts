@@ -6,6 +6,7 @@ export async function POST(req: NextRequest) {
     if (!sessionId) {
         throw new Error("No session ID provided");
     }
+    
     try {
         const backendRes = await fetch(process.env.NEXT_PUBLIC_LIVE_URL + "/admin/get_recently_added_users", {
             method: "POST",
