@@ -103,6 +103,7 @@ export default function NotificationDropdown() {
       setLoading(false)
     }
   };
+  
 
   const markAsRead = async (id: string[]) => {
     const payload = buildRequestBody({
