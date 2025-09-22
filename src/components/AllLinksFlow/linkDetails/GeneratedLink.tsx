@@ -5,6 +5,7 @@ interface GeneratedLinkProps {
   linkInfo: GeneratedLinkInfo | null;
 }
 
+
 const GeneratedLink: React.FC<GeneratedLinkProps> = ({ linkInfo }) => {
   return (
     <div className=" border border-gray-200 rounded-xl p-6 mb-8">
