@@ -48,7 +48,7 @@ export default function Rooms({ sessionId, apiEndpoint, idKey }: RoomsProps) {
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
     }, [totalRooms, limit]);
 
-    const customTabs = ["All Rooms", "Full Rooms", "Empty Rooms"];
+    const customTabs = ["All Rooms", "Empty Rooms"];
 
     if (!sessionId) {
         redirect("/signin");
