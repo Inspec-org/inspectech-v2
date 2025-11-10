@@ -4,6 +4,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
+import { usePathname } from "next/navigation";
 import React from "react";
 export default function AdminLayout({
   children,
@@ -11,6 +12,9 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const pathname = usePathname(); // Get current route
+
+  const isDepartmentsPage = pathname === "/departments"; // Adjust path if needed
 
   // Dynamic class for main content margin based on sidebar state
   const mainContentMargin = isMobileOpen
@@ -22,17 +26,21 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen xl:flex">
       {/* Sidebar and Backdrop */}
-      <AppSidebar />
-      
-      <Backdrop />
+      {!isDepartmentsPage && <AppSidebar />}
+      {!isDepartmentsPage && <Backdrop />}
+
       {/* Main Content Area */}
       <div
-        className={`flex-1 transition-all  duration-300 ease-in-out ${mainContentMargin}`}
+        className={`flex-1 transition-all duration-300 ease-in-out ${!isDepartmentsPage ? mainContentMargin : ""
+          }`}
       >
         {/* Header */}
-        <AppHeader />
+        {isDepartmentsPage && <AppHeader />}
+
         {/* Page Content */}
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 h-full">
+          {children}
+        </div>
       </div>
     </div>
   );

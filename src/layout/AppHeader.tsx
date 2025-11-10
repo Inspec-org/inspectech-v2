@@ -5,7 +5,7 @@ import UserDropdown from "@/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState ,useEffect,useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
@@ -44,7 +44,28 @@ const AppHeader: React.FC = () => {
     <header className="sticky top-0 flex w-full bg-white border-gray-200 z-99999   lg:border-b">
       <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
         <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200  sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
-          <button
+          <Link href="/" className="flex items-center gap-3">
+            <div className="bg-purple-600 rounded-lg p-2">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">Inspec Tech</h1>
+              <p className="text-xs text-gray-500">Inspection and Inventory Management System</p>
+            </div>
+          </Link>
+          {/* <button
             className="items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg z-99999  lg:flex  lg:h-11 lg:w-11 lg:border"
             onClick={handleToggle}
             aria-label="Toggle Sidebar"
@@ -80,10 +101,9 @@ const AppHeader: React.FC = () => {
                 />
               </svg>
             )}
-            {/* Cross Icon */}
-          </button>
+          </button> */}
 
-          <Link href="/" className="lg:hidden">
+          {/* <Link href="/" className="">
             <Image
               width={105}
               height={20}
@@ -98,9 +118,9 @@ const AppHeader: React.FC = () => {
               src="/images/Pasapo.svg"
               alt="Logo"
             />
-          </Link>
+          </Link> */}
 
-          <button
+          {/* <button
             onClick={toggleApplicationMenu}
             className="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100   lg:hidden"
           >
@@ -118,7 +138,7 @@ const AppHeader: React.FC = () => {
                 fill="currentColor"
               />
             </svg>
-          </button>
+          </button> */}
 
           {/* <div className="hidden lg:block">
             <form>
@@ -155,22 +175,23 @@ const AppHeader: React.FC = () => {
             </form>
           </div> */}
         </div>
-        <div
-          className={`${
-            isApplicationMenuOpen ? "flex" : "hidden"
-          } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
-        >
-          <div className="flex items-center gap-2 2xsm:gap-3">
-            {/* <!-- Dark Mode Toggler --> */}
-            {/* <ThemeToggleButton /> */}
-            {/* <!-- Dark Mode Toggler --> */}
-
-           <NotificationDropdown /> 
-            {/* <!-- Notification Menu Area --> */}
+        <div className="flex items-center gap-3">
+          <div className="flex justify-center items-center gap-3 bg-gray-50 rounded-full px-4 py-1 border border-gray-200 min-w-40">
+            <div>
+              <p className="text-sm font-medium text-gray-900">ABC Vendor</p>
+              <p className="text-xs text-gray-500">mrbenschuyld@gmail.com</p>
+            </div>
+            <div className="w-7 h-7 bg-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold">A</span>
+            </div>
           </div>
-          {/* <!-- User Area --> */}
-          <UserDropdown /> 
-    
+
+          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
         </div>
       </div>
     </header>

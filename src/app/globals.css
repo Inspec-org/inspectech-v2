@@ -134,6 +134,25 @@
 
   --color-theme-purple-500: #7a5af8;
 
+  --colo-brand-primary: #9333EA;
+  --color-brand-secondary: #8B5CF6;
+
+  --color-bg-grey: #F9F6FE;
+
+  --color-text-grey: #555B61;
+  --color-text-blue: #3730A3;
+
+  --color-button-main: #7522BB;
+  --color-button-secondary: #2A85EF;
+
+  --color-error-primary: #E53935;
+  --color-success-primary: #4CAF50;
+  --color-warning-primary: #FFA726;
+
+  --color-error-secondary: #FCEBEB;
+  --color-success-secondary: #DBEFDC;
+  --color-warning-secondary: #FEF7ED;
+
     /* --primary:#FFFFFF;
   --accent:#4958E9;
   --background:#F9FAFB;

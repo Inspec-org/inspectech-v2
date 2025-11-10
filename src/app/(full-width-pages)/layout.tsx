@@ -3,5 +3,5 @@ export default function FullWidthPageLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div>{children}</div>;
+  return <div className="bg-[#FAF4FF]">{children}</div>;
 }

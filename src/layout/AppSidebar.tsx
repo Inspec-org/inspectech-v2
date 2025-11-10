@@ -17,7 +17,6 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
-import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;
@@ -46,59 +45,58 @@ const navItems: NavItem[] = [
     icon: <Image src="/images/Guests.png" alt="Guests" width={24} height={24} />,
     name: "All Guests",
     path: "/allGuests"
-  }
-  ,
+  },
   {
     icon: <Image src="/images/Rooms.png" alt="Rooms" width={24} height={24} />,
     name: "All Rooms",
     path: "/allRooms"
   },
   {
-    icon: <Image src="/images/Generate Links.png" alt="Rooms" width={24} height={24} />,
+    icon: <Image src="/images/Generate Links.png" alt="Links" width={24} height={24} />,
     name: "Generated Links",
     path: "/allLinks"
   }
 ];
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
   const pathname = usePathname();
 
   const renderMenuItems = (
     navItems: NavItem[],
     menuType: "main" | "others"
   ) => (
-    <ul className="font-raleway flex flex-col gap-4">
+    <ul className="font-raleway flex flex-col gap-1">
       {navItems.map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group  ${openSubmenu?.type === menuType && openSubmenu?.index === index
-                ? "menu-item-active"
-                : "menu-item-inactive"
+              className={`menu-item-dark group ${openSubmenu?.type === menuType && openSubmenu?.index === index
+                  ? "menu-item-dark-active"
+                  : "menu-item-dark-inactive"
                 } cursor-pointer ${!isExpanded && !isHovered
                   ? "lg:justify-center"
                   : "lg:justify-start"
                 }`}
             >
               <span
-                className={` ${openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-icon-active"
-                  : "menu-item-icon-inactive"
+                className={`${openSubmenu?.type === menuType && openSubmenu?.index === index
+                    ? "text-white"
+                    : "text-gray-400"
                   }`}
               >
                 {nav.icon}
               </span>
               {(isExpanded || isHovered || isMobileOpen) && (
-                <span className={`menu-item-text`}>{nav.name}</span>
+                <span className="menu-item-text-dark">{nav.name}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon
-                  className={`ml-auto w-5 h-5 transition-transform duration-200  ${openSubmenu?.type === menuType &&
-                    openSubmenu?.index === index
-                    ? "rotate-180 text-brand-500"
-                    : ""
+                  className={`ml-auto w-5 h-5 transition-transform duration-200 ${openSubmenu?.type === menuType &&
+                      openSubmenu?.index === index
+                      ? "rotate-180 text-white"
+                      : "text-gray-400"
                     }`}
                 />
               )}
@@ -107,19 +105,19 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <Link
                 href={nav.path}
-                className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                className={`menu-item-dark group ${isActive(nav.path)
+                    ? "menu-item-dark-active"
+                    : "menu-item-dark-inactive"
                   }`}
               >
                 <span
-                  className={`${isActive(nav.path)
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
+                  className={`${isActive(nav.path) ? "text-white" : "text-gray-400"
                     }`}
                 >
                   {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
+                  <span className="menu-item-text-dark">{nav.name}</span>
                 )}
               </Link>
             )
@@ -142,32 +140,18 @@ const AppSidebar: React.FC = () => {
                   <li key={subItem.name}>
                     <Link
                       href={subItem.path}
-                      className={`menu-dropdown-item ${isActive(subItem.path)
-                        ? "menu-dropdown-item-active"
-                        : "menu-dropdown-item-inactive"
+                      className={`menu-dropdown-item-dark ${isActive(subItem.path)
+                          ? "menu-dropdown-item-dark-active"
+                          : "menu-dropdown-item-dark-inactive"
                         }`}
                     >
                       {subItem.name}
                       <span className="flex items-center gap-1 ml-auto">
                         {subItem.new && (
-                          <span
-                            className={`ml-auto ${isActive(subItem.path)
-                              ? "menu-dropdown-badge-active"
-                              : "menu-dropdown-badge-inactive"
-                              } menu-dropdown-badge `}
-                          >
-                            new
-                          </span>
+                          <span className="menu-dropdown-badge-dark">new</span>
                         )}
                         {subItem.pro && (
-                          <span
-                            className={`ml-auto ${isActive(subItem.path)
-                              ? "menu-dropdown-badge-active"
-                              : "menu-dropdown-badge-inactive"
-                              } menu-dropdown-badge `}
-                          >
-                            pro
-                          </span>
+                          <span className="menu-dropdown-badge-dark">pro</span>
                         )}
                       </span>
                     </Link>
@@ -185,22 +169,19 @@ const AppSidebar: React.FC = () => {
     type: "main" | "others";
     index: number;
   } | null>(null);
-  const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
-  );
+  const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>({});
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => path === pathname;
-  const isActive = useCallback((path: string) => {
-    return pathname === path || pathname.startsWith(`${path}/`);
-  }, [pathname]);
-
+  const isActive = useCallback(
+    (path: string) => {
+      return pathname === path || pathname.startsWith(`${path}/`);
+    },
+    [pathname]
+  );
 
   useEffect(() => {
-    // Check if the current path matches any submenu item
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
-
       navItems.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -216,14 +197,12 @@ const AppSidebar: React.FC = () => {
       });
     });
 
-    // If no submenu item matches, close the open submenu
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
   }, [pathname, isActive]);
 
   useEffect(() => {
-    // Set the height of the submenu items when the submenu is opened
     if (openSubmenu !== null) {
       const key = `${openSubmenu.type}-${openSubmenu.index}`;
       if (subMenuRefs.current[key]) {
@@ -249,63 +228,170 @@ const AppSidebar: React.FC = () => {
   };
 
   return (
-    <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white   text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
-        ${isExpanded || isMobileOpen
-          ? "w-[290px]"
-          : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
+    <>
+      <style jsx global>{`
+        .menu-item-dark {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75rem 1rem;
+          border-radius: 0.5rem;
+          transition: all 0.2s;
+          font-size: 0.9375rem;
+          font-weight: 500;
         }
+
+        .menu-item-dark-inactive {
+          color: #9ca3af;
+        }
+
+        .menu-item-dark-inactive:hover {
+          background-color: rgba(255, 255, 255, 0.05);
+          color: #ffffff;
+        }
+
+        .menu-item-dark-active {
+          background-color: #92400e;
+          color: #ffffff;
+        }
+
+        .menu-item-text-dark {
+          font-size: 0.9375rem;
+          font-weight: 500;
+        }
+
+        .menu-dropdown-item-dark {
+          display: block;
+          padding: 0.5rem 0.75rem;
+          border-radius: 0.375rem;
+          font-size: 0.875rem;
+          transition: all 0.2s;
+          color: #9ca3af;
+        }
+
+        .menu-dropdown-item-dark:hover {
+          background-color: rgba(255, 255, 255, 0.05);
+          color: #ffffff;
+        }
+
+        .menu-dropdown-item-dark-active {
+          background-color: #92400e;
+          color: #ffffff;
+        }
+
+        .menu-dropdown-badge-dark {
+          padding: 0.125rem 0.5rem;
+          border-radius: 0.25rem;
+          font-size: 0.75rem;
+          background-color: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
+        }
+      `}</style>
+      <aside
+        className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-[#1a1d2e] text-gray-300 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-800
+        ${isExpanded || isMobileOpen
+            ? "w-[280px]"
+            : isHovered
+              ? "w-[280px]"
+              : "w-[90px]"
+          }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
-      onMouseEnter={() => !isExpanded && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div
-        className={`py-8 flex  ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-          }`}
+        onMouseEnter={() => !isExpanded && setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <Link href="/">
+        {/* User Profile Section */}
+        <div
+          className={`py-6 border-b border-gray-800 ${!isExpanded && !isHovered && !isMobileOpen
+              ? "flex justify-center"
+              : ""
+            }`}
+        >
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className=""
-                src="/images/Pasapo.svg"
-                alt=""
-                width={105}
-                height={40}
-              />
-              <Image
-                className="hidden "
-                src="/images/Pasapo.svg"
-                alt=""
-                width={105}
-                height={40}
-              />
-            </>
-          ) : (
-            <Image
-              src="/images/Pasapo.svg"
-              alt=""
-              width={32}
-              height={32}
-            />
-          )}
-        </Link>
-      </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
-            <div>
-
-              {renderMenuItems(navItems, "main")}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
+                AB
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-white truncate">
+                    ABC vendor
+                  </p>
+                  <span className="px-1.5 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded uppercase font-medium">
+                    US
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 truncate">
+                  mikenchypto@gmail.com
+                </p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <span className="text-xs text-gray-400">Vendor Account</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                 
+                    toggleSidebar();
+                  
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
             </div>
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
+              AB
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex-1 flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar py-6">
+          <nav className="flex-1">
+            <div className="flex flex-col gap-4">
+              <div>{renderMenuItems(navItems, "main")}</div>
+            </div>
+          </nav>
+
+          {/* Logout Button */}
+          <div className="mt-auto pt-4">
+            <button
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#92400e] hover:bg-[#b45309] text-white transition-colors ${!isExpanded && !isHovered && !isMobileOpen
+                  ? "justify-center"
+                  : "justify-start"
+                }`}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              {(isExpanded || isHovered || isMobileOpen) && (
+                <span className="font-medium">Logout</span>
+              )}
+            </button>
           </div>
-        </nav>
-        {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
-      </div>
-    </aside>
+        </div>
+      </aside>
+    </>
   );
 };
 
