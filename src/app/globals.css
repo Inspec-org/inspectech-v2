@@ -826,3 +826,25 @@ span.flatpickr-weekday,
   opacity: 0.8;
   cursor: grabbing; /* Changes the cursor to indicate dragging */
 }
+
+
+input[type="checkbox"].circle-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #7c3aed;
+  border-radius: 50%;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 60%;
+}
+
+input[type="checkbox"].circle-checkbox:checked {
+  background-color: #7c3aed;
+  border-color: #7c3aed;
+  background-image: url("/images/inspections/tick.svg");
+}

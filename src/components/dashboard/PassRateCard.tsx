@@ -18,7 +18,7 @@ export default function PassRateCard({ passRate, passed, failed }: PassRateCardP
         <h3 className="text-lg font-semibold text-indigo-900">
           Overall Pass Rate
         </h3>
-        <ArrowRight className="w-5 h-5 text-indigo-600" />
+        {/* <ArrowRight className="w-5 h-5 text-indigo-600" /> */}
       </div>
 
       {/* Circular Progress */}

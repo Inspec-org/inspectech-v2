@@ -81,9 +81,9 @@ export default function QuickActions({ onActionClick }: QuickActionsProps) {
           <button
             key={action.id}
             onClick={() => handleClick(action.id)}
-            className={`w-full flex items-center gap-3 px-5 py-7 rounded-xl ${action.bgColor} ${action.textColor} font-medium text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
+            className={`w-full flex items-center gap-3 px-5 2xl:py-5 py-6 rounded-xl ${action.bgColor} ${action.textColor} font-medium text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
           >
-            <span className={action.iconColor}>
+            <span className={`${action.iconColor} bg-white p-2 rounded-full`}>
               {action.icon}
             </span>
             <span>{action.label}</span>

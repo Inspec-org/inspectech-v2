@@ -1,5 +1,5 @@
 "use client";
-import { ExternalLink, RefreshCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useMemo, useState } from "react";
@@ -98,7 +98,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   const totalPages = tabs.length;
   const currentData = tabFilteredData;
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 h-full">
+    <div className="h-full">
       <div
         className={`flex items-center justify-between flex-wrap gap-4 ${custom_tabs?.length ? "mb-4" : "mb-6"
           }`}
@@ -163,7 +163,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
           <div className="overflow-x-auto border-t border-gray-200">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-left font-raleway text-[var(--secondary)] border-b">
+                <tr className={`text-left font-raleway ${title !== "Recent Inspection Orders" ? "bg-[#F2EBFF] text-[#3730A3]" : ""} `}>
                   {columns.map((col, i) => (
                     <th key={i} className="py-2 px-4 font-medium text-center">
                       {col.header}
@@ -187,48 +187,88 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
 
           {/* Pagination */}
           {title === "Recent Inspection Orders" ? (
-            <div className="flex justify-between items-center mt-4">
+            <div className="flex justify-between items-center mt-4 text-[#6B65F2]">
               <div className="flex items-center gap-2">
-                <RefreshCcw className="w-4 h-4 text-gray-500 cursor-pointer" />
+                <RefreshCcw className="w-4 h-4 cursor-pointer" />
                 <p>Refresh</p>
               </div>
               <div className="flex items-center gap-2">
                 <p>View All Inspections</p>
-                <ExternalLink className="w-4 h-4 text-gray-500 cursor-pointer" />
+                <ExternalLink className="w-4 h-4 cursor-pointer" />
               </div>
             </div>
           ) :
             (
-              <div className="flex justify-between items-center mt-4">
-                <button
-                  onClick={() => goToPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage <= 1}
-                  className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
-                >
-                  ← Previous
-                </button>
-                <div className="flex gap-2">
+              <div className="flex justify-between items-center mt-4 bg-[#F6F8FF] p-2">
+                {/* Left side: Showing results */}
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-gray-600">
+                    Showing <span className="font-semibold">{((currentPage - 1) * pageSize) + 1}</span> to{" "}
+                    <span className="font-semibold">{Math.min(currentPage * pageSize, tabFilteredData.length)}</span> of{" "}
+                    <span className="font-semibold">{tabFilteredData.length}</span> results
+                  </div>
+                  <div className="h-5 w-0.5 bg-black" />
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>Row per page:</span>
+                    <select
+                      className="border rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 bg-white"
+                      value={pageSize}
+                      onChange={(e) => {
+                        // Handle page size change if needed
+                        // You may need to add setPageSize to props
+                      }}
+                    >
+                      <option value={10}>10</option>
+                      <option value={15}>15</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Right: Page navigation */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage <= 1}
+                    className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
+                  >
+                    <ChevronsLeft className="w-4 h-4" color="#7522BB" />
+                  </button>
+                  <button
+                    onClick={() => goToPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage <= 1}
+                    className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
+                  >
+                    <ChevronLeft className="w-4 h-4" color="#7522BB" />
+                  </button>
                   {tabs.map((tab) => (
                     <button
                       key={tab}
                       onClick={() => goToPage(Number(tab))}
-                      className={`w-8 h-8 rounded-md text-sm ${currentPage === Number(tab)
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-600 hover:bg-gray-200"
+                      className={`w-6 h-6 rounded text-xs font-medium ${currentPage === Number(tab)
+                        ? "bg-purple-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
                         }`}
                     >
                       {tab}
                     </button>
                   ))}
+                  <button
+                    onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage >= totalPages}
+                    className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
+                  >
+                    <ChevronRight className="w-4 h-4" color="#7522BB" />
+                  </button>
+                  <button
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage >= totalPages}
+                    className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
+                  >
+                    <ChevronsRight className="w-4 h-4" color="#7522BB" />
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage >= totalPages}
-                  className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
-                >
-                  Next →
-                </button>
               </div>
             )
           }
