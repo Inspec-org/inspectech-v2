@@ -1,8 +1,9 @@
 "use client";
+import { ExternalLink, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useMemo, useState } from "react";
-import { FaSearch } from "react-icons/fa";
+import { FaExternalLinkSquareAlt, FaSearch } from "react-icons/fa";
 import { ClipLoader } from "react-spinners"
 
 // Reusable column definition
@@ -51,10 +52,10 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   search,
   setSearch
 }: GenericDataTableProps<T>) {
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const tabFilteredData = useMemo(() => {
     if (!activeTab || !customTabFilter) return data;
     return data.filter((item) => customTabFilter(item, activeTab));
@@ -71,7 +72,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
       router.push(`?${params.toString()}`);
     }
   };
-  
+
   const isEmpty = tabFilteredData.length === 0;
 
   // 🔸 Derive fallback key if title is missing
@@ -97,7 +98,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   const totalPages = tabs.length;
   const currentData = tabFilteredData;
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 h-full">
       <div
         className={`flex items-center justify-between flex-wrap gap-4 ${custom_tabs?.length ? "mb-4" : "mb-6"
           }`}
@@ -128,7 +129,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
         </div>
 
         {/* Search bar */}
-        <div className="relative w-72">
+        {/* <div className="relative w-72">
           <input
             type="text"
             placeholder="Search..."
@@ -140,7 +141,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
             }}
           />
           <FaSearch className="absolute left-3 top-2.5 text-gray-400" />
-        </div>
+        </div> */}
       </div>
 
       {loading ? (
@@ -185,41 +186,57 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
           </div>
 
           {/* Pagination */}
-          <div className="flex justify-between items-center mt-4">
-            <button
-              onClick={() => goToPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage <= 1}
-              className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
-            >
-              ← Previous
-            </button>
-            <div className="flex gap-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => goToPage(Number(tab))}
-                  className={`w-8 h-8 rounded-md text-sm ${currentPage === Number(tab)
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-200"
-                    }`}
-                >
-                  {tab}
-                </button>
-              ))}
+          {title === "Recent Inspection Orders" ? (
+            <div className="flex justify-between items-center mt-4">
+              <div className="flex items-center gap-2">
+                <RefreshCcw className="w-4 h-4 text-gray-500 cursor-pointer" />
+                <p>Refresh</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <p>View All Inspections</p>
+                <ExternalLink className="w-4 h-4 text-gray-500 cursor-pointer" />
+              </div>
             </div>
+          ) :
+            (
+              <div className="flex justify-between items-center mt-4">
+                <button
+                  onClick={() => goToPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage <= 1}
+                  className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
+                >
+                  ← Previous
+                </button>
+                <div className="flex gap-2">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => goToPage(Number(tab))}
+                      className={`w-8 h-8 rounded-md text-sm ${currentPage === Number(tab)
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-600 hover:bg-gray-200"
+                        }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
 
-            <button
-              onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage >= totalPages}
-              className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
-            >
-              Next →
-            </button>
-          </div>
+                <button
+                  onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="px-4 py-2 border rounded-md text-sm disabled:opacity-50"
+                >
+                  Next →
+                </button>
+              </div>
+            )
+          }
+
         </>
       )}
 
-    </div>
+    </div >
   );
 }
 

@@ -13,7 +13,6 @@ type SidebarContextType = {
   setActiveItem: (item: string | null) => void;
   toggleSubmenu: (item: string) => void;
 };
-
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export const useSidebar = () => {
@@ -33,6 +32,7 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -53,6 +53,8 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const toggleSidebar = () => {
     setIsExpanded((prev) => !prev);
+    setIsLocked((prev) => !prev); // Toggle lock state
+    setIsHovered(false);
   };
 
   const toggleMobileSidebar = () => {
@@ -68,7 +70,7 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         isExpanded: isMobile ? false : isExpanded,
         isMobileOpen,
-        isHovered,
+        isHovered: isLocked ? false : isHovered,
         activeItem,
         openSubmenu,
         toggleSidebar,
