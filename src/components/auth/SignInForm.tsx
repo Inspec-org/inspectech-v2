@@ -184,14 +184,14 @@ export default function SignInForm() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-end">
+                  {/* <div className="flex items-center justify-end">
                     <Link
                       href="/forget-password"
                       className="text-sm  hover:text-text-blue hover:underline "
                     >
                       Forgot password?
                     </Link>
-                  </div>
+                  </div> */}
                   <div className="flex items-center justify-start gap-2">
                     <div className="">
                       <input
