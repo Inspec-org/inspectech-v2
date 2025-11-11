@@ -1,12 +1,14 @@
 import Inspections from '@/components/inspections/Inspections'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 function page() {
-  return (
-    <div>
-      <Inspections />
-    </div>
-  )
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <div>
+                <Inspections />
+            </div>
+        </Suspense>
+    )
 }
 
 export default page
