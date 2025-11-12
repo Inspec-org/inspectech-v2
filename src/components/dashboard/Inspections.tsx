@@ -19,6 +19,7 @@ type InspectionData = {
     date: string;
 };
 
+
 export const dummyInspections: InspectionData[] = [
     {
         id: "1",
