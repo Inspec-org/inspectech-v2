@@ -31,50 +31,51 @@ export default function SignInForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    // setIsLoading(true);
 
-    const payload = buildRequestBody(formdata);
+    // const payload = buildRequestBody(formdata);
 
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
+    // try {
+    //   const response = await fetch("/api/auth/login", {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json"
+    //     },
+    //     body: JSON.stringify(payload)
+    //   });
 
-      const result = await response.json();
-      console.log(result.data)
+    //   const result = await response.json();
+    //   console.log(result.data)
 
-      if (!response.ok || result.data.status === false) {
-        throw new Error(result.data?.message || result.error)
-      }
+    //   if (!response.ok || result.data.status === false) {
+    //     throw new Error(result.data?.message || result.error)
+    //   }
 
-      const sessionId = result.data.data.session_id;
-      if (sessionId) {
-        login(sessionId);
+    //   const sessionId = result.data.data.session_id;
+    //   if (sessionId) {
+    //     login(sessionId);
 
-        setFormdata({
-          email: "",
-          password: ""
-        });
+    //     setFormdata({
+    //       email: "",
+    //       password: ""
+    //     });
 
-        // Redirect after successful login
-        router.push("/");
+    //     // Redirect after successful login
+    //     router.push("/");
 
-        console.log("Login successful");
-      } else {
-        console.error("No session_id found in response");
-      }
+    //     console.log("Login successful");
+    //   } else {
+    //     console.error("No session_id found in response");
+    //   }
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      toast.error(errorMessage);
-      console.error("Network Error:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    // } catch (error) {
+    //   const errorMessage = error instanceof Error ? error.message : String(error);
+    //   toast.error(errorMessage);
+    //   console.error("Network Error:", error);
+    // } finally {
+    //   setIsLoading(false);
+    // }
+    router.push("/departments");
   };
 
   return (

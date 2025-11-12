@@ -17,6 +17,7 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
+import { BarChart, BarChart2, BarChart4, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -27,35 +28,30 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    icon: <GridIcon />,
+    icon: <Home />,
     name: "Dashboard",
-    path: "/",
+    path: "/dashboard",
   },
   {
-    icon: <Image src="/images/User.png" alt="All Users" width={24} height={24} />,
-    name: "All Users",
-    path: "/allUsers",
+    icon: <ClipboardCheck />,
+    name: "Inspections",
+    path: "/inspections",
   },
   {
-    icon: <Image src="/images/Properties.png" alt="Properties" width={24} height={24} />,
-    name: "All Properties",
-    path: "/allProperties",
+    icon: <BarChart4 />,
+    name: "Reports",
+    path: "/reports",
   },
   {
-    icon: <Image src="/images/Guests.png" alt="Guests" width={24} height={24} />,
-    name: "All Guests",
-    path: "/allGuests"
+    icon: <Users />,
+    name: "Users",
+    path: "/users"
   },
   {
-    icon: <Image src="/images/Rooms.png" alt="Rooms" width={24} height={24} />,
-    name: "All Rooms",
-    path: "/allRooms"
+    icon: <Mail />,
+    name: "Request Admin Review",
+    path: "/admin-review"
   },
-  {
-    icon: <Image src="/images/Generate Links.png" alt="Links" width={24} height={24} />,
-    name: "Generated Links",
-    path: "/allLinks"
-  }
 ];
 
 const AppSidebar: React.FC = () => {
@@ -73,8 +69,8 @@ const AppSidebar: React.FC = () => {
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
               className={`menu-item-dark group ${openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-dark-active"
-                  : "menu-item-dark-inactive"
+                ? "menu-item-dark-active"
+                : "menu-item-dark-inactive"
                 } cursor-pointer ${!isExpanded && !isHovered
                   ? "lg:justify-center"
                   : "lg:justify-start"
@@ -82,8 +78,8 @@ const AppSidebar: React.FC = () => {
             >
               <span
                 className={`${openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? "text-white"
-                    : "text-gray-400"
+                  ? "text-white"
+                  : "text-gray-400"
                   }`}
               >
                 {nav.icon}
@@ -94,9 +90,9 @@ const AppSidebar: React.FC = () => {
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon
                   className={`ml-auto w-5 h-5 transition-transform duration-200 ${openSubmenu?.type === menuType &&
-                      openSubmenu?.index === index
-                      ? "rotate-180 text-white"
-                      : "text-gray-400"
+                    openSubmenu?.index === index
+                    ? "rotate-180 text-white"
+                    : "text-gray-400"
                     }`}
                 />
               )}
@@ -106,8 +102,8 @@ const AppSidebar: React.FC = () => {
               <Link
                 href={nav.path}
                 className={`menu-item-dark group ${isActive(nav.path)
-                    ? "menu-item-dark-active"
-                    : "menu-item-dark-inactive"
+                  ? "menu-item-dark-active"
+                  : "menu-item-dark-inactive"
                   }`}
               >
                 <span
@@ -141,8 +137,8 @@ const AppSidebar: React.FC = () => {
                     <Link
                       href={subItem.path}
                       className={`menu-dropdown-item-dark ${isActive(subItem.path)
-                          ? "menu-dropdown-item-dark-active"
-                          : "menu-dropdown-item-dark-inactive"
+                        ? "menu-dropdown-item-dark-active"
+                        : "menu-dropdown-item-dark-inactive"
                         }`}
                     >
                       {subItem.name}
@@ -230,63 +226,92 @@ const AppSidebar: React.FC = () => {
   return (
     <>
       <style jsx global>{`
-        .menu-item-dark {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
-          transition: all 0.2s;
-          font-size: 0.9375rem;
-          font-weight: 500;
-        }
+  .menu-item-dark {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+  }
 
-        .menu-item-dark-inactive {
-          color: #9ca3af;
-        }
+  .menu-item-dark-inactive {
+    color: #9ca3af;
+  }
 
-        .menu-item-dark-inactive:hover {
-          background-color: rgba(255, 255, 255, 0.05);
-          color: #ffffff;
-        }
+  .menu-item-dark-inactive:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+  }
 
-        .menu-item-dark-active {
-          background-color: #92400e;
-          color: #ffffff;
-        }
+  /* 🔥 Active state styled like your screenshot */
+  .menu-item-dark-active {
+    background-color: #633922; /* deep brown background */
+    color: #ffffff;
+    border-radius: 0.75rem;
+  }
 
-        .menu-item-text-dark {
-          font-size: 0.9375rem;
-          font-weight: 500;
-        }
+  .menu-item-dark-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 6px;
+    background-color: #c76a29; /* orange accent */
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
 
-        .menu-dropdown-item-dark {
-          display: block;
-          padding: 0.5rem 0.75rem;
-          border-radius: 0.375rem;
-          font-size: 0.875rem;
-          transition: all 0.2s;
-          color: #9ca3af;
-        }
+  .menu-item-text-dark {
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
 
-        .menu-dropdown-item-dark:hover {
-          background-color: rgba(255, 255, 255, 0.05);
-          color: #ffffff;
-        }
+  .menu-dropdown-item-dark {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    color: #9ca3af;
+  }
 
-        .menu-dropdown-item-dark-active {
-          background-color: #92400e;
-          color: #ffffff;
-        }
+  .menu-dropdown-item-dark:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+  }
 
-        .menu-dropdown-badge-dark {
-          padding: 0.125rem 0.5rem;
-          border-radius: 0.25rem;
-          font-size: 0.75rem;
-          background-color: rgba(255, 255, 255, 0.1);
-          color: #ffffff;
-        }
-      `}</style>
+  .menu-dropdown-item-dark-active {
+    background-color: #633922;
+    color: #ffffff;
+  }
+
+  .menu-dropdown-item-dark-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: #c76a29;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+
+  .menu-dropdown-badge-dark {
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+`}</style>
+
       <aside
         className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-[#1a1d2e] text-gray-300 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-800
         ${isExpanded || isMobileOpen
@@ -303,8 +328,8 @@ const AppSidebar: React.FC = () => {
         {/* User Profile Section */}
         <div
           className={`py-6 border-b border-gray-800 ${!isExpanded && !isHovered && !isMobileOpen
-              ? "flex justify-center"
-              : ""
+            ? "flex justify-center"
+            : ""
             }`}
         >
           {isExpanded || isHovered || isMobileOpen ? (
@@ -331,9 +356,9 @@ const AppSidebar: React.FC = () => {
               </div>
               <button
                 onClick={() => {
-                 
-                    toggleSidebar();
-                  
+
+                  toggleSidebar();
+
                 }}
                 className="text-gray-400 hover:text-white transition-colors"
               >
@@ -368,8 +393,8 @@ const AppSidebar: React.FC = () => {
           <div className="mt-auto pt-4">
             <button
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#92400e] hover:bg-[#b45309] text-white transition-colors ${!isExpanded && !isHovered && !isMobileOpen
-                  ? "justify-center"
-                  : "justify-start"
+                ? "justify-center"
+                : "justify-start"
                 }`}
             >
               <svg

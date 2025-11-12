@@ -210,21 +210,21 @@ function Inspections() {
                 {/* header */}
                 <div className='flex justify-between'>
                     <div className='flex gap-2'>
-                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-4 py-2 rounded-xl'>
+                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl'>
                             <Filter className='w-4 h-4' />
                             Filter
                         </button>
-                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-4 py-2 rounded-xl'>
+                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl'>
                             <Download className='w-4 h-4' />
                             Export
                         </button>
                         {(selectedRows.length > 0) && (
                             <>
-                                <button className='flex gap-2 items-center bg-[#F3EBFF66] border border-[#0075FF] px-4 py-2 rounded-xl text-[#0075FF]'>
+                                <button className='flex gap-2 items-center bg-[#F3EBFF66] border border-[#0075FF] px-2 py-2 text-sm rounded-xl text-[#0075FF] whitespace-nowrap'>
                                     <Briefcase className='w-4 h-4' />
                                     Reassign Department ({selectedRows.length})
                                 </button>
-                                <button className='flex gap-2 items-center bg-[#F49595] px-4 py-2 rounded-xl text-white'>
+                                <button className='flex gap-2 items-center bg-[#F49595] px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap'>
                                     <X className='w-4 h-4' />
                                     Delete Inspection ({selectedRows.length})
                                     
@@ -234,15 +234,15 @@ function Inspections() {
                         )}
                     </div>
                     <div className='flex gap-2 text-white'>
-                        <button className='flex gap-2 items-center bg-[#6BD6B6] px-4 py-2 rounded-xl'>
+                        <button className='flex gap-2 items-center bg-[#6BD6B6] px-2 py-2 text-sm rounded-xl whitespace-nowrap'>
                             <Edit className='w-4 h-4' />
                             Batch Edit
                         </button>
-                        <button className='flex gap-2 items-center bg-[#7522BB] px-4 py-2 rounded-xl'>
+                        <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap'>
                             <Plus className='w-4 h-4' />
                             Add Inspection
                         </button>
-                        <button className='flex gap-2 items-center bg-[#2A85EF] px-4 py-2 rounded-xl'>
+                        <button className='flex gap-2 items-center bg-[#2A85EF] px-2 py-2 text-sm rounded-xl whitespace-nowrap'>
                             <Plus className='w-4 h-4' />
                             Batch Create
                         </button>
@@ -251,7 +251,7 @@ function Inspections() {
                 </div>
                 {/* table */}
                 <div className="h-full">
-                    <GenericDataTable title="" data={dummyInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
+                    <GenericDataTable title="" data={dummyInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onClick={() => { router.push("/inspections/BatchEdit") }} emptyStateImages={{
                         "All Users": "/images/No Users.svg"
                     }}
                     />

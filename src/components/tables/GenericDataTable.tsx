@@ -31,6 +31,7 @@ interface GenericDataTableProps<T> {
   querykey?: string
   search: string
   setSearch: React.Dispatch<React.SetStateAction<string>>
+  onClick?: () => void
 }
 
 function GenericDataTable<T extends { id: string; tab?: string }>({
@@ -50,7 +51,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   setLoading,
   querykey,
   search,
-  setSearch
+  setSearch,
+  onClick
 }: GenericDataTableProps<T>) {
 
   const router = useRouter();
@@ -173,7 +175,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
               </thead>
               <tbody>
                 {currentData.map((row) => (
-                  <tr key={row.id} className="border-b hover:bg-gray-50">
+                  <tr key={row.id} className="border-b hover:bg-gray-50" onClick={onClick}>
                     {columns.map((col, i) => (
                       <td key={i} className="py-3 px-4 font-raleway text-center">
                         {col.cell ? col.cell(row) : (row as any)[col.accessor]}
