@@ -46,16 +46,19 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     };
 
     return (
-        <div ref={dropdownRef} className="relative ">
+        <div ref={dropdownRef} className="relative w-full">
             <button
                 type="button"
                 disabled={disabled}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
-                style={{ width: width }}
-                className={`px-3 py-2 text-left border rounded-lg flex items-center justify-between ${disabled
-                    ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-not-allowed'
-                    : 'bg-[#FAF7FF] border-gray-300 text-gray-700 hover:border-gray-400'
-                    }`}
+                style={width ? { width } : undefined}
+                className={`px-3 py-2 text-left border rounded-lg flex items-center justify-between ${
+                    width ? '' : 'w-full'
+                } ${
+                    disabled
+                        ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-not-allowed'
+                        : 'bg-[#FAF7FF] border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
             >
                 <span className={selectedOption ? 'text-gray-700' : 'text-gray-500'}>
                     {selectedOption ? selectedOption.label : placeholder}
@@ -68,8 +71,10 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
             {isOpen && !disabled && (
                 <div
-                    className="absolute z-50 mt-1 bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
-                    style={{ width: width }}
+                    className={`absolute z-50 mt-1 bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto ${
+                        width ? '' : 'w-full'
+                    }`}
+                    style={width ? { width } : undefined}
                 >
                     {options.map((option) => (
                         <button

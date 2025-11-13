@@ -79,11 +79,7 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-screen lg:w-1/2 w-full">
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-        <div className="relative rounded-2xl">
-          <div className="absolute top-0 left-0 w-full h-[8px] bg-gradient-to-r from-[#312E81] to-[#7E22CE] rounded-t-2xl z-50"></div>
-          <div className="absolute top-0 left-0 w-[8px] h-full bg-gradient-to-b from-[#312E81] to-[#7E22CE] rounded-l-2xl z-50"></div>
+    
 
           <div className="relative p-6 rounded-2xl shadow-2xl bg-bg-grey">
             <div className="mb-5 sm:mb-8">
@@ -185,14 +181,14 @@ export default function SignInForm() {
                       </span>
                     </div>
                   </div>
-                  {/* <div className="flex items-center justify-end">
+                  <div className="flex items-center justify-end">
                     <Link
                       href="/forget-password"
                       className="text-sm  hover:text-text-blue hover:underline "
                     >
                       Forgot password?
                     </Link>
-                  </div> */}
+                  </div>
                   <div className="flex items-center justify-start gap-2">
                     <div className="">
                       <input
@@ -223,8 +219,6 @@ export default function SignInForm() {
               </form>
             </div>
           </div>
-        </div >
-      </div >
-    </div >
+        
   );
 }
