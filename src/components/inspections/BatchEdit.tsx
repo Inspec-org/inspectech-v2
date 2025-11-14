@@ -5,16 +5,17 @@ import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import General from './General';
 import CheckList from './CheckLIst';
 import Media from './Media';
+import { useRouter } from 'next/navigation';
 
 export default function BatchEdit({ type }: { type: string }) {
     const [activeTab, setActiveTab] = useState('general');
-
+    const Router = useRouter();
 
     return (
         <div className="bg-white p-4">
             <div className="">
                 {/* Header */}
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl'>
+                <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl' onClick={() => Router.back()}>
                     <ArrowLeft size={20} />
                     <span>Back to Inspection</span>
                 </button>

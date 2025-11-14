@@ -9,6 +9,7 @@ import { Modal } from '../ui/modal';
 import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import CheckList from './CheckLIst';
+import FilterInspectionsModal from '../Modals/FilterInspectionsModal';
 
 
 type InspectionData = {
@@ -102,6 +103,7 @@ function Inspections() {
     const { isOpen, openModal, closeModal } = useModal();
     const { isOpen: isEditModalOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
     const { isOpen: isExportOpen, openModal: openExportModal, closeModal: closeExportModal } = useModal();
+    const { isOpen: isFilterOpen, openModal: openFilterModal, closeModal: closeEFilterModal } = useModal();
     const [formData, setFormData] = useState({
         status: 'Leave unchanged',
         type: '',
@@ -244,11 +246,11 @@ function Inspections() {
                 {/* header */}
                 <div className='flex justify-between'>
                     <div className='flex gap-2'>
-                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl'>
+                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl' onClick={openFilterModal}>
                             <Filter className='w-4 h-4' />
                             Filter
                         </button>
-                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl'>
+                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl' onClick={openExportModal}>
                             <Download className='w-4 h-4' />
                             Export
                         </button>
@@ -543,25 +545,38 @@ function Inspections() {
 
                     <div>
                         <div className='flex gap-2 items-start mb-5 border rounded-xl p-4'>
-                            <input type="radio" name="format" id="" />
-                            <label className="text-sm font-medium text-gray-700 flex flex-col">
-                                <span>CSV File</span>
-                                <span className='text-gray-400 text-xs'>Export as comma-separated values file</span>
-                            </label>
+                            <div>
+                                <input type="radio" name="format" id="" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 flex flex-col">
+                                    <span>CSV File</span>
+                                    <span className='text-gray-400 text-xs'>Export as comma-separated values file</span>
+                                </label>
+                            </div>
                         </div>
-                         <div className='flex gap-2 items-start mb-5 border rounded-xl p-4'>
-                            <input type="radio" name="format" id="" />
-                            <label className="text-sm font-medium text-gray-700 flex flex-col">
-                                <span>JSON Data</span>
-                                <span className='text-gray-400 text-xs'>Export as JavaScript Object Notation</span>
-                            </label>
+                        <div className='flex gap-2 items-start mb-5 border rounded-xl p-4'>
+                            <div>
+                                <input type="radio" name="format" id="" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 flex flex-col">
+                                    <span>JSON Data</span>
+                                    <span className='text-gray-400 text-xs'>Export as JavaScript Object Notation</span>
+                                </label>
+                            </div>
                         </div>
-                         <div className='flex gap-2 items-start mb-5 border rounded-xl p-4'>
-                            <input type="radio" name="format" id="" />
-                            <label className="text-sm font-medium text-gray-700 flex flex-col">
-                                <span>EXCEL File</span>
-                                <span className='text-gray-400 text-xs'>Export in Microsoft Excel format</span>
-                            </label>
+
+                        <div className='flex gap-2 items-start mb-5 border rounded-xl p-4'>
+                            <div>
+                                <input type="radio" name="format" id="" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 flex flex-col">
+                                    <span>EXCEL File</span>
+                                    <span className='text-gray-400 text-xs'>Export in Microsoft Excel format</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -590,11 +605,13 @@ function Inspections() {
                             className="bg-[#7844AB] text-white px-4 py-2 rounded-lg hover:bg-gray-400 transition flex gap-2 items-center"
                         >
                             <ArrowRight className='w-4 h-4' />
-                            Export As 
+                            Export As
                         </button>
                     </div>
                 </div>
-            </Modal>
+            </Modal >
+
+            <FilterInspectionsModal isOpen={isFilterOpen} onClose={closeEFilterModal} />
         </div >
     )
 }

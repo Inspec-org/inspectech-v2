@@ -29,8 +29,8 @@ interface GenericDataTableProps<T> {
   loading: boolean,
   setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   querykey?: string
-  search: string
-  setSearch: React.Dispatch<React.SetStateAction<string>>
+  search?: string
+  setSearch?: React.Dispatch<React.SetStateAction<string>>
   onClick?: () => void
 }
 

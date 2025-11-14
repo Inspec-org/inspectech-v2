@@ -14,17 +14,15 @@ interface CustomDropdownProps {
     placeholder?: string;
     disabled?: boolean;
     width?: string
-    icon?: React.ReactNode
 }
 
-export const CustomDropdown: React.FC<CustomDropdownProps> = ({
+export const ReportDropdown: React.FC<CustomDropdownProps> = ({
     options,
     value,
     onChange,
     placeholder = 'Select option',
     disabled = false,
-    width,
-    icon
+    width
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,22 +46,21 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     };
 
     return (
-        <div ref={dropdownRef} className="relative">
+        <div ref={dropdownRef} className="">
             <button
                 type="button"
                 disabled={disabled}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 style={width ? { width } : undefined}
-                className={`px-3 py-2 text-left border rounded-lg flex items-center justify-between ${
+                className={`px-3 py-2 text-left rounded-lg flex items-center justify-between ${
                     width ? '' : 'w-full'
                 } ${
                     disabled
                         ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-not-allowed'
-                        : 'bg-[#FAF7FF] border-gray-300 text-gray-700 hover:border-gray-400'
+                        : ' text-gray-700 hover:border-gray-400'
                 }`}
             >
-                <span className={`flex gap-2 items-center ${selectedOption} ? 'text-gray-700' : 'text-gray-500'`}>
-                    {icon}
+                <span className={selectedOption ? 'text-gray-700' : 'text-gray-500'}>
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
                 <ChevronDown

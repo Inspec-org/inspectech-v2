@@ -1,32 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
+import { connectDB } from "@/lib/db/db";
+import Admin from "@/lib/models/Admin";
+import jwt from "jsonwebtoken";
 
 export async function POST(req: NextRequest) {
-    const body = await req.json();
     try {
-        const backendRes = await fetch(process.env.NEXT_PUBLIC_LOCAL_URL + "/admin/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
-        });
+        const { email, password } = await req.json();
 
-        const data = await backendRes.json();
-        if (!backendRes.ok) {
+        if (!email || !password) {
             return NextResponse.json(
-                { error: data.message },
-                { status: backendRes.status }
+                { success: false, message: "Email and password are required" },
+                { status: 400 }
             );
         }
 
-        return NextResponse.json(
-            { message: "users fetched successfully", data },
-            { status: 200 }
+        await connectDB();   // <-- CONNECT SAFELY (prevents errors)
+
+        const user = await Admin.findOne({ email, isDeleted: false }).select("+password");
+        if (!user) {
+            return NextResponse.json(
+                { success: false, message: "user not found" },
+                { status: 401 }
+            );
+        }
+
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            return NextResponse.json(
+                { success: false, message: "Invalid email or password" },
+                { status: 401 }
+            );
+        }
+
+        const JWT_SECRET = process.env.JWT_SECRET!;
+        const token = jwt.sign(
+            { id: user._id, email: user.email },
+            JWT_SECRET,
+            { expiresIn: "7d" }
         );
-    } catch (error) {
-        console.error(error);
+
+        return NextResponse.json({
+            success: true,
+            message: "Login successful",
+            token,
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                avatar: user.avatar
+            }
+        });
+
+    } catch (error: any) {
+        console.error("LOGIN ERROR:", error);
         return NextResponse.json(
-            { error: "Internal server error" },
+            { success: false, message: error.message || "Server error" },
             { status: 500 }
         );
     }

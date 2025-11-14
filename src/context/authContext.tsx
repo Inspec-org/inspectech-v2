@@ -6,12 +6,10 @@ import { buildRequestBody } from "@/utils/apiWrapper";
 
 // Types
 export interface User {
-  id: string;
-  first_name: string;
-  last_name: string;
   email: string;
-  profile_image_url: string;
-  notification_setting: boolean;
+  username?: string;
+  avatar?: string;
+  _id?: string;
 }
 
 interface UserContextType {
@@ -49,12 +47,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const fetchUser = async (sessionId: string) => {
     try {
       const response = await fetch("/api/auth/fetch_user", {
-        method: "POST",
+        method: "GET",
         headers: {
           "Session": sessionId, 
           "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        }
       });
 
       if (!response.ok) {
