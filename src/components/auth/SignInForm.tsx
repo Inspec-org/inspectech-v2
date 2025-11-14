@@ -35,55 +35,54 @@ export default function SignInForm() {
 
     // const payload = buildRequestBody(formdata);
 
-    // try {
-    //   const response = await fetch("/api/auth/login", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     },
-    //     body: JSON.stringify(payload)
-    //   });
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({email: formdata.email, password: formdata.password})
+      });
 
-    //   const result = await response.json();
-    //   console.log(result.data)
+      const result = await response.json();
+      console.log(result)
 
-    //   if (!response.ok || result.data.status === false) {
-    //     throw new Error(result.data?.message || result.error)
-    //   }
+      if (!response.ok) {
+        throw new Error(result.data?.message || result.error)
+      }
 
-    //   const sessionId = result.data.data.session_id;
-    //   if (sessionId) {
-    //     login(sessionId);
+      router.push("/departments");
+      login(result.token)
 
-    //     setFormdata({
-    //       email: "",
-    //       password: ""
-    //     });
+      // const sessionId = result.data.data.session_id;
+      // if (sessionId) {
+      //   // login(sessionId);
 
-    //     // Redirect after successful login
-    //     router.push("/");
+      //   setFormdata({
+      //     email: "",
+      //     password: ""
+      //   });
 
-    //     console.log("Login successful");
-    //   } else {
-    //     console.error("No session_id found in response");
-    //   }
+      //   // Redirect after successful login
+      //   // router.push("/");
 
-    // } catch (error) {
-    //   const errorMessage = error instanceof Error ? error.message : String(error);
-    //   toast.error(errorMessage);
-    //   console.error("Network Error:", error);
-    // } finally {
-    //   setIsLoading(false);
-    // }
-    router.push("/departments");
+      //   console.log("Login successful");
+      // } else {
+      //   console.error("No session_id found in response");
+      // }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error(errorMessage);
+      console.error("Network Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+    // 
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-screen lg:w-1/2 w-full">
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-        <div className="relative rounded-2xl">
-          <div className="absolute top-0 left-0 w-full h-[8px] bg-gradient-to-r from-[#312E81] to-[#7E22CE] rounded-t-2xl z-50"></div>
-          <div className="absolute top-0 left-0 w-[8px] h-full bg-gradient-to-b from-[#312E81] to-[#7E22CE] rounded-l-2xl z-50"></div>
+    
 
           <div className="relative p-6 rounded-2xl shadow-2xl bg-bg-grey">
             <div className="mb-5 sm:mb-8">
@@ -185,14 +184,14 @@ export default function SignInForm() {
                       </span>
                     </div>
                   </div>
-                  {/* <div className="flex items-center justify-end">
+                  <div className="flex items-center justify-end">
                     <Link
                       href="/forget-password"
                       className="text-sm  hover:text-text-blue hover:underline "
                     >
                       Forgot password?
                     </Link>
-                  </div> */}
+                  </div>
                   <div className="flex items-center justify-start gap-2">
                     <div className="">
                       <input
@@ -223,8 +222,6 @@ export default function SignInForm() {
               </form>
             </div>
           </div>
-        </div >
-      </div >
-    </div >
+        
   );
 }

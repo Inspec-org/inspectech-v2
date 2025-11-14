@@ -222,16 +222,6 @@ function General() {
                         className="w-full px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 resize-none"
                     />
                 </div>
-
-                {/* Submit Button */}
-                <div className="pt-4">
-                    <button
-                        type="submit"
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium"
-                    >
-                        Submit
-                    </button>
-                </div>
             </form>
         </div>
     )

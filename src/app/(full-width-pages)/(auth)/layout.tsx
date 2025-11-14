@@ -36,13 +36,21 @@ export default function AuthLayout({
     <div className="relative px-6 z-1  sm:p-0">
       <ThemeProvider>
         <div className="relative flex lg:flex-row w-full h-screen justify-center flex-col sm:p-0">
-          {children}
+          <div className="flex flex-col flex-1 min-h-screen lg:w-1/2 w-full">
+            <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+              <div className="relative rounded-2xl">
+                <div className="absolute top-0 left-0 w-full h-[8px] bg-gradient-to-r from-[#312E81] to-[#7E22CE] rounded-t-2xl z-50"></div>
+                <div className="absolute top-0 left-0 w-[8px] h-full bg-gradient-to-b from-[#312E81] to-[#7E22CE] rounded-l-2xl z-50"></div>
+                {children}
+              </div >
+            </div >
+          </div >
           <div className="lg:w-1/2 w-full h-full bg-gradient-to-b from-[#312E81]  to-[#7E22CE] lg:grid items-center hidden">
             <div className="h-full mt-auto items-center justify-center  z-1">
               {/* <!-- ===== Common Grid Shape Start ===== --> */}
               {/* <GridShape /> */}
               <div className="flex flex-col items-start justify-center h-full max-w-sm w-full mx-auto">
-                
+
                 <div className="block mb-4">
                   <Image
                     width={105}

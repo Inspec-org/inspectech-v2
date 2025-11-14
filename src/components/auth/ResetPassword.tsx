@@ -30,20 +30,20 @@ export default function ResetPassword() {
             return;
         }
         try {
-            const response = await fetch("/api/auth/forget", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
+            // const response = await fetch("/api/auth/forget", {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify(payload)
+            // });
 
-            const result = await response.json();
+            // const result = await response.json();
 
-            if (!response.ok) {
-                console.error("Server Error:", result.message);
-                return;
-            }
+            // if (!response.ok) {
+            //     console.error("Server Error:", result.message);
+            //     return;
+            // }
             router.push("/signin")
             // setIsApiSe  nt(true)
             // setCooldown(30);
@@ -55,8 +55,8 @@ export default function ResetPassword() {
         }
     };
     return (
-        <div className="flex flex-col flex-1 lg:w-1/2 w-full overflow-y-auto no-scrollbar">
-            <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
+        <div className="elative p-6 rounded-2xl shadow-2xl bg-bg-grey">
+            {/* <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
                 <Link
                     href="/signin"
                     className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700  "
@@ -64,7 +64,7 @@ export default function ResetPassword() {
                     <ChevronLeftIcon />
                     Go Back
                 </Link>
-            </div>
+            </div> */}
             <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
                 <div>
                     <div className="mb-5 sm:mb-8">
