@@ -1,23 +1,57 @@
 'use client'
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import Header from './Header'
 import { StatsGrid } from './StatCard';
 import MonthlyInspectionChart from './MonthlyInspection';
 import PassRateCard from './PassRateCard';
 import Inspections from './Inspections';
 import QuickActions from './QuickAction';
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
+import { Department } from '../departments/DepartmentCard';
+import { useSearchParams } from 'next/navigation';
 
 function Dashboard() {
+    const searchParams = useSearchParams()
     const statsData = {
         totalInspections: 40,
         passRate: '32.5%',
         failRate: '0%',
         needsReview: '20%',
     };
+    const [departments, setDepartments] = React.useState<Department[]>([]);
+    const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
+
+    useEffect(() => {
+        const departmentName = searchParams.get("department");
+        if (departmentName && departments.length > 0) {
+            const dept = departments.find(d => d.name === departmentName) ?? null;
+            setSelectedDepartment(dept);
+        }
+    }, [departments, searchParams]);
+    const getDepartments = async () => {
+        try {
+            const res = await apiRequest("/api/departments/get-departments");
+            if (res.ok) {
+                const json = await res.json();
+                setDepartments(json.departments);
+            }
+        } catch (error) {
+            console.error('Error fetching departments:', error);
+            const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+            toast.error(errorMessage);
+            setDepartments([]);
+        }
+    };
+
+    useEffect(() => {
+        getDepartments();
+    }, []);
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <div className='w-full bg-white space-y-4 p-4 shadow-2xl rounded-2xl'>
-                <Header />
+                <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)}
+                />
                 <StatsGrid data={statsData} />
                 <div className="grid grid-cols-12 gap-4 items-stretch">
                     <div className="lg:col-span-8 col-span-12 h-full">

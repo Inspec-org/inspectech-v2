@@ -1,18 +1,20 @@
 import React from 'react';
 import { Department, DepartmentCard } from './DepartmentCard';
-import {RefreshCcwIcon} from 'lucide-react';
+import { RefreshCcwIcon } from 'lucide-react';
 import Image from 'next/image';
 
 interface DepartmentSelectorProps {
   company: string;
   departments: Department[];
   onDepartmentSelect?: (department: Department) => void;
+  getDepartments: () => void;
 }
 
-export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({ 
-  company, 
+export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
+  company,
   departments,
-  onDepartmentSelect 
+  onDepartmentSelect,
+  getDepartments
 }) => {
   return (
     <div className=" ">
@@ -32,9 +34,9 @@ export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
               </p>
             </div>
           </div>
-          
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            <Image src="/images/departments/refresh.svg" alt="Refresh" width={16} height={16}/>
+
+          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" onClick={getDepartments}>
+            <Image src="/images/departments/refresh.svg" alt="Refresh" width={16} height={16} />
             Refresh Page
           </button>
         </div>
@@ -48,7 +50,7 @@ export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
 
         {/* Department Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {departments.map((department) => (
+          {departments?.map((department) => (
             <DepartmentCard
               key={department.id}
               department={department}

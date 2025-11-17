@@ -11,7 +11,6 @@ import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import CheckList from './CheckLIst';
 import FilterInspectionsModal from '../Modals/FilterInspectionsModal';
 
-
 type InspectionData = {
     id: string;
     status: string;
@@ -513,7 +512,7 @@ function Inspections() {
                                 />
                             </div>
                         </div>
-                        <CheckList prop='batch' />
+                        <CheckList prop='batch' formData={formData as any} setFormData={setFormData as any} />
                     </div>
 
                     {/* Footer (fixed) */}

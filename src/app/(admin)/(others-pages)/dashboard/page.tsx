@@ -1,11 +1,11 @@
 import Dashboard from '@/components/dashboard/Dashboard'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 function page() {
   return (
-    <div className=' '>
+    <Suspense fallback={<div>Loading...</div>}>
       <Dashboard />
-    </div>
+    </Suspense>
   )
 }
 

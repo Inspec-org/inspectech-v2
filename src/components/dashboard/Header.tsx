@@ -1,8 +1,21 @@
 'use client';
 import React, { useState } from 'react';
 import { ChevronDown, Folder, Building2 } from 'lucide-react';
+import { Department } from '../departments/DepartmentCard';
 
-function Header() {
+function Header({
+  departments,
+  setSelectedDepartment,
+  selectedDepartment,
+  vendor,
+  setVendor,
+}: {
+  departments: Department[];
+  setSelectedDepartment: React.Dispatch<React.SetStateAction<Department | null>>;
+  selectedDepartment?: Department | null;
+  vendor?: string;
+  setVendor?: (vendor: string) => void;
+}) {
   const [departmentOpen, setDepartmentOpen] = useState(false);
   const [vendorOpen, setVendorOpen] = useState(false);
 
@@ -20,21 +33,26 @@ function Header() {
           >
             <Folder className="w-4 h-4 text-purple-600" />
             <span className="text-sm text-gray-700 flex-1 text-left">
-              US Purchase Trailers
+              {selectedDepartment?.name || 'Select Department'}
             </span>
             <ChevronDown className="w-4 h-4 text-gray-500" />
           </button>
           {departmentOpen && (
             <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
               <div className="py-1">
-                <button className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2">
-                  <Folder className="w-4 h-4 text-purple-600" />
-                  US Purchase Trailers
-                </button>
-                <button className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2">
-                  <Folder className="w-4 h-4 text-purple-600" />
-                  Canada Trailers
-                </button>
+                {departments.map((dept) => (
+                  <button
+                    key={dept.id}
+                    onClick={() => {
+                      setSelectedDepartment(dept);
+                      setDepartmentOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
+                  >
+                    <Folder className="w-4 h-4 text-purple-600" />
+                    {dept.name}
+                  </button>
+                ))}
               </div>
             </div>
           )}

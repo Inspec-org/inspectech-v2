@@ -1,24 +1,10 @@
 'use client'
-import React, { useState } from 'react'
+import React from 'react'
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
+import { FormData } from './BatchEdit';
 
-function General() {
-    const [formData, setFormData] = useState({
-        unitId: "I12",
-        inspectionStatus: "",
-        reviewReason: "",
-        type: "53 foot trailer",
-        inspector: "John Inspector",
-        vendor: "ABC vendor",
-        location: "East Plant",
-        delivered: "",
-        durationMin: "5",
-        durationSec: "00",
-        dateDay: "05",
-        dateMonth: "07",
-        dateYear: "2025",
-        notes: "New notes I12 test",
-    });
+function General({ type, formData, setFormData }: { type: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }) {
+
 
     // 🔹 handle input & dropdown changes
     const handleChange = (field: string, value: string) => {
@@ -47,8 +33,10 @@ function General() {
                     <input
                         type="text"
                         value={formData.unitId}
-                        disabled
-                        className="w-[300px] px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700"
+                        onChange={(e) => handleChange("unitId", e.target.value)}
+                        disabled={type === "edit"}
+                        placeholder='Enter Equipment ID/Trailer Number'
+                        className={`w-[300px] px-3 py-2 ${type==="edit"? "bg-gray-100":"bg-[#FAF7FF]"} focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-300 rounded-lg text-gray-700`}
                     />
                 </div>
 
@@ -114,6 +102,7 @@ function General() {
                         type="text"
                         value={formData.inspector}
                         onChange={(e) => handleChange("inspector", e.target.value)}
+                        placeholder='Enter Inspector Name'
                         className="w-[300px] px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700"
                     />
                 </div>

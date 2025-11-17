@@ -6,9 +6,8 @@ export interface Department {
   id: string;
   name: string;
   description: string;
-  icon: string;
   color: string;
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 
@@ -45,7 +44,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
       onClick={() => onClick?.(department)}
       className={`relative  border ${borderClasses[department.color]} rounded-xl p-6 bg-white hover:shadow-lg transition-shadow cursor-pointer`}
     >
-      {department.isActive && (
+      {department.isActive || true && (
         <span className="absolute top-4 right-4 px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
           ACTIVE
         </span>
@@ -61,7 +60,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
       
       <div className="flex items-center justify-between text-sm">
         <span className={`${textClasses[department.color]} font-medium uppercase tracking-wide`}>
-          {department.description}
+          ACCESS DASHBOARD
         </span>
         <svg 
           className="w-4 h-4 text-gray-400" 

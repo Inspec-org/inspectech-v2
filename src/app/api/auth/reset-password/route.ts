@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
-import Admin from "@/lib/models/Admin";
+import User from "@/lib/models/User";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "@/lib/sendEmail";
 
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
         await connectDB();   // <-- CONNECT SAFELY (prevents errors)
 
-        const user = await Admin.findOne({ email, isDeleted: false }).select("+password");
+        const user = await User.findOne({ email, isDeleted: false }).select("+password");
         if (!user) {
             return NextResponse.json(
                 { success: false, message: "User not found" },

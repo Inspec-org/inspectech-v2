@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 import { type } from 'os'
 
-const AdminSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
   username: {
     type: String,
     required: [true, 'Please provide a username'],
@@ -48,6 +48,11 @@ const AdminSchema = new mongoose.Schema({
     type: String,
     select: false
   },
+  role: {
+    type: String,
+    enum: ['admin', 'vendor'],
+    default: 'vendor',
+  },
   verificationOTPExpires: {
     type: Date,
     select: false
@@ -69,7 +74,7 @@ const AdminSchema = new mongoose.Schema({
 })
 
 // Hash password before saving
-AdminSchema.pre('save', async function (next) {
+UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next()
 
   try {
@@ -82,8 +87,8 @@ AdminSchema.pre('save', async function (next) {
 })
 
 // Compare password method
-AdminSchema.methods.comparePassword = async function (candidatePassword) {
+UserSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password)
 }
 
-export default mongoose.models.Admin || mongoose.model('Admin', AdminSchema)
+export default mongoose.models.User || mongoose.model('User', UserSchema)

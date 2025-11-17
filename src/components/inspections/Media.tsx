@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, Check, Image, ImageIcon, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload } from 'lucide-react';
-
+import { FormData } from './BatchEdit';
 interface UploadCardProps {
     title: string;
     description: string;
@@ -275,11 +275,14 @@ const ImageAlignmentGuide: React.FC = () => {
     );
 };
 
-const Media: React.FC = () => {
+const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }> = ({ formData, setFormData }) => {
     const [showAdditional, setShowAdditional] = useState(false);
 
     const handleUpload = (file: File) => {
-        console.log('Uploading file:', file.name);
+        setFormData((prev: any) => ({
+            ...prev,
+            additionalAttachments: [ ...(prev.additionalAttachments || []), file.name ],
+        }));
     };
 
     return (
