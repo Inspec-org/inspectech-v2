@@ -3,28 +3,10 @@ import mongoose from "mongoose";
 import User from "@/lib/models/User";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db/db";
+import { getUserFromToken } from "@/lib/getUserFromToken";
 
 // Middleware to get user from JWT
-export async function getUserFromToken(token: string | undefined) {
-  if (!token) return null;
 
-  try {
-    const JWT_SECRET = process.env.JWT_SECRET;
-    if (!JWT_SECRET) throw new Error("JWT_SECRET is missing");
-
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
-    if (!decoded.id) return null;
-
-    // Ensure DB connection
-    await connectDB(); 
-
-    const user = await User.findById(decoded.id).select("username email avatar _id role");
-    return user;
-  } catch (err) {
-    console.error("JWT verify error:", err);
-    return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 });
-  }
-}
 
 export async function GET(req: Request) {
   try {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromToken } from "../../auth/fetch_user/route";
 import Department from "@/lib/models/Departments";
+import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function GET(req: NextRequest) {
   try {
