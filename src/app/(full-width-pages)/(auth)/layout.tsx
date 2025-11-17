@@ -53,8 +53,8 @@ export default function AuthLayout({
 
                 <div className="block mb-4">
                   <Image
-                    width={105}
-                    height={20}
+                    width={96}
+                    height={96}
                     className=""
                     src="/images/auth/check.svg"
                     alt="Logo"

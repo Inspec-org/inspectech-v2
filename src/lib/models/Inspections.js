@@ -2,8 +2,8 @@ import mongoose from 'mongoose'
 
 const InspectionSchema = new mongoose.Schema({
   unitId: { type: String, required: true, unique: true, trim: true },
-  inspectionStatus: { type: String, enum: ['pass', 'fail', 'need_review', 'out_of_cycle', 'no_inspection', 'incomplete', 'complete'] },
-  reviewReason: { type: String, enum: ['incomplete_image', 'incomplete_dot', 'incomplete_checklist'], default: null },
+  inspectionStatus: { type: String },
+  reviewReason: { type: String, default: null },
   type: { type: String },
   inspector: { type: String },
   vendor: { type: String },

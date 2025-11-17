@@ -20,7 +20,7 @@ export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
     <div className=" ">
       <div className="max-w-6xl mx-auto h-full flex flex-col justify-center">
         {/* Header */}
-        <div className="bg-purple-100 p-4 flex items-start justify-between mb-8 rounded-lg">
+        <div className="bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#FAF5FF] to-[60%] p-4 flex items-start justify-between mb-8 rounded-lg">
           <div className="flex items-start gap-3">
             <div className="bg-purple-100 rounded-lg">
               <Image src="/images/departments/logo.svg" alt="Department" width={48} height={48} />
@@ -35,7 +35,7 @@ export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
             </div>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" onClick={getDepartments}>
+          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-[#F4EEFC] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" onClick={getDepartments}>
             <Image src="/images/departments/refresh.svg" alt="Refresh" width={16} height={16} />
             Refresh Page
           </button>
@@ -43,10 +43,14 @@ export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
 
         {/* Company Label */}
         <div className="mb-6">
-          <div className="inline-block border-l-4 border-purple-600 pl-3">
-            <p className="text-sm font-semibold text-gray-900">{company}</p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+              {company}
+            </p>
+            <span className="flex-1 border-t border-gray-300"></span>
           </div>
         </div>
+
 
         {/* Department Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

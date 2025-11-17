@@ -6,6 +6,8 @@ import General from './General';
 import CheckList from './CheckLIst';
 import Media from './Media';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
 
 export interface FormData {
     unitId: string;
@@ -78,6 +80,7 @@ export default function BatchEdit({ type }: { type: string }) {
     const [isSaved, setIsSaved] = useState(false);
     const [lastSaved, setLastSaved] = useState<FormData | null>(null);
     const [hasSavedOnce, setHasSavedOnce] = useState(false);
+    const [inspectionId, setInspectionId] = useState<string | null>(null);
     const today = new Date();
 
     const [formData, setFormData] = useState<FormData>({
@@ -151,6 +154,66 @@ export default function BatchEdit({ type }: { type: string }) {
       }
     }, [formData, lastSaved]);
 
+    const createInspection = async () => {
+      try {
+        const res = await apiRequest('/api/inspections/add-new-inspection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setInspectionId(data.inspection?._id ?? null);
+          toast.success('Inspection created');
+        } else {
+          toast.error(data.message || 'Failed to create inspection');
+        }
+      } catch (error: any) {
+        toast.error(error.message || 'Server error');
+        console.error(error.message);
+      }
+    };
+
+    const saveInspection = async () => {
+      if (!formData.unitId || formData.unitId.trim() === '') return;
+      try {
+        if (!hasSavedOnce) {
+          const res = await apiRequest('/api/inspections/add-new-inspection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setInspectionId(data.inspection?._id ?? null);
+            setHasSavedOnce(true);
+            setLastSaved(formData);
+            setIsSaved(true);
+            toast.success('Initial inspection saved');
+          } else {
+            toast.error(data.message || 'Failed to save inspection');
+          }
+        } else {
+          const res = await apiRequest('/api/inspections/update-inspection', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setLastSaved(formData);
+            setIsSaved(true);
+            toast.success('Inspection updated');
+          } else {
+            toast.error(data.message || 'Failed to update inspection');
+          }
+        }
+      } catch (error: any) {
+        toast.error(error.message || 'Server error');
+        console.error(error.message);
+      }
+    };
+
     return (
         <div className="bg-white p-4">
             <div className="">
@@ -177,7 +240,7 @@ export default function BatchEdit({ type }: { type: string }) {
                                     <span>Delete Inspection (2)</span>
                                 </button>
 
-                                <button className='flex gap-2 items-center bg-[#F3EBFF66] border border-[#0075FF] px-2 py-2 text-sm rounded-xl text-[#0075FF] whitespace-nowrap' disabled={!formData.unitId || formData.unitId.trim() === ''} onClick={() => { setLastSaved(formData); setIsSaved(true); setHasSavedOnce(true); }}>
+                                <button className='flex gap-2 items-center bg-[#F3EBFF66] border border-[#0075FF] px-2 py-2 text-sm rounded-xl text-[#0075FF] whitespace-nowrap' disabled={!formData.unitId || formData.unitId.trim() === ''} onClick={saveInspection}>
                                     <Save size={18} />
                                     <span>Save Changes</span>
                                 </button>
@@ -199,14 +262,14 @@ export default function BatchEdit({ type }: { type: string }) {
                                         : 'bg-[#7522BB] border-white text-white hover:bg-[#5a1a95]'
                                         }`}
                                     disabled={!formData.unitId || formData.unitId.trim() === ''}
-                                    onClick={() => { setLastSaved(formData); setIsSaved(true); setHasSavedOnce(true); }}
+                                    onClick={saveInspection}
                                 >
                                     <Save size={18} />
                                     <span>Save Changes</span>
                                 </button>
 
 
-                                <button className='flex gap-2 items-center bg-[#10B981] border px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap' disabled={!isSaved}>
+                                <button className='flex gap-2 items-center bg-[#10B981] hover:bg-[#0F9D58] border px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap' disabled={!isSaved} onClick={()=> Router.push(`/inspections`)}>
                                     <Check size={18} />
                                     <span>Create Inspection</span>
                                 </button>
@@ -269,7 +332,7 @@ export default function BatchEdit({ type }: { type: string }) {
 
                 {/* Form Content */}
                 {activeTab === 'general' && (
-                    <General type={type} formData={formData} setFormData={setFormData} />
+                    <General type={type} formData={formData} setFormData={setFormData} disabledUnitId={hasSavedOnce} />
                 )}
 
                 {activeTab === 'checklist' && (
