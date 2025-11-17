@@ -9,11 +9,12 @@ import { buildRequestBody } from "@/utils/apiWrapper";
 import { redirect } from "next/navigation";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { toast } from "react-toastify";
 
 
 export default function ForgetForm() {
     const [isApiSent, setIsApiSent] = useState(false);
-    const [otp, setOtp] = useState(Array(5).fill(""));
+    const [otp, setOtp] = useState(Array(4).fill(""));
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const [isOTPLoading, setIsOTPLoading] = useState(false);
     const [isVerificationLoading, setIsVerificationLoading] = useState(false);
@@ -109,23 +110,21 @@ export default function ForgetForm() {
     const sendOTP = async () => {
         setIsOTPLoading(true);
 
-        const payload = buildRequestBody({ email });
-
         try {
-            // const response = await fetch("/api/auth/forget", {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json"
-            //     },
-            //     body: JSON.stringify(payload)
-            // });
+            const response = await fetch("/api/auth/forget", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email })
+            });
 
-            // const result = await response.json();
+            const result = await response.json();
 
-            // if (!response.ok) {
-            //     console.error("Server Error:", result.message);
-            //     return;
-            // }
+            if (!response.ok) {
+                console.error("Server Error:", result.message);
+                throw new Error(result.message || result.error);
+            }
             setIsApiSent(true)
             setCooldown(30);
 
@@ -140,30 +139,30 @@ export default function ForgetForm() {
         setIsVerificationLoading(true);
         const token = otp.join('')
 
-        const payload = buildRequestBody({ email, token });
-
         try {
-            // const response = await fetch("/api/auth/forget", {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json"
-            //     },
-            //     body: JSON.stringify(payload)
-            // });
+            const response = await fetch("/api/auth/verify", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email, otp: token })
+            });
 
-            // const result = await response.json();
+            const result = await response.json();
 
-            // if (!response.ok) {
-            //     console.error("Server Error:", result.message);
-            //     return;
-            // }
-            sessionStorage.setItem("email",email)
-            sessionStorage.setItem("token",token)
+            if (!response.ok) {
+                console.error("Server Error:", result.message);
+                throw new Error(result.message || result.error);
+            }
+            sessionStorage.setItem("email", email)
+            sessionStorage.setItem("token", token)
             router.push("/reset-password")
 
 
         } catch (error) {
             console.error("Network Error:", error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(errorMessage);
         } finally {
             setIsVerificationLoading(false);
         }

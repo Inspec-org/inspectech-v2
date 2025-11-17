@@ -24,32 +24,34 @@ export default function ResetPassword() {
         const email = sessionStorage.getItem("email")
         const token = sessionStorage.getItem("token")
 
-        const payload = buildRequestBody({ email, token, "new_password": password });
         if (password !== confirmPassword) {
             toast.error("Passwords do not match");
             return;
         }
         try {
-            // const response = await fetch("/api/auth/forget", {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json"
-            //     },
-            //     body: JSON.stringify(payload)
-            // });
+            const response = await fetch("/api/auth/reset-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email, newPassword: password })
+            });
 
-            // const result = await response.json();
+            const result = await response.json();
 
-            // if (!response.ok) {
-            //     console.error("Server Error:", result.message);
-            //     return;
-            // }
+            if (!response.ok) {
+                console.error("Server Error:", result.message);
+                return;
+            }
+            toast.success(result.message)
             router.push("/signin")
             // setIsApiSe  nt(true)
             // setCooldown(30);
 
         } catch (error) {
             console.error("Network Error:", error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }

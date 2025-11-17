@@ -5,11 +5,13 @@ import UserDropdown from "@/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { UserContext } from "@/context/authContext";
+
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
-
+  const { logout, user, session_id, setUser } = useContext(UserContext);
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   const handleToggle = () => {
@@ -178,15 +180,15 @@ const AppHeader: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="flex justify-center items-center gap-3 bg-gray-50 rounded-full px-4 py-1 border border-gray-200 min-w-40">
             <div>
-              <p className="text-sm font-medium text-gray-900">ABC Vendor</p>
-              <p className="text-xs text-gray-500">mrbenschuyld@gmail.com</p>
+              <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+              <p className="text-xs text-gray-500">{user?.email}</p>
             </div>
             <div className="w-7 h-7 bg-purple-600 rounded-full flex items-center justify-center">
               <span className="text-white font-semibold">A</span>
             </div>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50" onClick={logout}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>

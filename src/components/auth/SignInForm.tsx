@@ -48,7 +48,7 @@ export default function SignInForm() {
       console.log(result)
 
       if (!response.ok) {
-        throw new Error(result.data?.message || result.error)
+        throw new Error(result?.message || result.error)
       }
 
       router.push("/departments");
