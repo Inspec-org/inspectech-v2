@@ -65,7 +65,7 @@ export default function NotificationDropdown() {
       if (user?.email) {
         const builtPayload = buildRequestBody({
           email: user.email,
-          userId: user.id
+          // userId: user.id
         });
 
         fetchData(builtPayload);
@@ -108,7 +108,7 @@ export default function NotificationDropdown() {
   const markAsRead = async (id: string[]) => {
     const payload = buildRequestBody({
       email: user?.email,
-      userId: user?.id,
+      // userId: user?.id,
       notification_ids: id
     });
     try {

@@ -1,0 +1,48 @@
+import { NextRequest, NextResponse } from "next/server";
+import { connectDB } from "@/lib/db/db";
+import Admin from "@/lib/models/Admin";
+import jwt from "jsonwebtoken";
+import { sendEmail } from "@/lib/sendEmail";
+
+export async function POST(req: NextRequest) {
+    try {
+        const { email } = await req.json();
+
+        if (!email) {
+            return NextResponse.json(
+                { success: false, message: "Email is required" },
+                { status: 400 }
+            );
+        }
+
+        await connectDB();   // <-- CONNECT SAFELY (prevents errors)
+
+        const user = await Admin.findOne({ email, isDeleted: false });
+        if (!user) {
+            return NextResponse.json(
+                { success: false, message: "User not found" },
+                { status: 401 }
+            );
+        }
+
+        const otp=Math.floor(1000 + Math.random() * 9000);
+
+        await sendEmail(user.email, "Reset Password", `Your OTP is ${otp}`);
+
+        user.resetPasswordOTP = otp;
+        user.resetPasswordExpires = Date.now() + 3600000;
+        await user.save();
+
+        return NextResponse.json({
+            success: true,
+            message: "Email Sent Successfully"
+        });
+
+    } catch (error: any) {
+        console.error("FORGET ERROR:", error);
+        return NextResponse.json(
+            { success: false, message: error.message || "Server error" },
+            { status: 500 }
+        );
+    }
+}

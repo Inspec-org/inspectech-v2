@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Modal } from "../ui/modal";
 
 interface User {
-  id: string;
+  _id: string;
   email: string;
   first_name: string;
   last_name: string;
@@ -94,7 +94,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       
       if (user) {
         onUpdateUser({
-          id: user.id,
+          _id: user._id,
           email: email,
           first_name: firstName,
           last_name: lastName,

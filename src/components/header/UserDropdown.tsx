@@ -95,9 +95,9 @@ export default function UserDropdown() {
   };
 
   useEffect(() => {
-    if (!user?.id) return; // wait until user is available
+    if (!user?._id) return; // wait until user is available
 
-    const toggleRef = ref(database, `${user.id}/settings/notificationsEnabled`);
+    const toggleRef = ref(database, `${user._id}/settings/notificationsEnabled`);
 
     // Subscribe to changes
     const unsubscribe = onValue(toggleRef, (snapshot) => {
@@ -106,12 +106,12 @@ export default function UserDropdown() {
 
     // Cleanup on unmount
     return () => unsubscribe();
-  }, [user?.id]);
+  }, [user?._id]);
 
   const handleToggle = () => {
-    if (!user?.id) return;
+    if (!user?._id) return;
 
-    const toggleRef = ref(database, `${user.id}/settings/notificationsEnabled`);
+    const toggleRef = ref(database, `${user._id}/settings/notificationsEnabled`);
     set(toggleRef, !enabled);
   };
   return (
@@ -125,13 +125,13 @@ export default function UserDropdown() {
           <Image
             width={44}
             height={44}
-            src={user?.profile_image_url?.trim() || "/images/default_image.svg"}
+            src={user?.avatar?.trim() || "/images/default_image.svg"}
             alt="User"
             className="w-full h-full object-cover"
           />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">{user?.first_name}</span>
+        <span className="block mr-1 font-medium text-theme-sm">{user?.username}</span>
 
         <svg
           className={`stroke-gray-500 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
@@ -159,7 +159,7 @@ export default function UserDropdown() {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm">
-            {user?.first_name} {user?.last_name}
+            {user?.username}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500">
             {user?.email}
@@ -249,7 +249,7 @@ export default function UserDropdown() {
       </Dropdown>
 
       {/* Edit Profile Modal */}
-      <EditProfileModal
+      {/* <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={closeEditProfile}
         user={user}
@@ -257,7 +257,7 @@ export default function UserDropdown() {
         onUpdateUser={handleUpdateUser}
         onError={handleError}
         buildRequestBody={buildRequestBody}
-      />
+      /> */}
 
       {/* Change Password Modal */}
       <ChangePasswordModal

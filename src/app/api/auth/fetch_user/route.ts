@@ -31,6 +31,7 @@ export async function GET(req: Request) {
     // Get token from Authorization header: "Bearer <token>"
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
+    console.log(token);
 
     const user = await getUserFromToken(token);
 

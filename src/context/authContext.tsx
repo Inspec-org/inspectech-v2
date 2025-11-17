@@ -49,10 +49,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const response = await fetch("/api/auth/fetch_user", {
         method: "GET",
         headers: {
-          "Session": sessionId, 
+          "Authorization": "Bearer " + sessionId, 
           "Content-Type": "application/json",
         }
       });
+
+      console.log(response)
 
       if (!response.ok) {
         if ([401, 403].includes(response.status)) {
@@ -65,7 +67,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      setUser(data.data.data);
+      console.log(data)
+      setUser(data.user);
     } catch (err) {
       console.error("User fetch failed:", err);
       // Clear invalid session
@@ -106,6 +109,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     localStorage.removeItem("session_id");
     setSession_id("");
     setUser(null);
+    const response = fetch("/api/auth/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+    })
     router.push("/signin");
   };
 
