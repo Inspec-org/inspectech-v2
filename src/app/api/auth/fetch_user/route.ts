@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
-import Admin from "@/lib/models/Admin";
+import User from "@/lib/models/User";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db/db";
 
 // Middleware to get user from JWT
-async function getUserFromToken(token: string | undefined) {
+export async function getUserFromToken(token: string | undefined) {
   if (!token) return null;
 
   try {
@@ -18,11 +18,11 @@ async function getUserFromToken(token: string | undefined) {
     // Ensure DB connection
     await connectDB(); 
 
-    const user = await Admin.findById(decoded.id).select("username email avatar _id");
+    const user = await User.findById(decoded.id).select("username email avatar _id role");
     return user;
   } catch (err) {
     console.error("JWT verify error:", err);
-    return null;
+    return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 });
   }
 }
 
@@ -31,7 +31,6 @@ export async function GET(req: Request) {
     // Get token from Authorization header: "Bearer <token>"
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
-    console.log(token);
 
     const user = await getUserFromToken(token);
 

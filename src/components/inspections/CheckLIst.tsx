@@ -1,98 +1,11 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
+import { FormData } from './BatchEdit';
 
-interface FormData {
-    // Identification & Registration
-    poNumber: string;
-    equipmentNumber: string;
-    vin: string;
-    licensePlateId: string;
-    licensePlateCountry: string;
-    licensePlateExpiration: string;
-    licensePlateState: string;
-    possessionOrigin: string;
-    manufacturer: string;
-    modelYear: string;
 
-    // Sensors & Electrical
-    absSensor: string;
-    airTankMonitor: string;
-    rtbIndicator: string;
-    lightOutSensor: string;
-    sensorError: string;
-    ultrasonicCargoSensor: string;
+export default function CheckList({ prop, formData, setFormData }: { prop: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }) {
 
-    // Physical Dimensions & Components
-    length: string;
-    height: string;
-    grossAxleWeightRating: string;
-    axleType: string;
-    brakeType: string;
-    suspensionType: string;
-    tireModel: string;
-
-    // Features & Appearance
-    amenikis: string;
-    doorBranding: string;
-    doorColor: string;
-    doorSensor: string;
-    doorType: string;
-    lashSystem: string;
-    mudFlapType: string;
-    panelBranding: string;
-    noseBranding: string;
-    skirted: string;
-    skirtColor: string;
-    captiveBeam: string;
-    cargoCameras: string;
-    cartbars: string;
-    tpms: string;
-    trailerHeightDecal: string;
-}
-
-export default function CheckList({ prop }: { prop: string }) {
-    const [formData, setFormData] = useState<FormData>({
-        poNumber: '',
-        equipmentNumber: '',
-        vin: '',
-        licensePlateId: '',
-        licensePlateCountry: '',
-        licensePlateExpiration: '',
-        licensePlateState: '',
-        possessionOrigin: '',
-        manufacturer: '',
-        modelYear: '',
-        absSensor: '',
-        airTankMonitor: '',
-        rtbIndicator: '',
-        lightOutSensor: '',
-        sensorError: '',
-        ultrasonicCargoSensor: '',
-        length: '',
-        height: '',
-        grossAxleWeightRating: '',
-        axleType: '',
-        brakeType: '',
-        suspensionType: '',
-        tireModel: '',
-        amenikis: '',
-        doorBranding: '',
-        doorColor: '',
-        doorSensor: '',
-        doorType: '',
-        lashSystem: '',
-        mudFlapType: '',
-        panelBranding: '',
-        noseBranding: '',
-        skirted: '',
-        skirtColor: '',
-        captiveBeam: '',
-        cargoCameras: '',
-        cartbars: '',
-        tpms: '',
-        trailerHeightDecal: '',
-    });
 
     const [expandedSections, setExpandedSections] = useState({
         identification: true,

@@ -1,49 +1,37 @@
 'use client'
 import { Department } from "@/components/departments/DepartmentCard";
 import { DepartmentSelector } from "@/components/departments/DepartmentSelector";
+import { apiRequest } from "@/utils/apiWrapper";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 
 export default function DepartmentsPage() {
-  const departments: Department[] = [
-    {
-      id: '1',
-      name: 'US Purchase Trailers',
-      description: 'ACCESS DASHBOARD',
-      icon: 'document',
-      color: 'purple',
-      isActive: true,
-    },
-    {
-      id: '2',
-      name: 'Canada Trailers',
-      description: 'ACCESS DASHBOARD',
-      icon: 'document',
-      color: 'blue',
-      isActive: true,
-    },
-    // {
-    //   id: '3',
-    //   name: 'Maintenance',
-    //   description: 'ACCESS DASHBOARD',
-    //   icon: 'document',
-    //   color: 'red',
-    //   isActive: true,
-    // },
-    // {
-    //   id: '4',
-    //   name: 'Campaign',
-    //   description: 'ACCESS DASHBOARD',
-    //   icon: 'document',
-    //   color: 'green',
-    //   isActive: true,
-    // },
-  ];
-  const router=useRouter()
+  const router = useRouter();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const getDepartments = async () => {
+    try {
+      const res = await apiRequest("/api/departments/get-departments");
+      if (res.ok) {
+        const json = await res.json();
+        setDepartments(json.departments);
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      toast.error(errorMessage);
+      setDepartments([]);
+    }
+  };
+
+  useEffect(() => {
+    getDepartments();
+  }, []);
 
   const handleDepartmentSelect = (department: Department) => {
     console.log('Selected department:', department);
-    router.push(`/dashboard`);
+    router.push(`/dashboard?department=${department.name}`);
     // Navigate to department dashboard
   };
 
@@ -52,6 +40,7 @@ export default function DepartmentsPage() {
       company="Amazon.com, Inc."
       departments={departments}
       onDepartmentSelect={handleDepartmentSelect}
+      getDepartments={getDepartments}
     />
   );
 }
