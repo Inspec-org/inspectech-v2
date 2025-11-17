@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { UserContext } from "@/context/authContext";
+import { ArrowLeftToLine } from "lucide-react";
 
 
 const AppHeader: React.FC = () => {
@@ -63,7 +64,7 @@ const AppHeader: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">Inspec Tech</h1>
+              <h1 className="text-lg font-semibold text-[#6823AB]">Inspec Tech</h1>
               <p className="text-xs text-gray-500">Inspection and Inventory Management System</p>
             </div>
           </Link>
@@ -188,10 +189,8 @@ const AppHeader: React.FC = () => {
             </div>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50" onClick={logout}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
+          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 bg-[#F4EEFC]" onClick={logout}>
+            <ArrowLeftToLine className="w-4 h-4" />
             Logout
           </button>
         </div>

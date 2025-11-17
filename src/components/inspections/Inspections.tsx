@@ -1,6 +1,6 @@
 'use client'
 import { ArrowRight, Briefcase, Cross, Download, Edit, Edit3, Filter, Plus, X } from 'lucide-react'
-import React, { useContext, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { UserContext } from '@/context/authContext';
@@ -10,6 +10,8 @@ import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import CheckList from './CheckLIst';
 import FilterInspectionsModal from '../Modals/FilterInspectionsModal';
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
 
 type InspectionData = {
     id: string;
@@ -23,69 +25,11 @@ type InspectionData = {
     delivered: string;
 };
 
-export const dummyInspections: InspectionData[] = [
-    {
-        id: "1",
-        status: "Completed",
-        type: "Safety Inspection",
-        inspector: "John Smith",
-        vendor: "Cappadocia Travel Co.",
-        location: "Goreme, Turkey",
-        duration: "2 hours",
-        date: "2025-10-25",
-        delivered: "Yes"
-    },
-    {
-        id: "2",
-        status: "Pending",
-        type: "Quality Check",
-        inspector: "Fatma Kaya",
-        vendor: "Skyline Tours",
-        location: "Istanbul, Turkey",
-        duration: "3 hours",
-        date: "2025-10-28",
-        delivered: "Yes"
-    },
-    {
-        id: "3",
-        status: "In Progress",
-        type: "Maintenance Audit",
-        inspector: "Ali Demir",
-        vendor: "Blue Horizon Travels",
-        location: "Antalya, Turkey",
-        duration: "1.5 hours",
-        date: "2025-10-29",
-        delivered: "Yes"
-    },
-    {
-        id: "4",
-        status: "Completed",
-        type: "Health & Safety Check",
-        inspector: "Mehmet Yildiz",
-        vendor: "Anatolia Adventures",
-        location: "Pamukkale, Turkey",
-        duration: "2 hours",
-        date: "2025-10-15",
-        delivered: "No"
-    },
-    {
-        id: "5",
-        status: "Pending",
-        type: "Vehicle Inspection",
-        inspector: "Elif Aydin",
-        vendor: "Historic Gateways",
-        location: "Izmir, Turkey",
-        duration: "1 hour",
-        date: "2025-11-01",
-        delivered: "Yes"
-    },
-];
-
 function Inspections() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    // const [tableData, setTableData] = useState<UserOrder[]>([]);
+    const [inspections, setInspections] = useState<InspectionData[]>([]);
     const [totaluser, setTotaluser] = useState(5);
     const currentPage = parseInt(searchParams.get("user_page") || "1", 10);
     const [loading, setLoading] = useState(false)
@@ -134,7 +78,7 @@ function Inspections() {
         if (selectAll) {
             setSelectedRows([]);
         } else {
-            setSelectedRows(dummyInspections.map((row) => row.id));
+            setSelectedRows(inspections.map((row) => row.id));
         }
         setSelectAll(!selectAll);
     };
@@ -146,6 +90,46 @@ function Inspections() {
             setSelectedRows([...selectedRows, id]);
         }
     };
+
+    useEffect(() => {
+        const getInspections = async () => {
+            try {
+                setLoading(true);
+                const res = await apiRequest(`/api/inspections/get-inspections`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: currentPage, limit, filter: { search } }),
+                });
+                const json = await res.json();
+                if (res.ok && json.success) {
+                    setTotaluser(json.total || 0);
+                    const mapped: InspectionData[] = (json.inspections || []).map((doc: any) => ({
+                        id: doc.unitId,
+                        status: (doc.inspectionStatus || '').toString(),
+                        type: doc.type || '',
+                        inspector: doc.inspector || '',
+                        vendor: doc.vendor || '',
+                        location: doc.location || '',
+                        duration: `${doc.durationMin || ''}m ${doc.durationSec || ''}s`,
+                        date: doc.createdAt ? new Date(doc.createdAt).toISOString().slice(0, 10) : '',
+                        delivered: doc.delivered === 'yes' ? 'Yes' : doc.delivered === 'no' ? 'No' : '',
+                    }));
+                    setInspections(mapped);
+                } else {
+                    toast.error(json.message || 'Failed to fetch inspections');
+                    setInspections([]);
+                    setTotaluser(0);
+                }
+            } catch (e: any) {
+                toast.error(e.message || 'Server error');
+                setInspections([]);
+                setTotaluser(0);
+            } finally {
+                setLoading(false);
+            }
+        };
+        getInspections();
+    }, [currentPage, limit, search]);
 
     const columns: Column<InspectionData>[] = [
         {
@@ -291,7 +275,7 @@ function Inspections() {
                 </div>
                 {/* table */}
                 <div className="h-full">
-                    <GenericDataTable title="" data={dummyInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onClick={() => { router.push("/inspections/BatchEdit") }} emptyStateImages={{
+                    <GenericDataTable title="" data={inspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onClick={() => { router.push("/inspections/BatchEdit") }} emptyStateImages={{
                         "All Users": "/images/No Users.svg"
                     }}
                     />

@@ -3,7 +3,7 @@ import React from 'react'
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { FormData } from './BatchEdit';
 
-function General({ type, formData, setFormData }: { type: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }) {
+function General({ type, formData, setFormData, disabledUnitId }: { type: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; disabledUnitId?: boolean }) {
 
 
     // 🔹 handle input & dropdown changes
@@ -34,9 +34,9 @@ function General({ type, formData, setFormData }: { type: string; formData: Form
                         type="text"
                         value={formData.unitId}
                         onChange={(e) => handleChange("unitId", e.target.value)}
-                        disabled={type === "edit"}
+                        disabled={type === "edit" || !!disabledUnitId}
                         placeholder='Enter Equipment ID/Trailer Number'
-                        className={`w-[300px] px-3 py-2 ${type==="edit"? "bg-gray-100":"bg-[#FAF7FF]"} focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-300 rounded-lg text-gray-700`}
+                        className={`w-[300px] px-3 py-2 ${type==="edit" || !!disabledUnitId? "bg-gray-100":"bg-[#FAF7FF]"} focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-300 rounded-lg text-gray-700`}
                     />
                 </div>
 
