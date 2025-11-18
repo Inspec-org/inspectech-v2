@@ -270,8 +270,8 @@ export default function Inspections() {
     ];
 
     return (
-        <div className="h-full">
-            <GenericDataTable title="Recent Inspection Orders" data={dummyInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
+        <div className="h-full border p-6">
+            <GenericDataTable title="Recent Inspection Orders" title_font_size="text-lg font-bold" data={dummyInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
                 "All Users": "/images/No Users.svg"
             }}
             />

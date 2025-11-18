@@ -1,7 +1,7 @@
 'use client'
 import React from 'react'
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
-import { FormData } from './BatchEdit';
+import { FormData } from './Edit';
 
 function General({ type, formData, setFormData, disabledUnitId }: { type: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; disabledUnitId?: boolean }) {
 
@@ -21,7 +21,7 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
         <div className="bg-white rounded-lg shadow-sm p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Unit ID */}
-                <div className="flex justify-between gap-4 items-start border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 items-start border-b pb-2">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
                             Unit ID
@@ -36,12 +36,12 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                         onChange={(e) => handleChange("unitId", e.target.value)}
                         disabled={type === "edit" || !!disabledUnitId}
                         placeholder='Enter Equipment ID/Trailer Number'
-                        className={`w-[300px] px-3 py-2 ${type==="edit" || !!disabledUnitId? "bg-gray-100":"bg-[#FAF7FF]"} focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-300 rounded-lg text-gray-700`}
+                        className={`lg:w-[300px] w-full px-3 py-2 ${type === "edit" || !!disabledUnitId ? "bg-gray-100" : "bg-[#FAF7FF]"} focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-300 rounded-lg text-gray-700`}
                     />
                 </div>
 
                 {/* Inspection Status */}
-                <div className="flex justify-between gap-4 items-center border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                     <label className="block text-sm font-medium text-gray-700">
                         Inspection Status
                     </label>
@@ -49,21 +49,22 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                         options={[
                             { value: "pass", label: "PASS" },
                             { value: "fail", label: "FAIL" },
-                            { value: "need_review", label: "NEEDS REVIEW" },
-                            { value: "out_of_cycle", label: "OUT OF CYCLE (DELIVERED)" },
-                            { value: "no_inspection", label: "NO INSPECTION(DELIVERED)" },
+                            { value: "needs review", label: "NEEDS REVIEW" },
+                            { value: "out of cycle (delivered)", label: "OUT OF CYCLE (DELIVERED)" },
+                            { value: "no inspection (delivered)", label: "NO INSPECTION (DELIVERED)" },
                             { value: "incomplete", label: "INCOMPLETE" },
                             { value: "complete", label: "COMPLETE" },
                         ]}
-                        width="300px"
+                        width="lg:w-[300px] w-full"
                         value={formData.inspectionStatus}
                         onChange={(val) => handleChange("inspectionStatus", val)}
                     />
+
                 </div>
 
                 {/* Review Reason */}
-                {formData.inspectionStatus === "need_review" && (
-                    <div className="flex justify-between gap-4 items-center border-b pb-2">
+                {formData.inspectionStatus === "needs review" && (
+                    <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                         <label className="block text-sm font-medium text-gray-700">
                             Review Reason
                         </label>
@@ -83,18 +84,18 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
 
 
                 {/* Type */}
-                <div className="flex justify-between gap-4 items-center border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                     <label className="block text-sm font-medium text-gray-700">Type</label>
                     <input
                         type="text"
                         value={formData.type}
                         onChange={(e) => handleChange("type", e.target.value)}
-                        className="w-[300px] px-3 py-2 bg-[#FAF7FF] border border-purple-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="lg:w-[300px] w-full px-3 py-2 bg-[#FAF7FF] border border-purple-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                 </div>
 
                 {/* Inspector */}
-                <div className="flex justify-between gap-4 items-center border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                     <label className="block text-sm font-medium text-gray-700">
                         Inspector
                     </label>
@@ -103,12 +104,12 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                         value={formData.inspector}
                         onChange={(e) => handleChange("inspector", e.target.value)}
                         placeholder='Enter Inspector Name'
-                        className="w-[300px] px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700"
+                        className="lg:w-[300px] w-full px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700"
                     />
                 </div>
 
                 {/* Vendor */}
-                <div className="flex justify-between gap-4 items-center border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                     <label className="block text-sm font-medium text-gray-700">
                         Vendor
                     </label>
@@ -116,12 +117,12 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                         type="text"
                         value={formData.vendor}
                         onChange={(e) => handleChange("vendor", e.target.value)}
-                        className="w-[300px] px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700"
+                        className="lg:w-[300px] w-full px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700"
                     />
                 </div>
 
                 {/* Location */}
-                <div className="flex justify-between gap-4 items-center border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                     <label className="block text-sm font-medium text-gray-700">
                         Location
                     </label>
@@ -129,12 +130,12 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                         type="text"
                         value={formData.location}
                         onChange={(e) => handleChange("location", e.target.value)}
-                        className="w-[300px] px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700"
+                        className="lg:w-[300px] w-full px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700"
                     />
                 </div>
 
                 {/* Delivered */}
-                <div className="flex justify-between gap-4 items-center border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                     <label className="block text-sm font-medium text-gray-700">
                         Delivered
                     </label>
@@ -150,7 +151,7 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                 </div>
 
                 {/* Duration */}
-                <div className="flex justify-between gap-4 items-center border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                     <label className="block text-sm font-medium text-gray-700">
                         Duration
                     </label>
@@ -173,25 +174,25 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                 </div>
 
                 {/* Date */}
-                <div className="flex justify-between gap-4 items-center border-b pb-2">
+                <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center border-b pb-2">
                     <label className="block text-sm font-medium text-gray-700">Date</label>
                     <div className="flex gap-2 items-center">
                         <input
-                            type="text"
+                            type="number"
                             value={formData.dateDay}
                             onChange={(e) => handleChange("dateDay", e.target.value)}
                             className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
                         />
                         <span className="text-gray-400">/</span>
                         <input
-                            type="text"
+                            type="number"
                             value={formData.dateMonth}
                             onChange={(e) => handleChange("dateMonth", e.target.value)}
                             className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
                         />
                         <span className="text-gray-400">/</span>
                         <input
-                            type="text"
+                            type="number"
                             value={formData.dateYear}
                             onChange={(e) => handleChange("dateYear", e.target.value)}
                             className="w-20 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"

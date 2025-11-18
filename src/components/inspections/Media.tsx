@@ -1,28 +1,40 @@
 import React, { useState } from 'react';
 import { Upload, Check, Image, ImageIcon, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload } from 'lucide-react';
-import { FormData } from './BatchEdit';
+import { FormData } from './Edit';
 interface UploadCardProps {
     title: string;
     description: string;
-    onUpload: (file: File) => void;
+    currentUrl?: string | null;
+    onUploadToCloudinary: (file: File) => Promise<void>;
 }
 type TabType = 'Front Left Side' | 'Front Right Side' | 'Rare Left Side' | 'Rare Right Side' | 'Inside Trailer Image' | 'Door Details Image';
 
-const UploadCard: React.FC<UploadCardProps> = ({ title, description, onUpload }) => {
+const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl, onUploadToCloudinary }) => {
     const [isUploaded, setIsUploaded] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             setSelectedFile(file);
+            const url = URL.createObjectURL(file);
+            setPreviewUrl(url);
+        } else {
+            setPreviewUrl(null);
         }
     };
 
-    const handleUpload = () => {
+    const handleUpload = async () => {
         if (selectedFile) {
-            onUpload(selectedFile);
-            setIsUploaded(true);
+            setIsUploading(true);
+            try {
+                await onUploadToCloudinary(selectedFile);
+                setIsUploaded(true);
+            } finally {
+                setIsUploading(false);
+            }
         }
     };
 
@@ -34,12 +46,20 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, onUpload })
             </div>
 
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-4 flex flex-col items-center justify-center min-h-[200px]">
-                <div className="w-16 h-16 mb-3 flex items-center justify-center">
-                    <LucideImage className='opacity-40' size={56} />
-                </div>
-                <p className="text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
-                <p className="text-xs text-gray-500">Supported formats: JPG, PNG</p>
-                <p className="text-xs text-gray-500">Maximum file size: 5MB</p>
+                {previewUrl ? (
+                    <img src={previewUrl} alt="Selected Preview" className="max-h-48 object-contain rounded-md border" />
+                ) : currentUrl ? (
+                    <img src={currentUrl} alt="Current Saved" className="max-h-48 object-contain rounded-md border" />
+                ) : (
+                    <>
+                        <div className="w-16 h-16 mb-3 flex items-center justify-center">
+                            <LucideImage className='opacity-40' size={56} />
+                        </div>
+                        <p className="text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-500">Supported formats: JPG, PNG</p>
+                        <p className="text-xs text-gray-500">Maximum file size: 5MB</p>
+                    </>
+                )}
             </div>
 
             <label className="block w-full mb-3">
@@ -57,11 +77,11 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, onUpload })
 
             <button
                 onClick={handleUpload}
-                disabled={!selectedFile}
+                disabled={!selectedFile || isUploading}
                 className="w-full bg-purple-600 text-white rounded-lg py-2 px-4 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
                 <CloudUpload size={16} />
-                Upload to Database
+                {isUploading ? 'Uploading...' : 'Upload to Database'}
             </button>
 
             {isUploaded && (
@@ -79,7 +99,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, onUpload })
     );
 };
 
-const PDFUpload = () => {
+const PDFUpload: React.FC<{ onUploadToCloudinary: (file: File) => void }> = ({ onUploadToCloudinary }) => {
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,7 +117,7 @@ const PDFUpload = () => {
 
     return (
         <div className="">
-            <div className="border border-gray-300 rounded-lg p-4 bg-white h-full">
+            <div className="border border-gray-300 rounded-lg p-4 bg-white h-full flex flex-col">
                 <h2 className="text-lg font-semibold mb-4">DOT Form PDF</h2>
 
                 <p className="text-sm text-gray-700 mb-4">
@@ -135,7 +155,19 @@ const PDFUpload = () => {
                         <p className="text-sm text-gray-400">No PDF Uploaded yet</p>
                     )}
                 </div>
+                <div className="mt-auto">
+                    <button
+                        onClick={() => uploadedFile && onUploadToCloudinary(uploadedFile)}
+                        disabled={!uploadedFile}
+                        className="w-full bg-purple-600 text-white rounded-lg py-2 px-4 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        <CloudUpload size={16} />
+                        Upload PDF to Database
+                    </button>
+                </div>
             </div>
+
+
         </div>
     );
 };
@@ -275,13 +307,13 @@ const ImageAlignmentGuide: React.FC = () => {
     );
 };
 
-const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }> = ({ formData, setFormData }) => {
+const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; onUploadToCloudinary: (field: string, file: File) => Promise<void>; }> = ({ formData, setFormData, onUploadToCloudinary }) => {
     const [showAdditional, setShowAdditional] = useState(false);
 
     const handleUpload = (file: File) => {
         setFormData((prev: any) => ({
             ...prev,
-            additionalAttachments: [ ...(prev.additionalAttachments || []), file.name ],
+            additionalAttachments: [...(prev.additionalAttachments || []), file.name],
         }));
     };
 
@@ -298,12 +330,14 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                         <UploadCard
                             title="Front Left Side"
                             description="Upload an image showing the front left of the trailer"
-                            onUpload={handleUpload}
+                            currentUrl={formData.frontLeftSideUrl}
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('frontLeftSideUrl', file)}
                         />
                         <UploadCard
                             title="Front Right Side"
                             description="Upload an image showing the front right of the trailer"
-                            onUpload={handleUpload}
+                            currentUrl={formData.frontRightSideUrl}
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('frontRightSideUrl', file)}
                         />
                     </div>
                 </div>
@@ -314,12 +348,14 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                         <UploadCard
                             title="Rear Left Side"
                             description="Upload an image showing the rear left of the trailer"
-                            onUpload={handleUpload}
+                            currentUrl={formData.rearLeftSideUrl}
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('rearLeftSideUrl', file)}
                         />
                         <UploadCard
                             title="Rear Right Side"
                             description="Upload an image showing the rear right of the trailer"
-                            onUpload={handleUpload}
+                            currentUrl={formData.rearRightSideUrl}
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('rearRightSideUrl', file)}
                         />
                     </div>
                 </div>
@@ -331,7 +367,8 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                             <UploadCard
                                 title="Inside Traier Image"
                                 description="Upload an image showing the inside of the trailer"
-                                onUpload={handleUpload}
+                                currentUrl={formData.insideTrailerImageUrl}
+                                onUploadToCloudinary={(file) => onUploadToCloudinary('insideTrailerImageUrl', file)}
                             />
                         </div>
                     </div>
@@ -341,7 +378,8 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                             <UploadCard
                                 title="Door Details Image"
                                 description="Upload an image showing the door details of the trailer"
-                                onUpload={handleUpload}
+                                currentUrl={formData.doorDetailsImageUrl}
+                                onUploadToCloudinary={(file) => onUploadToCloudinary('doorDetailsImageUrl', file)}
                             />
                         </div>
                     </div>
@@ -356,9 +394,10 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                         <UploadCard
                             title="DOT Form Image"
                             description="Upload an image showing the dot form of the trailer"
-                            onUpload={handleUpload}
+                            currentUrl={formData.dotFormImageUrl}
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormImageUrl', file)}
                         />
-                        <PDFUpload />
+                        <PDFUpload onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormPdfUrl', file)} />
                     </div>
                 </div>
             </div>
@@ -369,37 +408,40 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                         <p className='text-xs font-semibold text-[#11182780]'>Upload additional images related to the DOT Safety Inspection form</p>
                     </div>
                     <button
-                        onClick={() => setShowAdditional(!showAdditional)}
-                        className="flex gap-2 items-center bg-[#F3EBFF66] border  px-3 py-2 text-sm rounded-lg whitespace-nowrap"
-                    >
-                        {showAdditional ? (
-                            <span className="flex items-center gap-1">
-                                Hide <ChevronUp size={18} />
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-1">
-                                Add Additional Attachments <ChevronDown size={18} />
-                            </span>
-                        )}
-                    </button>
+                            onClick={() => setShowAdditional(!showAdditional)}
+                            className="flex gap-2 items-center bg-[#F3EBFF66] border  px-3 py-2 text-sm rounded-lg whitespace-nowrap"
+                        >
+                            {showAdditional ? (
+                                <span className="flex items-center gap-1">
+                                    Hide <ChevronUp size={18} />
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-1">
+                                    Add Additional Attachments <ChevronDown size={18} />
+                                </span>
+                            )}
+                        </button>
                 </div>
                 {showAdditional && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                         <UploadCard
                             title="Additional Attachment 1"
                             description="Upload an image showing the additionalform1 of the trailer"
-                            onUpload={handleUpload}
+                            currentUrl={formData.additionalAttachment1}
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment1', file)}
                         />
                         <UploadCard
                             title="Additional Attachment 2"
                             description="Upload an image showing the additionalform2 of the trailer"
-                            onUpload={handleUpload}
+                            currentUrl={formData.additionalAttachment2}
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment2', file)}
                         />
                         <UploadCard
                             title="Additional Attachment 3"
                             description="Upload an image showing the additionalform3 of the trailer"
-                            onUpload={handleUpload}
-                        />Additional Attachment 1
+                            currentUrl={formData.additionalAttachment3}
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment3', file)}
+                        />
                     </div>
                 )}
             </div>

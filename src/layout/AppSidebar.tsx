@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -18,6 +18,7 @@ import {
   UserCircleIcon,
 } from "../icons/index";
 import { BarChart, BarChart2, BarChart4, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
+import { UserContext } from "@/context/authContext";
 
 type NavItem = {
   name: string;
@@ -57,6 +58,7 @@ const navItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
   const pathname = usePathname();
+  const { logout, user, session_id, setUser } = useContext(UserContext);
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -396,6 +398,7 @@ const AppSidebar: React.FC = () => {
                 ? "justify-center"
                 : "justify-start"
                 }`}
+                onClick={logout}
             >
               <svg
                 width="20"

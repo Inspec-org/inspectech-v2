@@ -15,6 +15,7 @@ export interface Column<T> {
 
 interface GenericDataTableProps<T> {
   title?: string;
+  title_font_size?: string
   tabs: string[];
   custom_tabs?: string[];
   activeTab?: string;
@@ -22,6 +23,7 @@ interface GenericDataTableProps<T> {
   data: T[]; // Make sure each item includes a `tab` field if using tab filtering
   columns: Column<T>[];
   pageSize?: number;
+  setPageSize?: React.Dispatch<React.SetStateAction<number>>;
   customTabFilter?: (item: T, tab: string) => boolean;
   emptyStateImages?: { [title: string]: string };
   currentPage: number
@@ -31,11 +33,12 @@ interface GenericDataTableProps<T> {
   querykey?: string
   search?: string
   setSearch?: React.Dispatch<React.SetStateAction<string>>
-  onClick?: () => void
+  onRowClick?: (row: T) => void
 }
 
 function GenericDataTable<T extends { id: string; tab?: string }>({
   title,
+  title_font_size,
   tabs,
   custom_tabs,
   activeTab,
@@ -45,6 +48,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   columns,
   emptyStateImages,
   pageSize = 10,
+  setPageSize,
   currentPage,
   setCurrentPage,
   loading,
@@ -52,7 +56,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   querykey,
   search,
   setSearch,
-  onClick
+  onRowClick
 }: GenericDataTableProps<T>) {
 
   const router = useRouter();
@@ -108,7 +112,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
         {/* Title*/}
         <div className={`flex ${tabs?.length ? "flex-col gap-2" : "items-center gap-4"}`}>
           {title && (
-            <h1 className="text-2xl font-weight-600 text-gray-800  font-raleway">
+            <h1 className={`${title_font_size ? title_font_size : 'text-2xl font-weight-600'}  text-gray-800  font-raleway`}>
               {title}
             </h1>
           )}
@@ -175,7 +179,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
               </thead>
               <tbody>
                 {currentData.map((row) => (
-                  <tr key={row.id} className="border-b hover:bg-gray-50" onClick={onClick}>
+                  <tr key={row.id} className="border-b hover:bg-gray-50" onClick={() => onRowClick?.(row)}>
                     {columns.map((col, i) => (
                       <td key={i} className="py-3 px-4 font-raleway text-center">
                         {col.cell ? col.cell(row) : (row as any)[col.accessor]}
@@ -189,7 +193,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
 
           {/* Pagination */}
           {title === "Recent Inspection Orders" ? (
-            <div className="flex justify-between items-center mt-4 text-[#6B65F2]">
+            <div className="flex justify-between items-edn mt-6 text-[#6B65F2] text-sm">
               <div className="flex items-center gap-2">
                 <RefreshCcw className="w-4 h-4 cursor-pointer" />
                 <p>Refresh</p>
@@ -201,23 +205,22 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
             </div>
           ) :
             (
-              <div className="flex justify-between items-center mt-4 bg-[#F6F8FF] p-2">
+              <div className="flex sm:flex-row flex-col-reverse justify-between items-center mt-4 bg-[#F6F8FF] sm:px-2 sm:py-2 py-4 sm:gap-0 gap-2">
                 {/* Left side: Showing results */}
-                <div className="flex items-center gap-4">
+                <div className="flex sm:flex-row flex-col sm:items-center sm:gap-4">
                   <div className="text-sm text-gray-600">
                     Showing <span className="font-semibold">{((currentPage - 1) * pageSize) + 1}</span> to{" "}
                     <span className="font-semibold">{Math.min(currentPage * pageSize, tabFilteredData.length)}</span> of{" "}
                     <span className="font-semibold">{tabFilteredData.length}</span> results
                   </div>
-                  <div className="h-5 w-0.5 bg-black" />
+                  <div className="h-5 w-0.5 bg-black sm:block hidden" />
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <span>Row per page:</span>
                     <select
                       className="border rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 bg-white"
                       value={pageSize}
                       onChange={(e) => {
-                        // Handle page size change if needed
-                        // You may need to add setPageSize to props
+                        setPageSize &&  setPageSize(Number(e.target.value));
                       }}
                     >
                       <option value={10}>10</option>

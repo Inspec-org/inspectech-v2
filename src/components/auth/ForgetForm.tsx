@@ -160,7 +160,7 @@ export default function ForgetForm() {
 
 
         } catch (error) {
-            console.error("Network Error:", error);
+            // console.error("Network Error:", error);            
             const errorMessage = error instanceof Error ? error.message : String(error);
             toast.error(errorMessage);
         } finally {
@@ -216,7 +216,7 @@ export default function ForgetForm() {
 
                                 {!isApiSent && (
                                     <div>
-                                        <Button className="w-full mt-10" size="sm" type="submit" disabled={isOTPLoading}>
+                                        <Button className="w-full mt-4" size="sm" type="submit" disabled={isOTPLoading}>
                                             {isOTPLoading ? (
                                                 <>
                                                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

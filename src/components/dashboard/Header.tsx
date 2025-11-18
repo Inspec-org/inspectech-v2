@@ -20,7 +20,7 @@ function Header({
   const [vendorOpen, setVendorOpen] = useState(false);
 
   return (
-    <div className="w-full flex items-center gap-6 bg-purple-50/60 px-6 py-3 border-b border-purple-100">
+    <div className="w-full flex flex-col md:flex-row flex-wrap md:items-center gap-6 bg-purple-50/60 px-6 py-3 border-b border-purple-100">
       {/* Department Section */}
       <div className="flex items-center gap-3">
         <span className="text-sm font-semibold text-purple-900 tracking-wide">
@@ -60,7 +60,7 @@ function Header({
       </div>
 
       {/* Divider */}
-      <div className="h-8 w-px bg-purple-200"></div>
+      <div className="hidden md:block h-8 w-px bg-purple-200"></div>
 
       {/* Vendor Section */}
       <div className="flex items-center gap-3">

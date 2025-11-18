@@ -74,7 +74,7 @@ export default function MonthlyInspectionChart({ year }: { year?: number }) {
                 padding: {
                     top: 0,
                     right: 0,
-                    bottom: 0,
+                    bottom: 10,
                     left: 10,
                 },
             },

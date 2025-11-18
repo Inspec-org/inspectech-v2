@@ -1,10 +1,10 @@
-import BatchEdit from '@/components/inspections/BatchEdit'
+import Edit from '@/components/inspections/Edit'
 import React from 'react'
 
 function page() {
   return (
     <div>
-      <BatchEdit type='edit' />
+      <Edit type='edit' />
     </div>
   )
 }

@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
     const delivered = filter.delivered ?? undefined;
     const deliveredStatuses: string[] | undefined = Array.isArray(filter.deliveredStatuses) ? filter.deliveredStatuses : undefined;
     const search = filter.search ?? undefined;
+    const duration = filter.duration ?? undefined;
+    console.log(unitId, unitIds, inspectionStatus, inspectionStatuses, type, types, inspector, inspectors, vendor, vendors, location, locations, delivered, deliveredStatuses, search)
 
     await connectDB();
 
@@ -54,6 +56,28 @@ export async function POST(req: NextRequest) {
 
     if (deliveredStatuses && deliveredStatuses.length) query.delivered = { $in: deliveredStatuses };
     else if (delivered) query.delivered = delivered;
+
+    if (Array.isArray(duration) && duration.length) {
+      const conds = duration.map((d: string) => {
+        const m = /^([0-9]+)m\s*([0-9]+)s$/.exec(d);
+        return m ? { durationMin: m[1], durationSec: m[2] } : null;
+      }).filter(Boolean) as any[];
+      if (conds.length) {
+        if (query.$or) {
+          const prevOr = query.$or;
+          delete query.$or;
+          query.$and = [{ $or: prevOr }, { $or: conds }];
+        } else {
+          query.$or = conds;
+        }
+      }
+    } else if (typeof duration === 'string') {
+      const m = /^([0-9]+)m\s*([0-9]+)s$/.exec(duration);
+      if (m) {
+        query.durationMin = m[1];
+        query.durationSec = m[2];
+      }
+    }
 
     if (search) {
       query.$or = [
