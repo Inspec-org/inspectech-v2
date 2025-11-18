@@ -10,7 +10,7 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
   });
 
   await transporter.sendMail({
-    from: `"SAGE App" <${process.env.EMAIL_USER}>`,
+    from: `"InspecTech" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html,

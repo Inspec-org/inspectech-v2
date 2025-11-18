@@ -8,7 +8,7 @@ const InspectionSchema = new mongoose.Schema({
   inspector: { type: String },
   vendor: { type: String },
   location: { type: String },
-  delivered: { type: String, enum: ['yes', 'no'] },
+  delivered: { type: String, enum: ['yes', 'no'], default: 'no' },
   durationMin: { type: String },
   durationSec: { type: String },
   dateDay: { type: String },
@@ -67,7 +67,9 @@ const InspectionSchema = new mongoose.Schema({
   doorDetailsImageUrl: { type: String },
   dotFormImageUrl: { type: String },
   dotFormPdfUrl: { type: String },
-  additionalAttachments: [{ type: String }],
+  additionalAttachment1: { type: String },
+  additionalAttachment2: { type: String },
+  additionalAttachment3: { type: String },
 }, {
   timestamps: true,
 })

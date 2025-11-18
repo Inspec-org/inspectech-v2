@@ -1,4 +1,4 @@
-import BatchEdit from '@/components/inspections/BatchEdit'
+import BatchEdit from '@/components/inspections/Edit'
 import React from 'react'
 
 function page() {

@@ -49,29 +49,30 @@ function Dashboard() {
     }, []);
     return (
         <Suspense fallback={<div>Loading...</div>}>
+            <h1 className='font-bold text-2xl px-2 py-3'>Dashboard</h1>
             <div className='w-full bg-white space-y-4 p-4 shadow-2xl rounded-2xl'>
                 <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)}
                 />
                 <StatsGrid data={statsData} />
                 <div className="grid grid-cols-12 gap-4 items-stretch">
-                    <div className="lg:col-span-8 col-span-12 h-full">
+                    <div className="xl:col-span-8 col-span-12 h-full">
                         <div className="h-full">
                             <MonthlyInspectionChart />
                         </div>
                     </div>
-                    <div className="lg:col-span-4 col-span-12 h-full">
+                    <div className="xl:col-span-4 col-span-12 h-full">
                         <div className="h-full">
                             <PassRateCard passRate={100} passed={13} failed={0} />
                         </div>
                     </div>
                 </div>
                 <div className="grid grid-cols-12 gap-4 items-stretch">
-                    <div className="lg:col-span-8 col-span-12 h-full">
+                    <div className="xl:col-span-8 col-span-12 h-full">
                         <div className="h-full">
                             <Inspections />
                         </div>
                     </div>
-                    <div className="lg:col-span-4 col-span-12 h-full">
+                    <div className="xl:col-span-4 col-span-12 h-full">
                         <div className="h-full">
                             <QuickActions onActionClick={(id) => console.log('Clicked:', id)} />
                         </div>

@@ -55,7 +55,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 style={width ? { width } : undefined}
                 className={`px-3 py-2 text-left border rounded-lg flex items-center justify-between ${
-                    width ? '' : 'w-full'
+                    width ? width : 'w-full'
                 } ${
                     disabled
                         ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-not-allowed'
@@ -75,7 +75,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
             {isOpen && !disabled && (
                 <div
                     className={`absolute z-50 mt-1 bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto ${
-                        width ? '' : 'w-full'
+                        width ? width : 'w-full'
                     }`}
                     style={width ? { width } : undefined}
                 >

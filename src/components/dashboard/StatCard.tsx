@@ -43,10 +43,10 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, variant }) => 
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm text-gray-600 mb-2">{label}</p>
-          <p className={`text-4xl font-bold ${styles.valueColor}`}>{value}</p>
+          <p className={`text-2xl font-bold ${styles.valueColor}`}>{value}</p>
         </div>
-        <div className={`${styles.bgColor} rounded-full p-3`}>
-          <Icon className={`w-6 h-6 ${styles.iconColor}`} />
+        <div className={`${styles.bgColor} rounded-lg p-2`}>
+          <Icon className={`w-5 h-5 ${styles.iconColor}`} />
         </div>
       </div>
     </div>
@@ -67,7 +67,7 @@ interface StatsGridProps {
 
 export const StatsGrid: React.FC<StatsGridProps> = ({ data }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 w-full">
       <StatCard
         label="Total Inspections"
         value={data.totalInspections}
