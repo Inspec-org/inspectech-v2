@@ -50,8 +50,9 @@ export default function SignInForm() {
       if (!response.ok) {
         throw new Error(result?.message || result.error)
       }
+      const role=result.user.role
 
-      router.push("/departments");
+      router.push(`/${role}/departments`);
       login(result.token)
 
       // const sessionId = result.data.data.session_id;

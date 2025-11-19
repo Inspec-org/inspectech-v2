@@ -59,6 +59,7 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
   const pathname = usePathname();
   const { logout, user, session_id, setUser } = useContext(UserContext);
+  const [dept,setDept] = useState("");
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -212,6 +213,7 @@ const AppSidebar: React.FC = () => {
     }
   }, [openSubmenu]);
 
+
   const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (
@@ -224,6 +226,14 @@ const AppSidebar: React.FC = () => {
       return { type: menuType, index };
     });
   };
+
+  useEffect(() => {
+    const dept= sessionStorage.getItem('selectedDepartment');
+    console.log(dept);
+    if (dept) {
+      setDept(dept);
+    }
+  }, []);
 
   return (
     <>
@@ -315,7 +325,7 @@ const AppSidebar: React.FC = () => {
 `}</style>
 
       <aside
-        className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-[#1a1d2e] text-gray-300 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-800
+        className={`fixed  flex flex-col lg:mt-0 top-0 px-4 left-0 bg-[#1a1d2e] text-gray-300 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-800
         ${isExpanded || isMobileOpen
             ? "w-[280px]"
             : isHovered
@@ -337,24 +347,27 @@ const AppSidebar: React.FC = () => {
           {isExpanded || isHovered || isMobileOpen ? (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
-                AB
+                <div className="w-2 h-2 rounded-full bg-white"></div>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-white truncate">
-                    ABC vendor
+                    {user?.username}
                   </p>
                   <span className="px-1.5 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded uppercase font-medium">
-                    US
+                    {dept.slice(0, 2).toUpperCase()}
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 truncate">
-                  mikenchypto@gmail.com
+                  {user?.email}
                 </p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                  <span className="text-xs text-gray-400">Vendor Account</span>
-                </div>
+                {user?.role === "vendor" && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                    <span className="text-xs text-gray-400">Vendor Account</span>
+                  </div>
+                )}
+
               </div>
               <button
                 onClick={() => {
@@ -398,7 +411,7 @@ const AppSidebar: React.FC = () => {
                 ? "justify-center"
                 : "justify-start"
                 }`}
-                onClick={logout}
+              onClick={logout}
             >
               <svg
                 width="20"

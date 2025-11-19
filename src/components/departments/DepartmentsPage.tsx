@@ -1,15 +1,17 @@
 'use client'
 import { Department } from "@/components/departments/DepartmentCard";
 import { DepartmentSelector } from "@/components/departments/DepartmentSelector";
+import { UserContext } from "@/context/authContext";
 import { apiRequest } from "@/utils/apiWrapper";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 
 export default function DepartmentsPage() {
   const router = useRouter();
   const [departments, setDepartments] = useState<Department[]>([]);
+  const { user } = useContext(UserContext)
   const getDepartments = async () => {
     try {
       const res = await apiRequest("/api/departments/get-departments");
@@ -31,7 +33,9 @@ export default function DepartmentsPage() {
 
   const handleDepartmentSelect = (department: Department) => {
     console.log('Selected department:', department);
-    router.push(`/dashboard?department=${department.name}`);
+    router.push(`dashboard?department=${department.name}`);
+    sessionStorage.setItem('selectedDepartment', department.name);
+    sessionStorage.setItem('selectedDepartmentId', department._id || '');
     // Navigate to department dashboard
   };
 

@@ -178,7 +178,7 @@ const AppHeader: React.FC = () => {
             </form>
           </div> */}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="sm:flex items-center gap-3 hidden ">
           <div className="flex justify-center items-center gap-3 bg-gray-50 rounded-full px-4 py-1 border border-gray-200 min-w-40">
             <div>
               <p className="text-sm font-medium text-gray-900">{user?.username}</p>

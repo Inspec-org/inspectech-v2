@@ -16,10 +16,17 @@ export async function POST(req: NextRequest) {
     if (!body?.unitId) {
       return NextResponse.json({ success: false, message: "unitId is required" }, { status: 400 });
     }
+    if (!body?.departmentId) {
+      return NextResponse.json({ success: false, message: "departmentId is required" }, { status: 400 });
+    }
 
     await connectDB();
 
     const cleaned: any = { ...body };
+    // console.log("cleaned", cleaned);
+    console.log("body", body);
+    cleaned.userId = user._id;
+    console.log("cleaned", cleaned);
     ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
       if (cleaned[key] === "" || cleaned[key] === undefined || cleaned[key] === null) {
         delete cleaned[key];

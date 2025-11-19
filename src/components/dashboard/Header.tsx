@@ -22,7 +22,7 @@ function Header({
   return (
     <div className="w-full flex flex-col md:flex-row flex-wrap md:items-center gap-6 bg-purple-50/60 px-6 py-3 border-b border-purple-100">
       {/* Department Section */}
-      <div className="flex items-center gap-3">
+      <div className="flex xl:flex-row flex-col xl:items-center gap-3">
         <span className="text-sm font-semibold text-purple-900 tracking-wide">
           DEPARTMENT
         </span>
@@ -42,15 +42,17 @@ function Header({
               <div className="py-1">
                 {departments.map((dept) => (
                   <button
-                    key={dept.id}
+                    key={dept._id}
                     onClick={() => {
                       setSelectedDepartment(dept);
                       setDepartmentOpen(false);
+                      sessionStorage.setItem('selectedDepartment', dept.name);
+                      sessionStorage.setItem('selectedDepartmentId', dept._id || '');
                     }}
                     className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
                   >
                     <Folder className="w-4 h-4 text-purple-600" />
-                    {dept.name}
+                    {dept.name} {dept.id}
                   </button>
                 ))}
               </div>
@@ -63,7 +65,7 @@ function Header({
       <div className="hidden md:block h-8 w-px bg-purple-200"></div>
 
       {/* Vendor Section */}
-      <div className="flex items-center gap-3">
+      <div className="flex xl:flex-row flex-col xl:items-center gap-3">
         <span className="text-sm font-semibold text-purple-900 tracking-wide">
           VENDOR
         </span>

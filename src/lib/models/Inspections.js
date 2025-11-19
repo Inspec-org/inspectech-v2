@@ -2,7 +2,9 @@ import mongoose from 'mongoose'
 
 const InspectionSchema = new mongoose.Schema({
   unitId: { type: String, required: true, unique: true, trim: true },
-  inspectionStatus: { type: String },
+  userId: {type:mongoose.Schema.Types.ObjectId, ref:'User', required: true},
+  departmentId: {type:mongoose.Schema.Types.ObjectId, ref:'Department', required: true},
+  inspectionStatus: { type: String, default: 'incomplete' },
   reviewReason: { type: String, default: null },
   type: { type: String },
   inspector: { type: String },

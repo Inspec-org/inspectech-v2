@@ -24,11 +24,16 @@ function Dashboard() {
 
     useEffect(() => {
         const departmentName = searchParams.get("department");
-        if (departmentName && departments.length > 0) {
-            const dept = departments.find(d => d.name === departmentName) ?? null;
-            setSelectedDepartment(dept);
+        if (departments.length > 0) {
+            if (departmentName) {
+                const dept = departments.find(d => d.name === departmentName) ?? null;
+                setSelectedDepartment(dept);
+            } else if (!selectedDepartment) {
+                const defaultDept = departments.find(d => d.name === 'US Purchase Trailers') ?? null;
+                setSelectedDepartment(defaultDept);
+            }
         }
-    }, [departments, searchParams]);
+    }, [departments, searchParams, selectedDepartment]);
     const getDepartments = async () => {
         try {
             const res = await apiRequest("/api/departments/get-departments");

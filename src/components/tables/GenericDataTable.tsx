@@ -23,6 +23,7 @@ interface GenericDataTableProps<T> {
   data: T[]; // Make sure each item includes a `tab` field if using tab filtering
   columns: Column<T>[];
   pageSize?: number;
+  totalCount?: number
   setPageSize?: React.Dispatch<React.SetStateAction<number>>;
   customTabFilter?: (item: T, tab: string) => boolean;
   emptyStateImages?: { [title: string]: string };
@@ -46,6 +47,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   customTabFilter,
   data,
   columns,
+  totalCount,
   emptyStateImages,
   pageSize = 10,
   setPageSize,
@@ -211,7 +213,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                   <div className="text-sm text-gray-600">
                     Showing <span className="font-semibold">{((currentPage - 1) * pageSize) + 1}</span> to{" "}
                     <span className="font-semibold">{Math.min(currentPage * pageSize, tabFilteredData.length)}</span> of{" "}
-                    <span className="font-semibold">{tabFilteredData.length}</span> results
+                    <span className="font-semibold">{totalCount}</span> results
                   </div>
                   <div className="h-5 w-0.5 bg-black sm:block hidden" />
                   <div className="flex items-center gap-2 text-sm text-gray-600">

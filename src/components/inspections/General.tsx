@@ -157,14 +157,14 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                     </label>
                     <div className="flex gap-2 items-center">
                         <input
-                            type="number"
+                            type="number" min={0}
                             value={formData.durationMin}
                             onChange={(e) => handleChange("durationMin", e.target.value)}
                             className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
                         />
                         <span className="text-sm text-gray-500">min</span>
                         <input
-                            type="number"
+                            type="number" min={0}
                             value={formData.durationSec}
                             onChange={(e) => handleChange("durationSec", e.target.value)}
                             className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
@@ -178,21 +178,21 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                     <label className="block text-sm font-medium text-gray-700">Date</label>
                     <div className="flex gap-2 items-center">
                         <input
-                            type="number"
+                            type="number" min={0}
                             value={formData.dateDay}
                             onChange={(e) => handleChange("dateDay", e.target.value)}
                             className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
                         />
                         <span className="text-gray-400">/</span>
                         <input
-                            type="number"
+                            type="number" min={0}
                             value={formData.dateMonth}
                             onChange={(e) => handleChange("dateMonth", e.target.value)}
                             className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
                         />
                         <span className="text-gray-400">/</span>
                         <input
-                            type="number"
+                            type="number" min={0}
                             value={formData.dateYear}
                             onChange={(e) => handleChange("dateYear", e.target.value)}
                             className="w-20 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"

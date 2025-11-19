@@ -57,19 +57,19 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
         <div className="">
             <div className="">
 
-                <div className={`flex  ${prop === "single" ? "md:flex-row flex-col" : "flex-col"} justify-between items-start gap-2 mb-5`}>
+                <div className={`flex  ${prop === "single" ? "md:flex-row flex-col mb-5" : "flex-col px-4"} justify-between items-start gap-2 `}>
                     {/* Identification & Registration */}
                     <div className={`rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full"}`}>
                         <button
                             onClick={() => toggleSection('identification')}
-                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 mb-4"
+                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
                         >
                             <h2 className={`text-sm  font-semibold text-gray-900`}>Identification & Registration</h2>
                             <span className="text-gray-400">{expandedSections.identification ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
                         </button>
 
                         {expandedSections.identification && (
-                            <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg">
+                            <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg w-full">
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">PO Number</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
@@ -94,7 +94,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Equipment ID/Trailer Number</label>
+                                    <div className='flex-1'>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Equipment ID/Trailer Number</label>
+                                    </div>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -199,7 +201,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">License Plate State/Province</label>
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">License Plate State/Province</label>
+                                    </div>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -285,14 +289,14 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                     <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full"}`}>
                         <button
                             onClick={() => toggleSection('sensors')}
-                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 mb-4"
+                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
                         >
                             <h2 className={`text-sm  font-semibold text-gray-900`}>Sensors & Electrical</h2>
                             <span className="text-gray-400">{expandedSections.sensors ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
                         </button>
 
                         {expandedSections.sensors && (
-                            <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg">
+                            <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg w-full">
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">ABS Sensor</label>
                                     <div className="flex gap-4">
@@ -531,10 +535,10 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                     </div>
                 </div>
                 {/* Physical Dimensions & Components */}
-                <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full"} mb-5`}>
+                <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full mb-5" : "w-full px-4"}`}>
                     <button
                         onClick={() => toggleSection('dimensions')}
-                        className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 mb-4"
+                        className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
                     >
                         <h2 className={`text-sm  font-semibold text-gray-900`}>Physical Dimensions & Components</h2>
                         <span className="text-gray-400">{expandedSections.dimensions ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
@@ -657,10 +661,10 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                 </div>
 
                 {/* Features & Appearance */}
-                <div className={`bg-white rounded-lg mt-4 ${prop === "single" ? "md:w-1/2 w-full" : "w-full"}`}>
+                <div className={`bg-white rounded-lg mt-4 ${prop === "single" ? "md:w-1/2 w-full" : "w-full px-4"}`}>
                     <button
                         onClick={() => toggleSection('features')}
-                        className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 mb-4"
+                        className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
                     >
                         <h2 className={`text-sm  font-semibold text-gray-900`}>Features & Appearance</h2>
                         <span className="text-gray-400">{expandedSections.features ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>

@@ -39,7 +39,7 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
     } else {
       // Refresh token invalid → logout
       localStorage.removeItem("accessToken");
-      window.location.href = "/login";
+      window.location.href = "/signin";
       return res;
     }
   }
