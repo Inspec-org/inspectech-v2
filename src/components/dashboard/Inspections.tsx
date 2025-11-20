@@ -23,7 +23,7 @@ type InspectionData = {
 export const dummyInspections: InspectionData[] = [
     {
         id: "1",
-        status: "Completed",
+        status: "complete",
         type: "Safety Inspection",
         inspector: "John Smith",
         vendor: "Cappadocia Travel Co.",
@@ -33,7 +33,7 @@ export const dummyInspections: InspectionData[] = [
     },
     {
         id: "2",
-        status: "Pending",
+        status: "pass",
         type: "Quality Check",
         inspector: "Fatma Kaya",
         vendor: "Skyline Tours",
@@ -43,7 +43,7 @@ export const dummyInspections: InspectionData[] = [
     },
     {
         id: "3",
-        status: "In Progress",
+        status: "incomplete",
         type: "Maintenance Audit",
         inspector: "Ali Demir",
         vendor: "Blue Horizon Travels",
@@ -53,7 +53,7 @@ export const dummyInspections: InspectionData[] = [
     },
     {
         id: "4",
-        status: "Completed",
+        status: "complete",
         type: "Health & Safety Check",
         inspector: "Mehmet Yildiz",
         vendor: "Anatolia Adventures",
@@ -63,7 +63,7 @@ export const dummyInspections: InspectionData[] = [
     },
     {
         id: "5",
-        status: "Pending",
+        status: "pass",
         type: "Vehicle Inspection",
         inspector: "Elif Aydin",
         vendor: "Historic Gateways",
@@ -225,14 +225,20 @@ export default function Inspections() {
             accessor: "status",
             cell: (row) => (
                 <span
-                    className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${row.status === "Completed"
-                        ? "bg-green-100 text-green-700"
-                        : row.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-blue-100 text-blue-700"
+                    className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${row.status === "complete"
+                        ? "bg-[#7522BB1A] text-[#7522BB]"
+                        : row.status === "incomplete"
+                            ? "bg-blue-100 text-blue-700"
+                            : row.status === "needs review"
+                                ? "bg-[#FB923C1A] text-[#FB923C]"
+                                : row.status === "pass"
+                                    ? "bg-[#16A34A1A] text-[#16A34A]"
+                                    : row.status === "fail"
+                                        ? "bg-red-100 text-red-700"
+                                        : ""
                         }`}
                 >
-                    {row.status}
+                    {row.status.toUpperCase()}
                 </span>
             ),
         },

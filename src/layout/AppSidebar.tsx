@@ -27,39 +27,40 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
-  {
-    icon: <Home />,
-    name: "Dashboard",
-    path: "/dashboard",
-  },
-  {
-    icon: <ClipboardCheck />,
-    name: "Inspections",
-    path: "/inspections",
-  },
-  {
-    icon: <BarChart4 />,
-    name: "Reports",
-    path: "/reports",
-  },
-  {
-    icon: <Users />,
-    name: "Users",
-    path: "/users"
-  },
-  {
-    icon: <Mail />,
-    name: "Request Admin Review",
-    path: "/admin-review"
-  },
-];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
   const pathname = usePathname();
   const { logout, user, session_id, setUser } = useContext(UserContext);
-  const [dept,setDept] = useState("");
+  const [dept, setDept] = useState("");
+
+  const navItems: NavItem[] = [
+    {
+      icon: <Home />,
+      name: "Dashboard",
+      path: `/${user?.role}/dashboard`,
+    },
+    {
+      icon: <ClipboardCheck />,
+      name: "Inspections",
+      path: `/${user?.role}/inspections`,
+    },
+    {
+      icon: <BarChart4 />,
+      name: "Reports",
+      path: "/reports",
+    },
+    {
+      icon: <Users />,
+      name: "Users",
+      path: "/users"
+    },
+    {
+      icon: <Mail />,
+      name: "Request Admin Review",
+      path: "/admin-review"
+    },
+  ];
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -228,11 +229,32 @@ const AppSidebar: React.FC = () => {
   };
 
   useEffect(() => {
-    const dept= sessionStorage.getItem('selectedDepartment');
-    console.log(dept);
-    if (dept) {
-      setDept(dept);
-    }
+    const read = () => {
+      const v = sessionStorage.getItem("selectedDepartment") || "";
+      setDept(v);
+    };
+
+    read();
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "selectedDepartment") {
+        setDept(e.newValue || "");
+      }
+    };
+
+    const onDept = (e: Event) => {
+      const d = (e as CustomEvent<string>).detail;
+      if (typeof d === "string") setDept(d);
+      else read();
+    };
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("selectedDepartmentChanged", onDept as EventListener);
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("selectedDepartmentChanged", onDept as EventListener);
+    };
   }, []);
 
   return (

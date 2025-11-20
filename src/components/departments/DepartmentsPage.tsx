@@ -36,6 +36,7 @@ export default function DepartmentsPage() {
     router.push(`dashboard?department=${department.name}`);
     sessionStorage.setItem('selectedDepartment', department.name);
     sessionStorage.setItem('selectedDepartmentId', department._id || '');
+    window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: department.name }));
     // Navigate to department dashboard
   };
 

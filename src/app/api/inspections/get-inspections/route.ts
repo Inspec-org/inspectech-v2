@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     const limit = parseInt(body.limit ?? 10, 10);
     const idsOnly: boolean = Boolean(body.idsOnly);
     const department = body.department ?? undefined;
+    const vendorId = body.vendorId ?? undefined;
 
     const filter = body.filter ?? {};
     const unitId = filter.unitId ?? undefined;
@@ -89,8 +90,9 @@ export async function POST(req: NextRequest) {
         { type: new RegExp(search, "i") },
       ];
     }
-    console.log("dept",department)
     if (department) query.departmentId = department;
+
+    if (vendorId) query.userId = vendorId;
 
 
 
@@ -100,6 +102,7 @@ export async function POST(req: NextRequest) {
       const allUnitIds = all.map((d: any) => d.unitId);
       return NextResponse.json({ success: true, allUnitIds, total });
     }
+    console.log(query);
 
     const inspections = await Inspection.find(query)
       .sort({ createdAt: -1 })

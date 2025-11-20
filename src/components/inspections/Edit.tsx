@@ -157,7 +157,7 @@ export default function Edit({ type }: { type: string }) {
   const params = useParams<{ inspection_id: string }>();
   const searchParams = useSearchParams();
   useEffect(() => {
-    const deptName = sessionStorage.getItem('selectedDepartment') || 'US Purchase Trailers';
+    const deptName = sessionStorage.getItem('selectedDepartment');
     (async () => {
       try {
         const res = await apiRequest('/api/departments/get-departments');

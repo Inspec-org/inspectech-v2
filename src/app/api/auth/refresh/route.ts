@@ -9,11 +9,15 @@ export async function GET() {
     return Response.json({ success: false, message: "No refresh token" }, { status: 401 });
 
   try {
-    // tell TypeScript this is JwtPayload with userId
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || "") as JwtPayload & { userId: string };
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || "") as JwtPayload & { userId?: string; id?: string };
+
+    const userId = decoded.id || decoded.userId;
+    if (!userId) {
+      return Response.json({ success: false, message: "Malformed refresh token" }, { status: 401 });
+    }
 
     const newAccessToken = jwt.sign(
-      { userId: decoded.userId },
+      { id: userId },
       process.env.JWT_SECRET || "",
       { expiresIn: "1d" }
     );

@@ -36,14 +36,13 @@ function Inspections() {
     const [filters, setFilters] = useState<InspectionData[]>([]);
     const [totalInspections, setTotalInspections] = useState(0);
     const currentPage = parseInt(searchParams.get("user_page") || "1", 10);
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
     const { user } = useContext(UserContext);
     const [department, setDepartment] = useState("");
     const [search, setSearch] = useState("");
     const [limit, setLimit] = useState(10);
     const pageTabs = useMemo(() => {
         const totalPages = Math.ceil(totalInspections / limit);
-        console.log(totalPages)
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
     }, [totalInspections, limit]);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -94,10 +93,13 @@ function Inspections() {
     // Count total selected filters
     const totalFiltersCount = Object.values(selectedFilters).reduce((sum, arr) => sum + arr.length, 0);
     const [dept, setDept] = useState<string | null>(null);
+    const [vendor, setVendor] = useState<string | null>(null);
 
     useEffect(() => {
         const storedDept = sessionStorage.getItem("selectedDepartmentId");
         setDept(storedDept);
+        const storedVendor = sessionStorage.getItem("selectedVendorId");
+        setVendor(storedVendor);
     }, []);
 
     const handleChange = (field: string, value: string) => {
@@ -146,11 +148,12 @@ function Inspections() {
     useEffect(() => {
         const getInspections = async () => {
             try {
+                console.log("api running")
                 setLoading(true);
                 const res = await apiRequest(`/api/inspections/get-inspections`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ page: currentPage, limit, filter: selectedFilters, department: dept }),
+                    body: JSON.stringify({ page: currentPage, limit, filter: selectedFilters, department: dept, vendorId: vendor }),
                 });
                 const json = await res.json();
                 if (res.ok && json.success) {
@@ -182,13 +185,16 @@ function Inspections() {
             }
         };
 
-        getInspections();
-    }, [currentPage, limit, search, selectedFilters,dept]);
+        setTimeout(() => {
+            console.log(currentPage, limit, selectedFilters, dept, vendor)
+            if (currentPage && limit && selectedFilters && dept && vendor)
+                getInspections();
+        }, 2000);
+    }, [currentPage, limit, search, selectedFilters, dept, vendor]);
 
     useEffect(() => {
         const getfilters = async () => {
             try {
-                setLoading(true);
                 const res = await apiRequest(`/api/inspections/get-filters`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -215,14 +221,15 @@ function Inspections() {
             } catch (e: any) {
                 toast.error(e.message || 'Server error');
                 setFilters([]);
-            } finally {
-                setLoading(false);
             }
         };
 
         getfilters();
 
     }, [dept])
+    useEffect(() => {
+        console.log("loading ", loading)
+    }, [loading])
 
     const columns: Column<InspectionData>[] = [
         {
@@ -365,15 +372,20 @@ function Inspections() {
                             <Edit className='w-4 h-4' />
                             Batch Edit ({selectedRows.length})
                         </button>
+                        {user?.role === "vendor" && (
+                            <>
+                                <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/new-inspection")} >
+                                    <Plus className='w-4 h-4' />
+                                    Add Inspection
+                                </button>
+                                <button className='flex gap-2 items-center bg-[#2A85EF] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/BatchCreate")}>
+                                    <Plus className='w-4 h-4' />
+                                    Batch Create
+                                </button>
+                            </>
+                        )}
 
-                        <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/new-inspection")} >
-                            <Plus className='w-4 h-4' />
-                            Add Inspection
-                        </button>
-                        <button className='flex gap-2 items-center bg-[#2A85EF] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/BatchCreate")}>
-                            <Plus className='w-4 h-4' />
-                            Batch Create
-                        </button>
+
                     </div>
 
                 </div>
