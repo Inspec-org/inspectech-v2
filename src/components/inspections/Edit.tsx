@@ -155,7 +155,6 @@ export default function Edit({ type }: { type: string }) {
   });
 
   const params = useParams<{ inspection_id: string }>();
-  const searchParams = useSearchParams();
   useEffect(() => {
     const deptName = sessionStorage.getItem('selectedDepartment');
     (async () => {
