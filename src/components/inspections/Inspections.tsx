@@ -374,11 +374,11 @@ function Inspections() {
                         </button>
                         {user?.role === "vendor" && (
                             <>
-                                <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/new-inspection")} >
+                                <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push(`/${user?.role}/inspections/new-inspection`)} >
                                     <Plus className='w-4 h-4' />
                                     Add Inspection
                                 </button>
-                                <button className='flex gap-2 items-center bg-[#2A85EF] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/BatchCreate")}>
+                                <button className='flex gap-2 items-center bg-[#2A85EF] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push(`/${user?.role}/inspections/BatchCreate`)}>
                                     <Plus className='w-4 h-4' />
                                     Batch Create
                                 </button>
@@ -426,7 +426,7 @@ function Inspections() {
                 )}
                 {/* table */}
                 <div className="h-full">
-                    <GenericDataTable title="" data={inspections} totalCount={totalInspections} tabs={pageTabs} columns={columns} pageSize={limit} setPageSize={setLimit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onRowClick={(row) => { router.push(`/inspections/Edit/${row.id}`) }} emptyStateImages={{
+                    <GenericDataTable title="" data={inspections} totalCount={totalInspections} tabs={pageTabs} columns={columns} pageSize={limit} setPageSize={setLimit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onRowClick={(row) => { router.push(`/${user?.role}/inspections/Edit/${row.id}`) }} emptyStateImages={{
                         "All Users": "/images/No Users.svg"
                     }}
                     />
