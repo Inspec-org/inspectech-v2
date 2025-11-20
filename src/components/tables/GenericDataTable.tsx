@@ -32,6 +32,7 @@ interface GenericDataTableProps<T> {
   loading: boolean,
   setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   querykey?: string
+  min_height?:string
   search?: string
   setSearch?: React.Dispatch<React.SetStateAction<string>>
   onRowClick?: (row: T) => void
@@ -41,6 +42,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   title,
   title_font_size,
   tabs,
+  min_height,
   custom_tabs,
   activeTab,
   onTabChange,
@@ -169,7 +171,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
       ) : (
         <>
           {/* Table */}
-          <div className="overflow-x-auto border-t border-gray-200">
+          <div className={`overflow-x-auto border-t border-gray-200 h-[${min_height}]`}>
             <table className="min-w-full text-sm">
               <thead>
                 <tr className={`text-left font-raleway ${title !== "Recent Inspection Orders" ? "bg-[#F2EBFF] text-[#3730A3]" : ""} `}>

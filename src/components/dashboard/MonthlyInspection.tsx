@@ -3,6 +3,8 @@ import dynamic from "next/dynamic";
 import useSWR from "swr";
 import { useMemo, useState } from "react";
 import type { ApexOptions } from "apexcharts";
+import { monthlyInspection } from "./Dashboard";
+import { ClipLoader } from "react-spinners";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
     ssr: false,
@@ -34,14 +36,29 @@ type InspectionApi = {
 
 type ViewType = "Monthly" | "Quarterly" | "Annually";
 
-export default function MonthlyInspectionChart({ year }: { year?: number }) {
+
+
+export default function MonthlyInspectionChart({ data, loading }: { data?: monthlyInspection, loading: boolean }) {
     const [view, setView] = useState<ViewType>("Monthly");
 
-    const { data } = useSWR<InspectionApi>(
-        `/api/admin/inspections/summary${year ? `?year=${year}` : ""}`,
-        fetcher,
-        { revalidateOnFocus: false }
-    );
+    const chartData = useMemo(() => {
+        if (!data) return null;
+
+        const selected =
+            view === "Monthly" ? data.monthly :
+                view === "Quarterly" ? data.quarterly :
+                    data.annually;
+
+        const labels =
+            view === "Monthly" ? ["W1", "W2", "W3", "W4"] :
+                view === "Quarterly" ? ["Q1", "Q2", "Q3", "Q4"] :
+                    MONTHS; // 12 months
+
+        const passData = selected.map(i => i.pass);
+        const failData = selected.map(i => i.fail);
+
+        return { labels, passData, failData };
+    }, [data, view]);
 
     const options: ApexOptions = useMemo(
         () => ({
@@ -79,7 +96,7 @@ export default function MonthlyInspectionChart({ year }: { year?: number }) {
                 },
             },
             xaxis: {
-                categories: data?.labels ?? MONTHS,
+                categories: chartData?.labels ?? [],
                 axisBorder: { show: false },
                 axisTicks: { show: false },
                 labels: {
@@ -132,22 +149,17 @@ export default function MonthlyInspectionChart({ year }: { year?: number }) {
                 },
             },
         }),
-        [data?.labels]
+        [chartData?.labels]
     );
 
     const series = useMemo(
         () => [
-            {
-                name: "Pass",
-                data: data?.passData ?? [190, 195, 185, 180, 175, 185, 195, 220, 240, 245, 250, 248]
-            },
-            {
-                name: "Fail",
-                data: data?.failData ?? [45, 50, 48, 52, 55, 60, 65, 80, 95, 110, 130, 140]
-            },
+            { name: "Pass", data: chartData?.passData ?? [] },
+            { name: "Fail", data: chartData?.failData ?? [] }
         ],
-        [data?.passData, data?.failData]
+        [chartData]
     );
+
 
     return (
         <div className="bg-white px-6 pt-6 border border-gray-200 rounded-2xl">
@@ -161,8 +173,8 @@ export default function MonthlyInspectionChart({ year }: { year?: number }) {
                             key={type}
                             onClick={() => setView(type)}
                             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${view === type
-                                    ? "bg-white text-gray-900 shadow-sm"
-                                    : "text-gray-600 hover:text-gray-900"
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-600 hover:text-gray-900"
                                 }`}
                         >
                             {type}
@@ -173,12 +185,20 @@ export default function MonthlyInspectionChart({ year }: { year?: number }) {
 
             <div className="max-w-full overflow-x-auto">
                 <div className="min-w-[600px]">
-                    <ReactApexChart
-                        options={options}
-                        series={series}
-                        type="area"
-                        height={290}
-                    />
+                    {loading ? (
+                        <div className="flex justify-center items-center h-[290px]">
+                            <ClipLoader color="#465fff" size={30} />
+                        </div>
+                    ) : (
+                        <ReactApexChart
+                            options={options}
+                            series={series}
+                            type="area"
+                            height={290}
+                        />
+                    )}
+
+
                 </div>
             </div>
         </div>
