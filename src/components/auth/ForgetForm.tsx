@@ -130,6 +130,8 @@ export default function ForgetForm() {
 
         } catch (error) {
             console.error("Network Error:", error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(errorMessage);
         } finally {
             setIsOTPLoading(false);
         }

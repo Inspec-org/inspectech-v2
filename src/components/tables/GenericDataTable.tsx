@@ -158,12 +158,13 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
         </div>
       ) : !loading && isEmpty ? (
         <div className="flex flex-col items-center justify-center py-20">
-          {emptyImage && (
+          {/* {emptyImage && (
             <img src={emptyImage} alt="No data" className="w-52 h-52 mb-4 object-contain" />
           )}
           <p className="text-lg text-gray-600 font-medium">
             {entityLabel?.toLowerCase()} added yet!!
-          </p>
+          </p> */}
+          No Data
         </div>
       ) : (
         <>

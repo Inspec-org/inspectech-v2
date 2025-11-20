@@ -17,7 +17,7 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
-import { BarChart, BarChart2, BarChart4, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
+import { BarChart, BarChart2, BarChart4, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
 import { UserContext } from "@/context/authContext";
 
 type NavItem = {
@@ -48,18 +48,24 @@ const AppSidebar: React.FC = () => {
     {
       icon: <BarChart4 />,
       name: "Reports",
-      path: "/reports",
+      path: `/${user?.role}/reports`,
     },
     {
       icon: <Users />,
       name: "Users",
-      path: "/users"
+      path: `/${user?.role}/users`
     },
-    {
-      icon: <Mail />,
-      name: "Request Admin Review",
-      path: "/admin-review"
-    },
+    user?.role === "vendor"
+      ? {
+        icon: <Mail />,
+        name: "Request Admin Review",
+        path: `/${user?.role}/request-admin-review`,
+      }
+      : {
+        icon: <CircleQuestionMark />,
+        name: "Inspection Vendor Tracker",
+        path: `/${user?.role}/inspection-vendor-tracker`,
+      },
   ];
 
   const renderMenuItems = (
