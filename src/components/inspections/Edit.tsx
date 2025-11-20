@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { ArrowLeft, Users, Trash2, Save, Database, Info, CheckSquare, Image, Filter, Check, Edit2, CheckCircle, Briefcase } from 'lucide-react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import General from './General';
@@ -8,6 +8,7 @@ import Media from './Media';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import { UserContext } from '@/context/authContext';
 
 export interface FormData {
   unitId: string;
@@ -80,6 +81,7 @@ export interface FormData {
 export default function Edit({ type }: { type: string }) {
   const [activeTab, setActiveTab] = useState('general');
   const Router = useRouter();
+  const { user } = useContext(UserContext);
   const [isSaved, setIsSaved] = useState(false);
   const [lastSaved, setLastSaved] = useState<FormData | null>(null);
   const [hasSavedOnce, setHasSavedOnce] = useState(false);
@@ -167,7 +169,7 @@ export default function Edit({ type }: { type: string }) {
             setFormData(prev => ({ ...prev, departmentId: dept._id }));
           }
         }
-      } catch (e: any) {}
+      } catch (e: any) { }
     })();
   }, []);
 
@@ -346,7 +348,7 @@ export default function Edit({ type }: { type: string }) {
                 </button>
 
 
-                <button className='flex gap-2 items-center bg-[#10B981] hover:bg-[#0F9D58] border px-2 py-2 text-sm rounded-xl text-white w-full whitespace-nowrap' disabled={!isSaved} onClick={() => Router.push(`/inspections`)}>
+                <button className='flex gap-2 items-center bg-[#10B981] hover:bg-[#0F9D58] border px-2 py-2 text-sm rounded-xl text-white w-full whitespace-nowrap' disabled={!isSaved} onClick={() => Router.push(`/${user?.role}/inspections`)}>
                   <Check size={18} />
                   <span>Create Inspection</span>
                 </button>
