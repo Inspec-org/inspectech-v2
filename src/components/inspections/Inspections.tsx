@@ -34,17 +34,17 @@ function Inspections() {
     const searchParams = useSearchParams();
     const [inspections, setInspections] = useState<InspectionData[]>([]);
     const [filters, setFilters] = useState<InspectionData[]>([]);
-    const [totaluser, setTotaluser] = useState(5);
+    const [totalInspections, setTotalInspections] = useState(0);
     const currentPage = parseInt(searchParams.get("user_page") || "1", 10);
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
     const { user } = useContext(UserContext);
     const [department, setDepartment] = useState("");
     const [search, setSearch] = useState("");
     const [limit, setLimit] = useState(10);
     const pageTabs = useMemo(() => {
-        const totalPages = Math.ceil(totaluser / limit);
+        const totalPages = Math.ceil(totalInspections / limit);
         return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
-    }, [totaluser, limit]);
+    }, [totalInspections, limit]);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [selectAll, setSelectAll] = useState(false);
     const { isOpen, openModal, closeModal } = useModal();
@@ -92,6 +92,15 @@ function Inspections() {
 
     // Count total selected filters
     const totalFiltersCount = Object.values(selectedFilters).reduce((sum, arr) => sum + arr.length, 0);
+    const [dept, setDept] = useState<string | null>(null);
+    const [vendor, setVendor] = useState<string | null>(null);
+
+    useEffect(() => {
+        const storedDept = sessionStorage.getItem("selectedDepartmentId");
+        setDept(storedDept);
+        const storedVendor = sessionStorage.getItem("selectedVendorId");
+        setVendor(storedVendor);
+    }, []);
 
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -103,13 +112,29 @@ function Inspections() {
         }));
     };
 
-    const handleSelectAll = () => {
+    const handleSelectAll = async () => {
         if (selectAll) {
             setSelectedRows([]);
-        } else {
-            setSelectedRows(inspections.map((row) => row.id));
+            setSelectAll(false);
+            return;
         }
-        setSelectAll(!selectAll);
+        try {
+            const res = await apiRequest(`/api/inspections/get-inspections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idsOnly: true, filter: selectedFilters }),
+            });
+            const json = await res.json();
+            if (res.ok && json.success) {
+                const allIds: string[] = (json.allUnitIds || []).map((id: string) => id);
+                setSelectedRows(allIds);
+                setSelectAll(true);
+            } else {
+                toast.error(json.message || 'Failed to select all');
+            }
+        } catch (e: any) {
+            toast.error(e.message || 'Server error');
+        }
     };
 
     const handleSelectRow = (id: string) => {
@@ -123,16 +148,15 @@ function Inspections() {
     useEffect(() => {
         const getInspections = async () => {
             try {
-                console.log(selectedFilters)
+                console.log("api running")
                 setLoading(true);
                 const res = await apiRequest(`/api/inspections/get-inspections`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ page: currentPage, limit, filter: selectedFilters }),
+                    body: JSON.stringify({ page: currentPage, limit, filter: selectedFilters, department: dept, vendorId: vendor }),
                 });
                 const json = await res.json();
                 if (res.ok && json.success) {
-                    setTotaluser(json.total || 0);
                     const mapped: InspectionData[] = (json.inspections || []).map((doc: any) => ({
                         id: doc.unitId,
                         status: (doc.inspectionStatus || '').toString(),
@@ -144,36 +168,40 @@ function Inspections() {
                         date: doc.createdAt ? new Date(doc.createdAt).toISOString().slice(0, 10) : '',
                         delivered: doc.delivered === 'yes' ? 'Yes' : doc.delivered === 'no' ? 'No' : '',
                     }));
+                    console.log(json)
+                    setTotalInspections(json.total);
                     setInspections(mapped);
                 } else {
                     toast.error(json.message || 'Failed to fetch inspections');
                     setInspections([]);
-                    setTotaluser(0);
+                    setTotalInspections(0);
                 }
             } catch (e: any) {
                 toast.error(e.message || 'Server error');
                 setInspections([]);
-                setTotaluser(0);
+                setTotalInspections(0);
             } finally {
                 setLoading(false);
             }
         };
 
-        getInspections();
-    }, [currentPage, limit, search, selectedFilters]);
+        setTimeout(() => {
+            console.log(currentPage, limit, selectedFilters, dept, vendor)
+            if (currentPage && limit && selectedFilters && dept && vendor)
+                getInspections();
+        }, 2000);
+    }, [currentPage, limit, search, selectedFilters, dept, vendor]);
 
     useEffect(() => {
         const getfilters = async () => {
             try {
-                setLoading(true);
                 const res = await apiRequest(`/api/inspections/get-filters`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}),
+                    body: JSON.stringify({ department: dept }),
                 });
                 const json = await res.json();
                 if (res.ok && json.success) {
-                    setTotaluser(json.total || 0);
                     const mapped: InspectionData[] = (json.inspections || []).map((doc: any) => ({
                         id: doc.unitId,
                         status: (doc.inspectionStatus || '').toString(),
@@ -189,20 +217,19 @@ function Inspections() {
                 } else {
                     toast.error(json.message || 'Failed to fetch inspections');
                     setFilters([]);
-                    setTotaluser(0);
                 }
             } catch (e: any) {
                 toast.error(e.message || 'Server error');
                 setFilters([]);
-                setTotaluser(0);
-            } finally {
-                setLoading(false);
             }
         };
 
         getfilters();
 
-    }, [])
+    }, [dept])
+    useEffect(() => {
+        console.log("loading ", loading)
+    }, [loading])
 
     const columns: Column<InspectionData>[] = [
         {
@@ -339,21 +366,26 @@ function Inspections() {
                     <div className='flex flex-wrap gap-2 text-white'>
                         <button
                             onClick={openEditModal}
-                            className={`flex gap-2 items-center bg-[#6BD6B6] px-2 py-2 text-sm rounded-xl whitespace-nowrap ${selectedRows.length === 0 ? 'pointer-events-none-none' : 'hover:bg-[#5cc6a8]'}`}
+                            className={`flex gap-2 items-center  px-2 py-2 text-sm rounded-xl whitespace-nowrap hover:bg-[#5cc6a8] bg-[#047857] ${selectedRows.length === 0 ? 'cursor-not-allowed opacity-60' : ''}`}
                             disabled={selectedRows.length === 0}
                         >
                             <Edit className='w-4 h-4' />
                             Batch Edit ({selectedRows.length})
                         </button>
+                        {user?.role === "vendor" && (
+                            <>
+                                <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/new-inspection")} >
+                                    <Plus className='w-4 h-4' />
+                                    Add Inspection
+                                </button>
+                                <button className='flex gap-2 items-center bg-[#2A85EF] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/BatchCreate")}>
+                                    <Plus className='w-4 h-4' />
+                                    Batch Create
+                                </button>
+                            </>
+                        )}
 
-                        <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/new-inspection")} >
-                            <Plus className='w-4 h-4' />
-                            Add Inspection
-                        </button>
-                        <button className='flex gap-2 items-center bg-[#2A85EF] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push("/inspections/BatchCreate")}>
-                            <Plus className='w-4 h-4' />
-                            Batch Create
-                        </button>
+
                     </div>
 
                 </div>
@@ -394,15 +426,15 @@ function Inspections() {
                 )}
                 {/* table */}
                 <div className="h-full">
-                    <GenericDataTable title="" data={inspections} tabs={pageTabs} columns={columns} pageSize={limit} setPageSize={setLimit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onRowClick={(row) => { router.push(`/inspections/Edit/${row.id}`) }} emptyStateImages={{
+                    <GenericDataTable title="" data={inspections} totalCount={totalInspections} tabs={pageTabs} columns={columns} pageSize={limit} setPageSize={setLimit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onRowClick={(row) => { router.push(`/inspections/Edit/${row.id}`) }} emptyStateImages={{
                         "All Users": "/images/No Users.svg"
                     }}
                     />
                 </div>
             </div>
-            <ReassignDepartmentModal isOpen={isOpen} onClose={closeModal} department={department} onDepartmentChange={setDepartment} />
+            <ReassignDepartmentModal isOpen={isOpen} onClose={closeModal} department={department} onDepartmentChange={setDepartment} selectedUnitIds={selectedRows} />
 
-            <BatchEditInspectionsModal isOpen={isEditModalOpen} onClose={closeEditModal} formData={formData} onChange={handleChange} onDropdownChange={handleDropdownChange} />
+            <BatchEditInspectionsModal isOpen={isEditModalOpen} onClose={closeEditModal} formData={formData} onChange={handleChange} onDropdownChange={handleDropdownChange} selectedUnitIds={selectedRows} />
 
             <ExportInspectionsModal isOpen={isExportOpen} onClose={closeExportModal} selectedExportType={selectedExportType} onSelectedExportTypeChange={setSelectedExportType} />
 

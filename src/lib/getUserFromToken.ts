@@ -10,11 +10,12 @@ export async function getUserFromToken(token: string | undefined) {
     const JWT_SECRET = process.env.JWT_SECRET;
     if (!JWT_SECRET) throw new Error("JWT_SECRET is missing");
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
-    if (!decoded.id) return null;
+    const decoded = jwt.verify(token, JWT_SECRET) as { id?: string; userId?: string; email?: string };
+    const id = decoded.id || decoded.userId;
+    if (!id) return null;
 
     await connectDB();
-    const user = await User.findById(decoded.id).select("username email avatar _id role");
+    const user = await User.findById(id).select("username email avatar _id role");
     return user;
   } catch {
     return null;

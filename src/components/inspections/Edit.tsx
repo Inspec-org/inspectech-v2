@@ -5,12 +5,13 @@ import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import General from './General';
 import CheckList from './CheckLIst';
 import Media from './Media';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 
 export interface FormData {
   unitId: string;
+  departmentId: string;
   inspectionStatus: string;
   reviewReason: string;
   type: string;
@@ -87,6 +88,7 @@ export default function Edit({ type }: { type: string }) {
 
   const [formData, setFormData] = useState<FormData>({
     unitId: '',
+    departmentId: '',
     inspectionStatus: '',
     reviewReason: '',
     type: '53 Foot Trailer',
@@ -153,6 +155,22 @@ export default function Edit({ type }: { type: string }) {
   });
 
   const params = useParams<{ inspection_id: string }>();
+  useEffect(() => {
+    const deptName = sessionStorage.getItem('selectedDepartment');
+    (async () => {
+      try {
+        const res = await apiRequest('/api/departments/get-departments');
+        const json = await res.json();
+        if (res.ok) {
+          const dept = (json.departments || []).find((d: any) => d.name === deptName);
+          if (dept?._id) {
+            setFormData(prev => ({ ...prev, departmentId: dept._id }));
+          }
+        }
+      } catch (e: any) {}
+    })();
+  }, []);
+
   useEffect(() => {
     if (type === "edit" && params?.inspection_id) {
       const unitId = params.inspection_id as string;

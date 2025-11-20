@@ -3,6 +3,7 @@ import Image from 'next/image';
 import React from 'react';
 
 export interface Department {
+  _id?: string;
   id: string;
   name: string;
   description: string;

@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 const API_KEY = "v10gv2f4vdfhbtymhsdfvweuyv678gv8erh";
 
 export function buildRequestBody(data: object) {
@@ -9,40 +10,36 @@ export function buildRequestBody(data: object) {
 
 // utils/apiRequest.ts
 export async function apiRequest(url: string, options: RequestInit = {}) {
-  let accessToken = localStorage.getItem("session_id");
+  const stored = localStorage.getItem("session_id") || Cookies.get("session_id");
 
-  // Add Authorization header if token exists
   const res = await fetch(url, {
     ...options,
     headers: {
       ...options.headers,
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(stored ? { Authorization: `Bearer ${stored}` } : {}),
     },
   });
 
-  // If token expired, try refreshing
-  if (res.status === 401) {
-    const refreshRes = await fetch("/api/auth/refresh");
-    const refreshData = await refreshRes.json();
+  if (res.status !== 401) return res;
 
-    if (refreshData.success) {
-      localStorage.setItem("accessToken", refreshData.accessToken);
+  const refreshRes = await fetch("/api/auth/refresh", { credentials: "include" });
+  const refreshData = await refreshRes.json();
 
-      // Retry original request with new access token
-      return fetch(url, {
-        ...options,
-        headers: {
-          ...options.headers,
-          Authorization: `Bearer ${refreshData.accessToken}`,
-        },
-      });
-    } else {
-      // Refresh token invalid → logout
-      localStorage.removeItem("accessToken");
-      window.location.href = "/login";
-      return res;
-    }
+  if (refreshRes.ok && refreshData.success && refreshData.accessToken) {
+    localStorage.setItem("session_id", refreshData.accessToken);
+    Cookies.set("session_id", refreshData.accessToken);
+
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${refreshData.accessToken}`,
+      },
+    });
   }
 
+  Cookies.remove("session_id");
+  localStorage.removeItem("session_id");
+  if (typeof window !== "undefined") window.location.href = "/signin";
   return res;
 }

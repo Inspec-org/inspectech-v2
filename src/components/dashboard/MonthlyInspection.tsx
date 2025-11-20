@@ -151,7 +151,7 @@ export default function MonthlyInspectionChart({ year }: { year?: number }) {
 
     return (
         <div className="bg-white px-6 pt-6 border border-gray-200 rounded-2xl">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex xl:flex-row flex-col justify-between xl:items-center mb-6">
                 <h3 className="font-semibold text-gray-900 text-lg">
                     Monthly Inspection Results
                 </h3>

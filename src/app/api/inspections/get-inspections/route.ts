@@ -13,6 +13,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const page = parseInt(body.page ?? 1, 10);
     const limit = parseInt(body.limit ?? 10, 10);
+    const idsOnly: boolean = Boolean(body.idsOnly);
+    const department = body.department ?? undefined;
+    const vendorId = body.vendorId ?? undefined;
 
     const filter = body.filter ?? {};
     const unitId = filter.unitId ?? undefined;
@@ -31,8 +34,7 @@ export async function POST(req: NextRequest) {
     const deliveredStatuses: string[] | undefined = Array.isArray(filter.deliveredStatuses) ? filter.deliveredStatuses : undefined;
     const search = filter.search ?? undefined;
     const duration = filter.duration ?? undefined;
-    console.log(unitId, unitIds, inspectionStatus, inspectionStatuses, type, types, inspector, inspectors, vendor, vendors, location, locations, delivered, deliveredStatuses, search)
-
+   
     await connectDB();
 
     const query: any = {};
@@ -88,8 +90,20 @@ export async function POST(req: NextRequest) {
         { type: new RegExp(search, "i") },
       ];
     }
+    if (department) query.departmentId = department;
+
+    if (vendorId) query.userId = vendorId;
+
+
 
     const total = await Inspection.countDocuments(query);
+    if (idsOnly) {
+      const all = await Inspection.find(query).select('unitId').lean();
+      const allUnitIds = all.map((d: any) => d.unitId);
+      return NextResponse.json({ success: true, allUnitIds, total });
+    }
+    console.log(query);
+
     const inspections = await Inspection.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)

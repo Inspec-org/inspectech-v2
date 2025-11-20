@@ -2,13 +2,14 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 import Cookies from "js-cookie";
 import { usePathname, useRouter } from "next/navigation";
-import { buildRequestBody } from "@/utils/apiWrapper";
+import { buildRequestBody, apiRequest } from "@/utils/apiWrapper";
 
 // Types
 export interface User {
   email: string;
   username?: string;
   avatar?: string;
+  role?: string;
   _id?: string;
 }
 
@@ -46,10 +47,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const fetchUser = async (sessionId: string) => {
     try {
-      const response = await fetch("/api/auth/fetch_user", {
+      const response = await apiRequest("/api/auth/fetch_user", {
         method: "GET",
         headers: {
-          "Authorization": "Bearer " + sessionId, 
           "Content-Type": "application/json",
         }
       });
@@ -57,12 +57,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       console.log(response)
 
       if (!response.ok) {
-        if ([401, 403].includes(response.status)) {
-          setUser(null);
-          Cookies.remove("session_id");
-          localStorage.removeItem("session_id");
-          setSession_id("");
-        }
+        // if ([401, 403].includes(response.status)) {
+        //   console.log("Unauthorized or Forbidden");
+        //   setUser(null);
+        //   Cookies.remove("session_id");
+        //   localStorage.removeItem("session_id");
+        //   setSession_id("");
+        // }
         throw new Error("Failed to fetch Admin");
       }
 

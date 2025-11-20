@@ -1,28 +1,33 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { ChevronDown, Folder, Building2 } from 'lucide-react';
 import { Department } from '../departments/DepartmentCard';
+import { Vendor } from './Dashboard';
+import { UserContext } from '@/context/authContext';
 
 function Header({
   departments,
   setSelectedDepartment,
   selectedDepartment,
-  vendor,
-  setVendor,
+  vendors,
+  setSelectedVendor,
+  selectedVendor,
 }: {
   departments: Department[];
   setSelectedDepartment: React.Dispatch<React.SetStateAction<Department | null>>;
   selectedDepartment?: Department | null;
-  vendor?: string;
-  setVendor?: (vendor: string) => void;
+  vendors?: Vendor[] | null;
+  setSelectedVendor: React.Dispatch<React.SetStateAction<Vendor | null>>;
+  selectedVendor?: Vendor | null;
 }) {
   const [departmentOpen, setDepartmentOpen] = useState(false);
   const [vendorOpen, setVendorOpen] = useState(false);
+  const { user } = useContext(UserContext);
 
   return (
     <div className="w-full flex flex-col md:flex-row flex-wrap md:items-center gap-6 bg-purple-50/60 px-6 py-3 border-b border-purple-100">
       {/* Department Section */}
-      <div className="flex items-center gap-3">
+      <div className="flex xl:flex-row flex-col xl:items-center gap-3">
         <span className="text-sm font-semibold text-purple-900 tracking-wide">
           DEPARTMENT
         </span>
@@ -38,14 +43,18 @@ function Header({
             <ChevronDown className="w-4 h-4 text-gray-500" />
           </button>
           {departmentOpen && (
-            <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute top-full mt-1 min-w-[220px] bg-white border border-gray-200 rounded-lg shadow-lg z-10">
               <div className="py-1">
                 {departments.map((dept) => (
                   <button
-                    key={dept.id}
+                    key={dept._id}
                     onClick={() => {
+                      console.log('Selected department:', dept);
                       setSelectedDepartment(dept);
                       setDepartmentOpen(false);
+                      sessionStorage.setItem('selectedDepartment', dept.name);
+                      sessionStorage.setItem('selectedDepartmentId', dept._id || '');
+                      window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: dept.name }));
                     }}
                     className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
                   >
@@ -63,7 +72,7 @@ function Header({
       <div className="hidden md:block h-8 w-px bg-purple-200"></div>
 
       {/* Vendor Section */}
-      <div className="flex items-center gap-3">
+      <div className="flex xl:flex-row flex-col xl:items-center gap-3">
         <span className="text-sm font-semibold text-purple-900 tracking-wide">
           VENDOR
         </span>
@@ -75,18 +84,36 @@ function Header({
             <Building2 className="w-4 h-4 text-purple-600" />
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-gray-700 flex-1 text-left">
-              Current Company
+              {selectedVendor?.username || 'ABC Vendor'}
             </span>
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            {user?.role === 'admin' && (
+              <ChevronDown className="w-4 h-4 text-gray-500" />
+            )}
           </button>
           {vendorOpen && (
-            <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute top-full mt-1 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg z-10">
               <div className="py-1">
-                <button className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2">
+                {vendors?.map((vendor) => (
+                  <button
+                    key={vendor._id}
+                    onClick={() => {
+                      console.log('Selected vendor:', vendor);
+                      setSelectedVendor(vendor);
+                      setVendorOpen(false);
+                      sessionStorage.setItem('selectedVendor', vendor.username);
+                      sessionStorage.setItem('selectedVendorId', vendor._id || '');
+                    }}
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
+                  >
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                    {vendor.username}
+                  </button>
+                ))}
+                {/* <button className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-purple-600" />
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
                   Current Company
-                </button>
+                </button> */}
               </div>
             </div>
           )}
