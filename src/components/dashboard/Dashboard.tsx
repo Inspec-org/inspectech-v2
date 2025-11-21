@@ -1,5 +1,5 @@
 'use client'
-import React, { Suspense, useEffect } from 'react'
+import React, { Suspense, useContext, useEffect } from 'react'
 import Header from './Header'
 import { StatsGrid } from './StatCard';
 import MonthlyInspectionChart from './MonthlyInspection';
@@ -11,6 +11,7 @@ import { toast } from 'react-toastify';
 import { Department } from '../departments/DepartmentCard';
 import { useSearchParams } from 'next/navigation';
 import { set } from 'mongoose';
+import { UserContext } from '@/context/authContext';
 
 export interface Vendor {
     _id: string;
@@ -55,6 +56,8 @@ interface dashboadrData {
     stats: stats;
     monthlyInspection: monthlyInspection;
     overall: overallInspection;
+}
+interface recentData {
     recent: recentInspection[]
 }
 
@@ -65,7 +68,10 @@ function Dashboard() {
     const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
     const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(vendors[0]);
     const [dashboardData, setDashboardData] = React.useState<dashboadrData>();
+    const [recentData, setRecentData] = React.useState<recentData>();
     const [loading, setLoading] = React.useState(true);
+    const [recentloading, setRecentLoading] = React.useState(true);
+    const { user } = useContext(UserContext);
 
     useEffect(() => {
         const department = sessionStorage.getItem("selectedDepartment");
@@ -118,6 +124,33 @@ function Dashboard() {
         sessionStorage.setItem('selectedVendorId', vendors[0]?._id || '');
     }, [vendors])
 
+    const getRecent = async () => {
+        const vendorId = sessionStorage.getItem('selectedVendorId')
+        const departmentId = sessionStorage.getItem('selectedDepartmentId')
+        try {
+            setRecentLoading(true)
+            const res = await apiRequest(("/api/dashboard/get_recent_inspections"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ vendorId, departmentId })
+            });
+            if (res.ok) {
+                const json = await res.json();
+                console.log(json)
+                setRecentData(json.dashboard);
+            }
+        } catch (error) {
+            console.error('Error fetching recent inspections', error);
+            const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+            toast.error(errorMessage);
+        }
+        finally {
+            setRecentLoading(false)
+        }
+    }
+
     useEffect(() => {
         const getStats = async () => {
             const vendorId = sessionStorage.getItem('selectedVendorId')
@@ -144,8 +177,10 @@ function Dashboard() {
                 setLoading(false)
             }
         }
+
         if (selectedDepartment && selectedVendor) {
             getStats();
+            getRecent();
         }
     }, [selectedDepartment, selectedVendor]);
 
@@ -159,7 +194,7 @@ function Dashboard() {
                 <div className="grid grid-cols-12 gap-4 items-stretch">
                     <div className="xl:col-span-8 col-span-12 h-full">
                         <div className="h-full">
-                            <MonthlyInspectionChart data={dashboardData?.monthlyInspection} loading={loading}/>
+                            <MonthlyInspectionChart data={dashboardData?.monthlyInspection} loading={loading} />
                         </div>
                     </div>
                     <div className="xl:col-span-4 col-span-12 h-full">
@@ -177,12 +212,12 @@ function Dashboard() {
                 <div className="grid grid-cols-12 gap-4 items-stretch">
                     <div className="xl:col-span-8 col-span-12 h-full">
                         <div className="h-full">
-                            <Inspections recentInspections={dashboardData?.recent || []} loading={loading}/>
+                            <Inspections recentInspections={recentData?.recent || []} loading={recentloading} onRefresh={getRecent} />
                         </div>
                     </div>
                     <div className="xl:col-span-4 col-span-12 h-full">
                         <div className="h-full">
-                            <QuickActions onActionClick={(id) => console.log('Clicked:', id)} />
+                            <QuickActions role={user?.role || ''}/>
                         </div>
                     </div>
                 </div>

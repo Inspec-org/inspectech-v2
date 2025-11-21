@@ -53,6 +53,7 @@ function Inspections() {
     const { isOpen: isFilterOpen, openModal: openFilterModal, closeModal: closeEFilterModal } = useModal();
     const [selectedExportType, setSelectedExportType] = useState('csv');
     const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: string[] }>({});
+    const statusParam = searchParams.get("status");
     const [formData, setFormData] = useState({
         status: 'Leave unchanged',
         type: '',
@@ -63,33 +64,51 @@ function Inspections() {
         duration: '',
         durationMin: "5",
         durationSec: "00",
-        dateDay: "MM",
-        dateMonth: "DD",
-        dateYear: "YYYY",
+        dateDay: "01",
+        dateMonth: "01",
+        dateYear: "2925",
         notes: '',
-        delivered_status: ''
+        delivered_status: '',
+        poNumber: '',
+        equipmentNumber: '',
+        vin: '',
+        licensePlateId: '',
+        licensePlateCountry: '',
+        licensePlateExpiration: '',
+        licensePlateState: '',
+        possessionOrigin: '',
+        manufacturer: '',
+        modelYear: '',
+        absSensor: '',
+        airTankMonitor: '',
+        rtbIndicator: '',
+        lightOutSensor: '',
+        sensorError: '',
+        ultrasonicCargoSensor: '',
+        length: '',
+        height: '',
+        grossAxleWeightRating: '',
+        axleType: '',
+        brakeType: '',
+        suspensionType: '',
+        tireModel: '',
+        amenikis: '',
+        doorBranding: '',
+        doorColor: '',
+        doorSensor: '',
+        doorType: '',
+        lashSystem: '',
+        mudFlapType: '',
+        panelBranding: '',
+        noseBranding: '',
+        skirted: '',
+        skirtColor: '',
+        captiveBeam: '',
+        cargoCameras: '',
+        cartbars: '',
+        tpms: '',
+        trailerHeightDecal: '',
     });
-
-    const handleApplyFilters = (filters: { [key: string]: string[] }) => {
-        setSelectedFilters(filters);
-        closeEFilterModal();
-    };
-
-    const handleRemoveFilter = (filterKey: string, valueId: string) => {
-        setSelectedFilters(prev => {
-            const updated = { ...prev };
-            updated[filterKey] = updated[filterKey].filter(id => id !== valueId);
-            if (updated[filterKey].length === 0) {
-                delete updated[filterKey];
-            }
-            return updated;
-        });
-    };
-
-    const handleClearAllFilters = () => {
-        setSelectedFilters({});
-    };
-
     // Count total selected filters
     const totalFiltersCount = Object.values(selectedFilters).reduce((sum, arr) => sum + arr.length, 0);
     const [dept, setDept] = useState<string | null>(null);
@@ -98,6 +117,7 @@ function Inspections() {
     useEffect(() => {
         const storedDept = sessionStorage.getItem("selectedDepartmentId");
         setDept(storedDept);
+        setDepartment(storedDept || '');
         const storedVendor = sessionStorage.getItem("selectedVendorId");
         setVendor(storedVendor);
     }, []);
@@ -118,11 +138,15 @@ function Inspections() {
             setSelectAll(false);
             return;
         }
+        if (!dept || !vendor) {
+            toast.error('Please select department and vendor first');
+            return;
+        }
         try {
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idsOnly: true, filter: selectedFilters }),
+                body: JSON.stringify({ idsOnly: true, filter: selectedFilters, vendorId: vendor, department: dept }),
             });
             const json = await res.json();
             if (res.ok && json.success) {
@@ -144,47 +168,50 @@ function Inspections() {
             setSelectedRows([...selectedRows, id]);
         }
     };
-
-    useEffect(() => {
-        const getInspections = async () => {
-            try {
-                console.log("api running")
-                setLoading(true);
-                const res = await apiRequest(`/api/inspections/get-inspections`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ page: currentPage, limit, filter: selectedFilters, department: dept, vendorId: vendor }),
-                });
-                const json = await res.json();
-                if (res.ok && json.success) {
-                    const mapped: InspectionData[] = (json.inspections || []).map((doc: any) => ({
-                        id: doc.unitId,
-                        status: (doc.inspectionStatus || '').toString(),
-                        type: doc.type || '',
-                        inspector: doc.inspector || '',
-                        vendor: doc.vendor || '',
-                        location: doc.location || '',
-                        duration: `${doc.durationMin || ''}m ${doc.durationSec || ''}s`,
-                        date: doc.createdAt ? new Date(doc.createdAt).toISOString().slice(0, 10) : '',
-                        delivered: doc.delivered === 'yes' ? 'Yes' : doc.delivered === 'no' ? 'No' : '',
-                    }));
-                    console.log(json)
-                    setTotalInspections(json.total);
-                    setInspections(mapped);
-                } else {
-                    toast.error(json.message || 'Failed to fetch inspections');
-                    setInspections([]);
-                    setTotalInspections(0);
-                }
-            } catch (e: any) {
-                toast.error(e.message || 'Server error');
+    const handleRefreshAfterUpdate = () => {
+        setSelectedRows([]);
+        setSelectAll(false);
+        getInspections();
+    };
+    const getInspections = async () => {
+        try {
+            console.log("api running")
+            setLoading(true);
+            const res = await apiRequest(`/api/inspections/get-inspections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: currentPage, limit, filter: selectedFilters, department: dept, vendorId: vendor }),
+            });
+            const json = await res.json();
+            if (res.ok && json.success) {
+                const mapped: InspectionData[] = (json.inspections || []).map((doc: any) => ({
+                    id: doc.unitId,
+                    status: (doc.inspectionStatus || '').toString(),
+                    type: doc.type || '',
+                    inspector: doc.inspector || '',
+                    vendor: doc.vendor || '',
+                    location: doc.location || '',
+                    duration: `${doc.durationMin || ''}m ${doc.durationSec || ''}s`,
+                    date: `${doc.dateDay || ''}-${doc.dateMonth || ''}-${doc.dateYear || ''}`,
+                    delivered: doc.delivered === 'yes' ? 'Yes' : doc.delivered === 'no' ? 'No' : '',
+                }));
+                console.log(json)
+                setTotalInspections(json.total);
+                setInspections(mapped);
+            } else {
+                toast.error(json.message || 'Failed to fetch inspections');
                 setInspections([]);
                 setTotalInspections(0);
-            } finally {
-                setLoading(false);
             }
-        };
-
+        } catch (e: any) {
+            toast.error(e.message || 'Server error');
+            setInspections([]);
+            setTotalInspections(0);
+        } finally {
+            setLoading(false);
+        }
+    };
+    useEffect(() => {
         setTimeout(() => {
             console.log(currentPage, limit, selectedFilters, dept, vendor)
             if (currentPage && limit && selectedFilters && dept && vendor)
@@ -227,9 +254,44 @@ function Inspections() {
         getfilters();
 
     }, [dept])
+
     useEffect(() => {
-        console.log("loading ", loading)
-    }, [loading])
+        // Load filters from sessionStorage on mount
+        const storedFilters = sessionStorage.getItem('inspectionFilters');
+        if (storedFilters) {
+            try {
+                const parsedFilters = JSON.parse(storedFilters);
+                setSelectedFilters(parsedFilters);
+            } catch (e) {
+                console.error('Failed to parse filters from sessionStorage', e);
+            }
+        }
+    }, []);
+
+    // Update handleApplyFilters to save to sessionStorage
+    const handleApplyFilters = (filters: { [key: string]: string[] }) => {
+        setSelectedFilters(filters);
+        sessionStorage.setItem('inspectionFilters', JSON.stringify(filters));
+        closeEFilterModal();
+    };
+    const handleRemoveFilter = (filterKey: string, valueId: string) => {
+        setSelectedFilters(prev => {
+            const updated = { ...prev };
+            updated[filterKey] = updated[filterKey].filter(id => id !== valueId);
+            if (updated[filterKey].length === 0) {
+                delete updated[filterKey];
+            }
+            sessionStorage.setItem('inspectionFilters', JSON.stringify(updated));
+            return updated;
+        });
+    };
+
+    // Update handleClearAllFilters to clear sessionStorage
+    const handleClearAllFilters = () => {
+        setSelectedFilters({});
+        sessionStorage.removeItem('inspectionFilters');
+    };
+
 
     const columns: Column<InspectionData>[] = [
         {
@@ -239,6 +301,7 @@ function Inspections() {
                     checked={selectAll}
                     onChange={handleSelectAll}
                     className="circle-checkbox"
+                    disabled={!dept || !vendor}
                 />
             ),
             accessor: "select",
@@ -335,7 +398,7 @@ function Inspections() {
                 {/* header */}
                 <div className='flex flex-col sm:flex-row gap-3 justify-between'>
                     <div className='flex flex-wrap gap-2'>
-                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl relative' onClick={openFilterModal}>
+                        <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl relative' onClick={openFilterModal}>
                             <Filter className='w-4 h-4' />
                             Filter
                             {totalFiltersCount > 0 && (
@@ -344,17 +407,17 @@ function Inspections() {
                                 </span>
                             )}
                         </button>
-                        <button className='flex gap-2 items-center bg-[#F3EBFF66] px-2 py-2 text-sm rounded-xl' onClick={openExportModal}>
+                        <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl' onClick={openExportModal}>
                             <Download className='w-4 h-4' />
                             Export
                         </button>
                         {(selectedRows.length > 0) && (
                             <>
-                                <button className='flex gap-2 items-center bg-[#F3EBFF66] border border-[#0075FF] px-2 py-2 text-sm rounded-xl text-[#0075FF] whitespace-nowrap' onClick={openModal}>
+                                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white border border-[#0075FF] px-2 py-2 text-sm rounded-xl text-[#0075FF] whitespace-nowrap' onClick={openModal}>
                                     <Briefcase className='w-4 h-4' />
                                     Reassign Department ({selectedRows.length})
                                 </button>
-                                <button className='flex gap-2 items-center bg-[#F49595] px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap'>
+                                <button className='flex gap-2 items-center bg-[#F49595] px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap cursor-not-allowed*' disabled>
                                     <X className='w-4 h-4' />
                                     Delete Inspection ({selectedRows.length})
 
@@ -432,9 +495,9 @@ function Inspections() {
                     />
                 </div>
             </div>
-            <ReassignDepartmentModal isOpen={isOpen} onClose={closeModal} department={department} onDepartmentChange={setDepartment} selectedUnitIds={selectedRows} />
+            <ReassignDepartmentModal isOpen={isOpen} onClose={closeModal} department={department} onDepartmentChange={setDepartment} selectedUnitIds={selectedRows} onUpdated={handleRefreshAfterUpdate} />
 
-            <BatchEditInspectionsModal isOpen={isEditModalOpen} onClose={closeEditModal} formData={formData} onChange={handleChange} onDropdownChange={handleDropdownChange} selectedUnitIds={selectedRows} />
+            <BatchEditInspectionsModal isOpen={isEditModalOpen} onClose={closeEditModal} formData={formData} setFormData={setFormData} onChange={handleChange} onDropdownChange={handleDropdownChange} selectedUnitIds={selectedRows} onUpdated={handleRefreshAfterUpdate} />
 
             <ExportInspectionsModal isOpen={isExportOpen} onClose={closeExportModal} selectedExportType={selectedExportType} onSelectedExportTypeChange={setSelectedExportType} />
 

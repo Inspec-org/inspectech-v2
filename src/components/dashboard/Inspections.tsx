@@ -11,7 +11,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { recentInspection } from "./Dashboard"
 
 
-export default function Inspections({ recentInspections, loading }: { recentInspections: recentInspection[], loading: boolean }) {
+export default function Inspections({ recentInspections, loading, onRefresh }: { recentInspections: recentInspection[], loading: boolean, onRefresh: () => void }) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -91,7 +91,7 @@ export default function Inspections({ recentInspections, loading }: { recentInsp
 
     return (
         <div className="h-full border p-6">
-            <GenericDataTable title="Recent Inspection Orders" min_height="480px" title_font_size="text-lg font-bold" data={recentInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
+            <GenericDataTable title="Recent Inspection Orders" min_height="450px" title_font_size="text-lg font-bold" data={recentInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} onRefresh={onRefresh} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
                 "All Users": "/images/No Users.svg"
             }}
             />

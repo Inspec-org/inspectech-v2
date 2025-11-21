@@ -110,8 +110,6 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
             },
             yaxis: {
                 min: 0,
-                max: 250,
-                tickAmount: 5,
                 labels: {
                     formatter: (v) => Math.round(v).toString(),
                     style: {
@@ -165,7 +163,7 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
         <div className="bg-white px-6 pt-6 border border-gray-200 rounded-2xl">
             <div className="flex xl:flex-row flex-col justify-between xl:items-center mb-6">
                 <h3 className="font-semibold text-gray-900 text-lg">
-                    Monthly Inspection Results
+                    {view} Inspection Results
                 </h3>
                 <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
                     {(["Monthly", "Quarterly", "Annually"] as ViewType[]).map((type) => (

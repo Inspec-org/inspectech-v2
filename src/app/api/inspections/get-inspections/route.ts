@@ -39,22 +39,22 @@ export async function POST(req: NextRequest) {
 
     const query: any = {};
     if (unitIds && unitIds.length) query.unitId = { $in: unitIds };
-    else if (unitId) query.unitId = new RegExp(unitId, "i");
+    else if (unitId) query.unitId = unitId;
 
     if (inspectionStatuses && inspectionStatuses.length) query.inspectionStatus = { $in: inspectionStatuses };
     else if (inspectionStatus) query.inspectionStatus = inspectionStatus;
 
     if (types && types.length) query.type = { $in: types };
-    else if (type) query.type = new RegExp(type, "i");
+    else if (type) query.type = type;
 
     if (inspectors && inspectors.length) query.inspector = { $in: inspectors };
-    else if (inspector) query.inspector = new RegExp(inspector, "i");
+    else if (inspector) query.inspector = inspector;
 
     if (vendors && vendors.length) query.vendor = { $in: vendors };
-    else if (vendor) query.vendor = new RegExp(vendor, "i");
+    else if (vendor) query.vendor = vendor;
 
     if (locations && locations.length) query.location = { $in: locations };
-    else if (location) query.location = new RegExp(location, "i");
+    else if (location) query.location = location;
 
     if (deliveredStatuses && deliveredStatuses.length) query.delivered = { $in: deliveredStatuses };
     else if (delivered) query.delivered = delivered;

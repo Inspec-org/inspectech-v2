@@ -36,6 +36,7 @@ interface GenericDataTableProps<T> {
   search?: string
   setSearch?: React.Dispatch<React.SetStateAction<string>>
   onRowClick?: (row: T) => void
+  onRefresh?: () => void
 }
 
 function GenericDataTable<T extends { id: string; tab?: string }>({
@@ -60,7 +61,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   querykey,
   search,
   setSearch,
-  onRowClick
+  onRowClick,
+  onRefresh
 }: GenericDataTableProps<T>) {
 
   const router = useRouter();
@@ -184,7 +186,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
               </thead>
               <tbody>
                 {currentData.map((row) => (
-                  <tr key={row.id} className="border-b hover:bg-gray-50" onClick={() => onRowClick?.(row)}>
+                  <tr key={row.id} className={`border-b hover:bg-gray-50  ${onRowClick ? "cursor-pointer" : ""}`} onClick={() => onRowClick?.(row)}>
                     {columns.map((col, i) => (
                       <td key={i} className="py-3 px-4 font-raleway text-center">
                         {col.cell ? col.cell(row) : (row as any)[col.accessor]}
@@ -199,14 +201,14 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
           {/* Pagination */}
           {title === "Recent Inspection Orders" ? (
             <div className="flex justify-between items-edn mt-6 text-[#6B65F2] text-sm">
-              <div className="flex items-center gap-2">
-                <RefreshCcw className="w-4 h-4 cursor-pointer" />
+              <div className="flex items-center gap-2 cursor-pointer" onClick={onRefresh}>
+                <RefreshCcw className="w-4 h-4  " />
                 <p>Refresh</p>
               </div>
-              <div className="flex items-center gap-2">
+              <Link href="inspections" className="flex items-center gap-2">
                 <p>View All Inspections</p>
                 <ExternalLink className="w-4 h-4 cursor-pointer" />
-              </div>
+              </Link>
             </div>
           ) :
             (

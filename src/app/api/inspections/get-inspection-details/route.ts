@@ -19,8 +19,13 @@ export async function GET(req: NextRequest) {
     }
 
     await connectDB();
+    console.log("unitId", unitId);
+    let id=unitId;
+    if (unitId.includes("%20")) {
+      id = unitId.replaceAll("%20", " ");
+    }
 
-    const inspection = await Inspection.findOne({ unitId });
+    const inspection = await Inspection.findOne({ unitId:id });
     if (!inspection) {
       return NextResponse.json({ success: false, message: "Inspection not found" }, { status: 404 });
     }

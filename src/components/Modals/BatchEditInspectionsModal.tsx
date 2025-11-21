@@ -6,17 +6,20 @@ import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import CheckList from '../inspections/CheckLIst';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import { set } from 'mongoose';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   formData: any;
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
   onChange: (field: string, value: string) => void;
   onDropdownChange: (name: string, value: string) => void;
   selectedUnitIds: string[];
+  onUpdated?: () => void;
 };
 
-const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData, onChange, onDropdownChange, selectedUnitIds }) => {
+const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData, setFormData, onChange, onDropdownChange, selectedUnitIds, onUpdated }) => {
   const handleUpdate = async () => {
     const updates: any = {};
 
@@ -60,7 +63,10 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
           failures.push(r.reason?.message || 'Network error');
         }
       }
-      if (successes.length) toast.success(`Updated ${successes.length} inspections`);
+      if (successes.length) {
+        toast.success(`Updated ${successes.length} inspections`);
+        if (onUpdated) onUpdated();
+      }
       if (failures.length) toast.error(`Failed ${failures.length} updates`);
       onClose();
     } catch (e: any) {
@@ -130,8 +136,9 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
                 type="text"
                 placeholder="Leave unchanged"
                 value={formData.vendor}
+                disabled
                 onChange={(e) => onChange('vendor', e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] w-full"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 w-full cursor-not-allowed"
               />
             </div>
             {/* location */}
@@ -197,7 +204,7 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
             </div>
           </div>
           <h2 className="text-md font-semibold flex gap-2 items-center pl-4 mb-2">Inspection Checklist</h2>
-          <CheckList prop="batch" formData={formData as any} setFormData={() => { }} />
+          <CheckList prop="batch" formData={formData as any} setFormData={setFormData} />
         </div>
 
         <div className="flex justify-end gap-3 p-4 border-t flex-shrink-0">

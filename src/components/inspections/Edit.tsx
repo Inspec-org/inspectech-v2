@@ -9,6 +9,9 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import { UserContext } from '@/context/authContext';
+import { ClipLoader } from 'react-spinners';
+import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
+import { useModal } from '@/hooks/useModal';
 
 export interface FormData {
   unitId: string;
@@ -87,6 +90,12 @@ export default function Edit({ type }: { type: string }) {
   const [hasSavedOnce, setHasSavedOnce] = useState(false);
   const [inspectionId, setInspectionId] = useState<string | null>(null);
   const today = new Date();
+  const [loading, setLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const { isOpen, openModal, closeModal } = useModal();
+  const [department, setDepartment] = useState("");
+
+
 
   const [formData, setFormData] = useState<FormData>({
     unitId: '',
@@ -159,6 +168,8 @@ export default function Edit({ type }: { type: string }) {
   const params = useParams<{ inspection_id: string }>();
   useEffect(() => {
     const deptName = sessionStorage.getItem('selectedDepartment');
+    const deptId = sessionStorage.getItem('selectedDepartmentId');
+    setDepartment(deptId || '');
     (async () => {
       try {
         const res = await apiRequest('/api/departments/get-departments');
@@ -173,31 +184,42 @@ export default function Edit({ type }: { type: string }) {
     })();
   }, []);
 
+
   useEffect(() => {
+    console.log("params", type)
     if (type === "edit" && params?.inspection_id) {
       const unitId = params.inspection_id as string;
-      (async () => {
-        try {
-          const res = await apiRequest(`/api/inspections/get-inspection-details?unitId=${encodeURIComponent(unitId)}`);
-          const data = await res.json();
-          if (res.ok && data.success && data.inspection) {
-            const doc = data.inspection;
-            const normalized: any = {
-              ...doc,
-              additionalAttachments: Array.isArray(doc.additionalAttachments) ? doc.additionalAttachments : [],
-            };
-            setFormData(prev => ({ ...prev, ...normalized }));
-            setInspectionId(doc._id ?? null);
-            setHasSavedOnce(true);
-            setLastSaved(normalized);
-            setIsSaved(true);
-          } else {
-            toast.error(data.message || "Inspection not found");
+      setTimeout(() => {
+        (async () => {
+          try {
+            setLoading(true);
+            const res = await apiRequest(`/api/inspections/get-inspection-details?unitId=${encodeURIComponent(unitId)}`);
+            const data = await res.json();
+
+            if (res.ok && data.success && data.inspection) {
+              const doc = data.inspection;
+              console.log("doc", doc)
+              const normalized: any = {
+                ...doc,
+                additionalAttachments: Array.isArray(doc.additionalAttachments) ? doc.additionalAttachments : [],
+              };
+              setFormData(prev => ({ ...prev, ...normalized }));
+              setInspectionId(doc._id ?? null);
+              setHasSavedOnce(true);
+              setLastSaved(normalized);
+              setIsSaved(true);
+            } else {
+              toast.error(data.message || "Inspection not found");
+            }
+          } catch (error: any) {
+            toast.error(error.message || "Server error");
           }
-        } catch (error: any) {
-          toast.error(error.message || "Server error");
-        }
-      })();
+          finally {
+            setLoading(false);
+          }
+        })();
+      }, 1000)
+
     }
   }, [type, params]);
 
@@ -208,29 +230,11 @@ export default function Edit({ type }: { type: string }) {
     }
   }, [formData, lastSaved]);
 
-  const createInspection = async () => {
-    try {
-      const res = await apiRequest('/api/inspections/add-new-inspection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setInspectionId(data.inspection?._id ?? null);
-        toast.success('Inspection created');
-      } else {
-        toast.error(data.message || 'Failed to create inspection');
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Server error');
-      console.error(error.message);
-    }
-  };
 
   const saveInspection = async () => {
     if (!formData.unitId || formData.unitId.trim() === '') return;
     try {
+      setSaveLoading(true);
       if (!hasSavedOnce) {
         const res = await apiRequest('/api/inspections/add-new-inspection', {
           method: 'POST',
@@ -266,6 +270,9 @@ export default function Edit({ type }: { type: string }) {
       toast.error(error.message || 'Server error');
       console.error(error.message);
     }
+    finally {
+      setSaveLoading(false);
+    }
   };
 
   const uploadToCloudinary = async (field: string, file: File) => {
@@ -296,6 +303,11 @@ export default function Edit({ type }: { type: string }) {
 
   return (
     <div className="bg-white p-4">
+      {loading && (
+        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
+          <ClipLoader color="#0075FF" size={40} />
+        </div>
+      )}
       <div className="">
         {/* Header */}
         <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl' onClick={() => Router.back()}>
@@ -309,19 +321,30 @@ export default function Edit({ type }: { type: string }) {
               <h1 className="text-lg font-semibold text-purple-600 my-4 ">Edit Inspection - {formData.unitId}</h1>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2'>
+                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' onClick={openModal}>
                   <Briefcase size={18} />
                   <span>Reassign Department</span>
                 </button>
 
-                <button className="flex gap-2 items-center bg-[#F49595] hover:bg-red-600 hover:text-white  text-sm rounded-xl text-white w-full px-3 py-2">
+                <button className="flex gap-2 items-center bg-[#F49595]  text-sm rounded-xl text-white w-full px-3 py-2 cursor-not-allowed" disabled>
                   <Trash2 size={18} />
                   <span>Delete Inspection</span>
                 </button>
 
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' disabled={!formData.unitId || formData.unitId.trim() === ''} onClick={saveInspection}>
-                  <Edit2 size={18} />
-                  <span>Save Changes</span>
+                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading} onClick={saveInspection}>
+                  {saveLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Saving...</span>
+                    </>) : (
+                    <>
+                      <Edit2 size={18} />
+                      <span>Save Changes</span>
+                    </>
+                  )}
                 </button>
 
                 <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2'>
@@ -340,11 +363,23 @@ export default function Edit({ type }: { type: string }) {
                     ? 'bg-purple-400 cursor-not-allowed text-white border-transparent'
                     : 'bg-[#7522BB] border-white text-white hover:bg-[#5a1a95]'
                     }`}
-                  disabled={!formData.unitId || formData.unitId.trim() === ''}
+                  disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
                   onClick={saveInspection}
                 >
-                  <Edit2 size={18} />
-                  <span>Save Changes</span>
+                  {saveLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Saving...</span>
+                    </>) : (
+                    <>
+                      <Edit2 size={18} />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+
                 </button>
 
 
@@ -436,6 +471,13 @@ export default function Edit({ type }: { type: string }) {
           <Media formData={formData} setFormData={setFormData} onUploadToCloudinary={uploadToCloudinary} />
         )}
       </div>
+      <ReassignDepartmentModal
+        isOpen={isOpen}
+        onClose={closeModal}
+        department={department}
+        onDepartmentChange={setDepartment}
+        selectedUnitIds={formData.unitId ? [formData.unitId] : []}
+      />
     </div>
   );
 }

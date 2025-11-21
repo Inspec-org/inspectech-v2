@@ -5,6 +5,7 @@ import { Check, ChevronDown } from 'lucide-react';
 interface DropdownOption {
     value: string;
     label: string;
+    disabled?: boolean
 }
 
 interface CustomDropdownProps {
@@ -84,9 +85,10 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
                             key={option.value}
                             type="button"
                             onClick={() => handleSelect(option.value)}
-                            className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                            className={`w-full px-3 py-2 text-left  flex items-center  justify-between ${option.disabled ? 'cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 text-gray-700'}`}
+                            disabled={option.disabled}
                         >
-                            <span className="text-gray-700">{option.label}</span>
+                            <span className="">{option.label}</span>
                             {value === option.value && (
                                 <Check size={16} className="text-purple-600" />
                             )}
