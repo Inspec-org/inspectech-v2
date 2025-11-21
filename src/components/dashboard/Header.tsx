@@ -78,8 +78,8 @@ function Header({
         </span>
         <div className="relative">
           <button
-            onClick={() => setVendorOpen(!vendorOpen)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[200px]"
+            onClick={() => user?.role === 'admin' && setVendorOpen(!vendorOpen)}
+            className={`flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[200px] ${user?.role === 'admin' ? 'cursor-pointer' : 'cursor-auto'}`}
           >
             <Building2 className="w-4 h-4 text-purple-600" />
             <div className="w-2 h-2 rounded-full bg-green-500"></div>

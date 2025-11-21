@@ -11,6 +11,7 @@ type Props = {
   department: string;
   onDepartmentChange: (val: string) => void;
   selectedUnitIds: string[];
+  onUpdated?: () => void;
 };
 
 type Department = {
@@ -18,12 +19,13 @@ type Department = {
   name: string;
 };
 
-const ReassignDepartmentModal: React.FC<Props> = ({ 
-  isOpen, 
-  onClose, 
-  department, 
-  onDepartmentChange, 
-  selectedUnitIds 
+const ReassignDepartmentModal: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  department,
+  onDepartmentChange,
+  selectedUnitIds,
+  onUpdated
 }) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,12 +41,12 @@ const ReassignDepartmentModal: React.FC<Props> = ({
       setLoading(true);
       const res = await apiRequest('/api/departments/get-departments');
       const json = await res.json();
-      
+
       if (!res.ok) {
         toast.error(json?.error || 'Failed to fetch departments');
         return;
       }
-      
+
       setDepartments(json.departments || []);
     } catch (e: any) {
       toast.error(e?.message || 'Failed to load departments');
@@ -78,6 +80,7 @@ const ReassignDepartmentModal: React.FC<Props> = ({
       const okCount = results.filter(r => r.status === 'fulfilled').length;
       if (okCount > 0) {
         toast.success(`Reassigned ${okCount} inspection(s)`);
+        if (onUpdated) onUpdated();
       }
 
       const failCount = results.length - okCount;
@@ -103,7 +106,7 @@ const ReassignDepartmentModal: React.FC<Props> = ({
         </p>
 
         <div className="flex flex-col justify-between gap-2 mb-5">
-          <label className="block text-sm font-medium text-gray-700">Department</label>
+          <label className="block text-sm font-medium text-gray-700">Department {department}</label>
           <CustomDropdown
             options={options}
             width="w-full"
@@ -114,14 +117,14 @@ const ReassignDepartmentModal: React.FC<Props> = ({
         </div>
 
         <div className="flex justify-end gap-4">
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="border border-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
           >
             Cancel
           </button>
-          <button 
-            onClick={handleReassign} 
+          <button
+            onClick={handleReassign}
             disabled={loading || !department}
             className="bg-[#8FADF5] text-white px-4 py-2 rounded-lg hover:bg-gray-400 transition flex gap-2 items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >

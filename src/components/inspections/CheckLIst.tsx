@@ -70,7 +70,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
 
                         {expandedSections.identification && (
                             <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg w-full">
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">PO Number</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
@@ -93,7 +93,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
 
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <div className='flex-1'>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Equipment ID/Trailer Number</label>
                                     </div>
@@ -116,7 +116,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">VIN</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
@@ -137,7 +137,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">License Plate ID</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
@@ -158,7 +158,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">License Plate Country</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
@@ -179,7 +179,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">License Plate Expiration</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
@@ -200,7 +200,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <div className="flex-1">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">License Plate State/Province</label>
                                     </div>
@@ -223,7 +223,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Possession Origin <br /> Location/ Pickup Location</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
@@ -244,7 +244,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
                                     <CustomDropdown
                                         options={[
@@ -266,17 +266,17 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             { value: "vanguard", label: "Vanguard" },
                                             { value: "wabash", label: "Wabash" },
                                         ]}
-                                        width="xl:w-[230px] w-full"
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                         value={formData.manufacturer}
                                         onChange={(val) => handleDropdownChange("manufacturer", val)}
                                     />
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Model Year</label>
                                     <CustomDropdown
                                         options={yearOptions}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                         value={formData.modelYear}
                                         onChange={(val) => handleDropdownChange("modelYear", val)}
                                     />
@@ -297,7 +297,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
 
                         {expandedSections.sensors && (
                             <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg w-full">
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">ABS Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -336,7 +336,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Air Tank Monitor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -375,7 +375,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">RTB Indicator</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -414,7 +414,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Light Out Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -453,7 +453,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Sensor Error</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -492,7 +492,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Ultrasonic Cargo Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -546,7 +546,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
 
                     {expandedSections.dimensions && (
                         <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg">
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Length</label>
                                 <CustomDropdown
                                     options={[
@@ -556,13 +556,13 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "53", label: "53 ft" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.length}
                                     onChange={(val) => handleDropdownChange("length", val)}
                                 />
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Height</label>
                                 <CustomDropdown
                                     options={[
@@ -570,13 +570,13 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "13-6", label: "13 ft 6 in" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.height}
                                     onChange={(val) => handleDropdownChange("height", val)}
                                 />
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Gross Axle Weight Rating</label>
                                 <CustomDropdown
                                     options={[
@@ -585,13 +585,13 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "34000", label: "34000 lbs" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.grossAxleWeightRating}
                                     onChange={(val) => handleDropdownChange("grossAxleWeightRating}", val)}
                                 />
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Axle Type</label>
                                 <CustomDropdown
                                     options={[
@@ -600,13 +600,13 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "single", label: "Single Axle" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.axleType}
                                     onChange={(val) => handleDropdownChange("axleType", val)}
                                 />
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Brake Type</label>
                                 <CustomDropdown
                                     options={[
@@ -615,13 +615,13 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "drum", label: "Drum" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.brakeType}
                                     onChange={(val) => handleDropdownChange("brakeType", val)}
                                 />
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
                                 <CustomDropdown
                                     options={[
@@ -630,13 +630,13 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "spring", label: "Spring" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.suspensionType}
                                     onChange={(val) => handleDropdownChange("suspensionType", val)}
                                 />
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tire Model</label>
                                 <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                     <input
@@ -672,7 +672,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
 
                     {expandedSections.features && (
                         <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg">
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Amenikis</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
@@ -711,7 +711,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 </div>
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Door Branding</label>
                                 <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                     <input
@@ -732,7 +732,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 </div>
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Door Color</label>
                                 <CustomDropdown
                                     options={[
@@ -741,13 +741,13 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "white", label: "White" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.doorColor}
                                     onChange={(val) => handleDropdownChange("doorColor", val)}
                                 />
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Door Sensor</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
@@ -786,7 +786,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 </div>
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Door Type</label>
                                 <CustomDropdown
                                     options={[
@@ -795,13 +795,13 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "roll", label: "Roll" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.doorType}
                                     onChange={(val) => handleDropdownChange("doorType", val)}
                                 />
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Lash System</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
@@ -840,7 +840,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 </div>
                             </div>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Mud Flap Type</label>
                                 <CustomDropdown
                                     options={[
@@ -848,12 +848,12 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "fast-flap", label: "Fast-Flap" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.mudFlapType}
                                     onChange={(val) => handleDropdownChange("mudFlapType", val)}
                                 />
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Panel Branding</label>
                                 <CustomDropdown
                                     options={[
@@ -868,12 +868,12 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "Unbranded", label: "Unbranded" },
                                         { value: "XTRA Lease", label: "XTRA Lease" }
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.panelBranding}
                                     onChange={(val) => handleDropdownChange("panelBranding", val)}
                                 />
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nose Branding</label>
                                 <CustomDropdown
                                     options={[
@@ -881,12 +881,12 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "Captive Mean", label: "Captive Mean" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.noseBranding}
                                     onChange={(val) => handleDropdownChange("noseBranding", val)}
                                 />
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Skirted</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
@@ -924,7 +924,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </label>
                                 </div>
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Skirt Color</label>
                                 <CustomDropdown
                                     options={[
@@ -935,12 +935,12 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         { value: "White", label: "White" },
 
                                     ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : undefined}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.skirtColor}
                                     onChange={(val) => handleDropdownChange("skirtColor", val)}
                                 />
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Captive Beam</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
@@ -978,7 +978,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </label>
                                 </div>
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Cargo Camera</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
@@ -1016,7 +1016,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </label>
                                 </div>
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Cartbars</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
@@ -1054,7 +1054,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </label>
                                 </div>
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">TPMS</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
@@ -1092,7 +1092,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </label>
                                 </div>
                             </div>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : "xl:flex-col xl:items-start"} `}>
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Trailer Height Decal</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">

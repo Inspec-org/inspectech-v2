@@ -219,6 +219,7 @@ const FilterInspectionsModal: React.FC<{
     };
 
     const handleAddSelected = () => {
+        sessionStorage.setItem('inspectionFilters', JSON.stringify(selectedFilters));
         onApply(selectedFilters);
     };
 

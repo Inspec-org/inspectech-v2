@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckSquare, CheckCircle, AlertTriangle, FileText, Users, Zap } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface QuickAction {
   id: string;
@@ -11,58 +12,75 @@ interface QuickAction {
   onClick?: () => void;
 }
 
-const quickActions: QuickAction[] = [
-  {
-    id: 'view-inspections',
-    label: 'View Inspections',
-    icon: <CheckSquare className="w-5 h-5" />,
-    bgColor: 'bg-purple-50',
-    textColor: 'text-purple-700',
-    iconColor: 'text-purple-600',
-  },
-  {
-    id: 'passed-inspections',
-    label: 'Passed Inspections',
-    icon: <CheckCircle className="w-5 h-5" />,
-    bgColor: 'bg-green-50',
-    textColor: 'text-green-700',
-    iconColor: 'text-green-600',
-  },
-  {
-    id: 'failed-inspections',
-    label: 'Failed Inspections',
-    icon: <AlertTriangle className="w-5 h-5" />,
-    bgColor: 'bg-red-50',
-    textColor: 'text-red-700',
-    iconColor: 'text-red-600',
-  },
-  {
-    id: 'generate-report',
-    label: 'Generate Report',
-    icon: <FileText className="w-5 h-5" />,
-    bgColor: 'bg-orange-50',
-    textColor: 'text-orange-700',
-    iconColor: 'text-orange-600',
-  },
-  {
-    id: 'manage-users',
-    label: 'Manage Users',
-    icon: <Users className="w-5 h-5" />,
-    bgColor: 'bg-blue-50',
-    textColor: 'text-blue-700',
-    iconColor: 'text-blue-600',
-  },
-];
 
-interface QuickActionsProps {
-  onActionClick?: (actionId: string) => void;
-}
 
-export default function QuickActions({ onActionClick }: QuickActionsProps) {
+
+export default function QuickActions({ role }: { role: string }) {
+  const router = useRouter()
+  const quickActions: QuickAction[] = [
+    {
+      id: 'view-inspections',
+      label: 'View Inspections',
+      icon: <CheckSquare className="w-5 h-5" />,
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-700',
+      iconColor: 'text-purple-600',
+      onClick: () => {
+        sessionStorage.removeItem('inspectionFilters'); // Clear filters
+        router.push(`inspections`)
+      }
+    },
+    {
+      id: 'passed-inspections',
+      label: 'Passed Inspections',
+      icon: <CheckCircle className="w-5 h-5" />,
+      bgColor: 'bg-green-50',
+      textColor: 'text-green-700',
+      iconColor: 'text-green-600',
+      onClick: () => {
+        // Override filters with only pass status
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatus: ['5'] })); // '5' is pass status ID
+        router.push(`inspections`)
+      }
+    },
+    {
+      id: 'failed-inspections',
+      label: 'Failed Inspections',
+      icon: <AlertTriangle className="w-5 h-5" />,
+      bgColor: 'bg-red-50',
+      textColor: 'text-red-700',
+      iconColor: 'text-red-600',
+      onClick: () => {
+        // Override filters with only fail status
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatus: ['fail'] })); // Update with correct fail ID
+        router.push(`inspections`)
+      }
+    },
+    {
+      id: 'generate-report',
+      label: 'Generate Report',
+      icon: <FileText className="w-5 h-5" />,
+      bgColor: 'bg-orange-50',
+      textColor: 'text-orange-700',
+      iconColor: 'text-orange-600',
+      onClick: () => {
+        router.push(`reports`)
+      }
+    },
+    {
+      id: 'manage-users',
+      label: 'Manage Users',
+      icon: <Users className="w-5 h-5" />,
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-700',
+      iconColor: 'text-blue-600',
+      onClick: () => {
+        router.push(`users`)
+      }
+    },
+  ];
   const handleClick = (actionId: string) => {
-    if (onActionClick) {
-      onActionClick(actionId);
-    }
+
   };
 
   return (
@@ -80,7 +98,7 @@ export default function QuickActions({ onActionClick }: QuickActionsProps) {
         {quickActions.map((action) => (
           <button
             key={action.id}
-            onClick={() => handleClick(action.id)}
+            onClick={() => action.onClick && action.onClick()}
             className={`w-full flex items-center gap-3 px-5 2xl:py-5 py-6 rounded-xl ${action.bgColor} ${action.textColor} font-medium text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
           >
             <span className={`${action.iconColor} bg-white p-2 rounded-full`}>

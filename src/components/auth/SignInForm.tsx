@@ -97,7 +97,7 @@ export default function SignInForm() {
               alt="Logo"
             />
           </div>
-          <h1 className="font-normal text-text-blue text-title-sm  sm:text-title-md">
+          <h1 className="font-normal text-text-blue text-3xl">
             Welcome Back
           </h1>
         </div>

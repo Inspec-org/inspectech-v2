@@ -1,11 +1,11 @@
 'use client'
-import React from 'react'
+import React, { useContext, useEffect } from 'react'
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { FormData } from './Edit';
+import { UserContext } from '@/context/authContext';
 
 function General({ type, formData, setFormData, disabledUnitId }: { type: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; disabledUnitId?: boolean }) {
-
-
+    const { user } = useContext(UserContext);
     // 🔹 handle input & dropdown changes
     const handleChange = (field: string, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -17,6 +17,12 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
         console.log("Form Submitted:", formData);
         // You can now send `formData` to backend API here
     };
+    useEffect(() => {
+        const vendor = sessionStorage.getItem("selectedVendor");
+        if (vendor) {
+            setFormData((prev) => ({ ...prev, vendor: vendor }));
+        }
+    },[])
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -47,11 +53,11 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                     </label>
                     <CustomDropdown
                         options={[
-                            { value: "pass", label: "PASS" },
-                            { value: "fail", label: "FAIL" },
-                            { value: "needs review", label: "NEEDS REVIEW" },
-                            { value: "out of cycle (delivered)", label: "OUT OF CYCLE (DELIVERED)" },
-                            { value: "no inspection (delivered)", label: "NO INSPECTION (DELIVERED)" },
+                            { value: "pass", label: `PASS${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                            { value: "fail", label: `FAIL${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                            { value: "needs review", label: `NEEDS REVIEW${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                            { value: "out of cycle (delivered)", label: `OUT OF CYCLE (DELIVERED)${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                            { value: "no inspection (delivered)", label: `NO INSPECTION (DELIVERED)${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
                             { value: "incomplete", label: "INCOMPLETE" },
                             { value: "complete", label: "COMPLETE" },
                         ]}
@@ -59,7 +65,6 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                         value={formData.inspectionStatus}
                         onChange={(val) => handleChange("inspectionStatus", val)}
                     />
-
                 </div>
 
                 {/* Review Reason */}
@@ -116,8 +121,9 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                     <input
                         type="text"
                         value={formData.vendor}
+                        disabled
                         onChange={(e) => handleChange("vendor", e.target.value)}
-                        className="lg:w-[300px] w-full px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700"
+                        className="lg:w-[300px] w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 cursor-not-allowed"
                     />
                 </div>
 
