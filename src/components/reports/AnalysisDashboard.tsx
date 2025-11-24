@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 import { TrendingUp, CheckCircle, XCircle, Clock, BarChart3, CalendarClock, Activity, CheckSquare } from 'lucide-react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
 
 // Types
 interface StatCardProps {
@@ -102,9 +104,9 @@ const durationData = [
 
 // Components
 const DashboardHeader = ({ time, setTime }: { time: string, setTime: (val: string) => void }) => (
-    <div className="bg-white p-6 border-gray-200">
+    <div className="bg-white border-gray-200">
         <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-semibold text-gray-800">Analytics Dashboard</h1>
+            <h1 className="text-xl font-semibold text-gray-800">Analytics Dashboard</h1>
             <CustomDropdown
                 options={[
                     { value: "All Time", label: "All Time" },
@@ -138,82 +140,82 @@ const StatCard: React.FC<StatCardProps> = ({ icon, title, value, subtitle, color
     </div>
 );
 
-const InspectionStatusOverview: React.FC = () => (
-    <div className="bg-white p-6 rounded-lg">
-        <div className="flex justify-start items-start gap-2 mb-4">
-            <div className='self-start'>
-                <Activity size={28} className="text-[#7522BB]" />
+const InspectionStatusOverview: React.FC<{ total: number; pass: number; fail: number; statusData: { name: string; value: number; percentage: number; color: string }[] }> = ({ total, pass, fail, statusData }) => {
+    const filteredData = statusData.filter(item => item.value > 0);
+
+    return (
+        <div className="bg-white rounded-lg mt-4">
+            <div className="flex justify-start items-start gap-2 mb-4">
+                <div className='self-start'>
+                    <Activity size={28} className="text-[#7522BB]" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-semibold text-[#7522BB]">Inspection Status Overview</h2>
+                    <p className="text-sm text-gray-600">Distribution of pass/fail inspections</p>
+                </div>
             </div>
-            <div>
-                <h2 className="text-lg font-semibold text-[#7522BB]">Inspection Status Overview</h2>
-                <p className="text-sm text-gray-600">Distribution of pass/fail inspections</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                    <StatCard
+                        icon={<CheckSquare size={20} className="text-[#9333EA]" />}
+                        title="Total Inspections"
+                        value={String(total)}
+                        subtitle="View All Inspection"
+                        color="#9333EA"
+                    />
+                    <StatCard
+                        icon={<CheckCircle size={20} className="text-[#10B981]" />}
+                        title="Passed Inspections"
+                        value={String(pass)}
+                        subtitle={`${statusData.find(d => d.name === 'Passed')?.percentage ?? 0}% of total`}
+                        color="#10B981"
+                    />
+                    <StatCard
+                        icon={<XCircle size={20} className="text-[#EF4545]" />}
+                        title="Fail"
+                        value={String(fail)}
+                        subtitle={`${statusData.find(d => d.name === 'Failed')?.percentage ?? 0}% of total`}
+                        color="#EF4545"
+                    />
+                </div>
+                <div className="flex items-center justify-center" style={{ width: 600, height: 400 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={statusData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={0}
+                                outerRadius={150}
+                                dataKey="value"
+
+                            >
+                                {statusData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+            <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-gray-600">Passed ({pass}) - {statusData.find(d => d.name === 'Passed')?.percentage ?? 0}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span className="text-gray-600">Failed ({fail}) - {statusData.find(d => d.name === 'Failed')?.percentage ?? 0}%</span>
+                </div>
             </div>
         </div>
+    )
 
+};
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-                <StatCard
-                    icon={<CheckSquare size={20} className="text-[#9333EA]" />}
-                    title="Total Inspections"
-                    value="9512"
-                    subtitle="View All Inspection"
-                    color="#9333EA"
-                />
-                <StatCard
-                    icon={<CheckCircle size={20} className="text-[#10B981]" />}
-                    title="Passed Inspections"
-                    value="5232"
-                    subtitle="33% of total"
-                    color="#10B981"
-                />
-                <StatCard
-                    icon={<XCircle size={20} className="text-[#EF4545]" />}
-                    title="Fail"
-                    value="83"
-                    subtitle="9% of total"
-                    color="#EF4545"
-                />
-            </div>
-
-            <div className="flex items-center justify-center" style={{ width: 600, height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={inspectionStatusData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={0}
-                            outerRadius={150}  // change this to make the pie bigger
-                            paddingAngle={2}
-                            dataKey="value"
-                        >
-                            {inspectionStatusData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                    </PieChart>
-                </ResponsiveContainer>
-            </div>
-
-        </div>
-
-        <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-gray-600">Passed (91) - 91%</span>
-            </div>
-            <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span className="text-gray-600">Failed (9) - 9%</span>
-            </div>
-        </div>
-    </div>
-);
-
-const InspectionStatusBreakdown: React.FC = () => (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
+const InspectionStatusBreakdown: React.FC<{ data: { period: string; total: number; pass: number; fail: number }[] }> = ({ data }) => (
+    <div className="bg-white mt-4 rounded-lg ">
         <div className="flex items-start gap-2 mb-4">
             <div>
                 <BarChart3 size={18} className="text-[#7522BB]" />
@@ -223,24 +225,13 @@ const InspectionStatusBreakdown: React.FC = () => (
                 <p className="text-sm text-gray-600 mb-6">Current distribution of inspection results</p>
             </div>
         </div>
-
         <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={statusBreakdownData} barSize={190}>
+            <BarChart data={data} barSize={190}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                    dataKey="period"
-                    tick={{ fontSize: 12 }}
-
-                />
-                <YAxis
-                    label={{ value: 'Number of inspections', angle: -90, position: '', style: { fontSize: 14 } }}
-                    tick={{ fontSize: 12 }}
-                />
+                <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+                <YAxis label={{ value: 'Number of inspections', angle: -90, position: 'center', style: { fontSize: 14 }, dx:-15 }} tick={{ fontSize: 12 }} padding={{ top: 20 }}  allowDecimals={false} />
                 <Tooltip />
-                <Legend
-                    wrapperStyle={{ paddingTop: '20px' }}
-                    iconType="square"
-                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="square" />
                 <Bar dataKey="total" name="Total" fill="#8B5CF6" radius={[4, 4, 0, 0]} >
                     <LabelList dataKey="total" position="top" fill="#8B5CF6" />
                 </Bar>
@@ -255,112 +246,52 @@ const InspectionStatusBreakdown: React.FC = () => (
     </div>
 );
 
-const InspectionTrends: React.FC = () => {
+const InspectionTrends: React.FC<{ trends: { monthly: { passRate: { date: string; passRate: number }[]; volume: { date: string; inspections: number }[] }; quarterly: { passRate: { date: string; passRate: number }[]; volume: { date: string; inspections: number }[] }; yearly: { passRate: { date: string; passRate: number }[]; volume: { date: string; inspections: number }[] } } }> = ({ trends }) => {
     const [activeTimeTab, setActiveTimeTab] = useState('Monthly');
     const [activeTab, setActiveTab] = useState('Pass Rate');
-
     const displayedTrend =
         activeTimeTab === "Monthly"
-            ? trendsData.monthly[activeTab === "Pass Rate" ? "passRate" : "volume"]
+            ? trends.monthly[activeTab === "Pass Rate" ? "passRate" : "volume"]
             : activeTimeTab === "Quarterly"
-                ? trendsData.quarterly[activeTab === "Pass Rate" ? "passRate" : "volume"]
-                : trendsData.yearly[activeTab === "Pass Rate" ? "passRate" : "volume"];
-
-
+                ? trends.quarterly[activeTab === "Pass Rate" ? "passRate" : "volume"]
+                : trends.yearly[activeTab === "Pass Rate" ? "passRate" : "volume"];
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="bg-white mt-4 rounded-lg">
             <div className="flex items-center gap-2 mb-4">
                 <Activity size={18} className="text-[#7522BB]" />
                 <h2 className="text-lg font-semibold text-[#7522BB]">Inspection Trends</h2>
             </div>
             <p className="text-sm text-gray-600 mb-6">Inspection volumes and pass rates over time</p>
-
             <div className="flex justify-between gap-10 mb-6">
-                {/* 1st group */}
                 <div className="flex bg-purple-100 p-1 rounded-lg">
                     {['Pass Rate', 'Volume'].map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTab === tab
-                                ? 'bg-purple-600 text-white'
-                                : 'text-gray-700'
-                                }`}
-                        >
-                            {tab}
-                        </button>
+                        <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTab === tab ? 'bg-purple-600 text-white' : 'text-gray-700'}`}>{tab}</button>
                     ))}
                 </div>
-
-                {/* 2nd group */}
                 <div className="flex bg-purple-100 p-1 rounded-lg">
                     {['Monthly', 'Quarterly', 'Yearly'].map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTimeTab(tab)}
-                            className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTimeTab === tab
-                                ? 'bg-purple-600 text-white'
-                                : 'text-gray-700'
-                                }`}
-                        >
-                            {tab}
-                        </button>
+                        <button key={tab} onClick={() => setActiveTimeTab(tab)} className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTimeTab === tab ? 'bg-purple-600 text-white' : 'text-gray-700'}`}>{tab}</button>
                     ))}
                 </div>
             </div>
-
             <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={displayedTrend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 12 }}
-                        tickLine={false}
-                    />
-                    <YAxis
-                        yAxisId="left"
-                        label={{ value: 'Inspections', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
-                        tick={{ fontSize: 12 }}
-                        axisLine={false}
-                        tickLine={false}
-                    />
-                    <YAxis
-                        yAxisId="right"
-                        orientation="right"
-                        label={{ value: 'Pass Rate %', angle: 90, position: 'insideRight', style: { fontSize: 12 } }}
-                        tick={{ fontSize: 12 }}
-                        domain={[0, 100]}
-                        axisLine={false}
-                        tickLine={false}
-                    />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} tickLine={false} />
+                    <YAxis yAxisId="left" label={{ value: 'Inspections', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="right" orientation="right" label={{ value: 'Pass Rate %', angle: 90, position: 'insideRight', style: { fontSize: 12 } }} tick={{ fontSize: 12 }} domain={[0, 100]} axisLine={false} tickLine={false} />
                     <Tooltip />
                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="inspections"
-                        name="Volume"
-                        stroke="#4f46e5"
-                        strokeWidth={2}
-                        dot={{ fill: '#4f46e5', r: 4 }}
-                    />
-                    <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="passRate"
-                        name="Pass Rate"
-                        stroke="#8b5cf6"
-                        strokeWidth={2}
-                        dot={{ fill: '#8b5cf6', r: 4 }}
-                    />
+                    <Line yAxisId="right" type="monotone" dataKey="inspections" name="Volume" stroke="#4f46e5" strokeWidth={2} dot={{ fill: '#4f46e5', r: 4 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="passRate" name="Pass Rate" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: '#8b5cf6', r: 4 }} />
                 </LineChart>
             </ResponsiveContainer>
         </div>
     );
 };
 
-const InspectionDurationAnalysis: React.FC = () => (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
+const InspectionDurationAnalysis: React.FC<{ durationData: { range: string; count: number }[] }> = ({ durationData }) => (
+    <div className="bg-white mt-4 rounded-lg">
         <div className="flex items-center gap-2 mb-4">
             <div>
                 <Clock size={18} className="text-[#7522BB]" />
@@ -370,65 +301,67 @@ const InspectionDurationAnalysis: React.FC = () => (
                 <p className="text-sm text-gray-600">Distribution of inspection durations</p>
             </div>
         </div>
-
         <div className="flex justify-end items-center gap-4 mb-6">
             <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600">Bin Size (minutes):</label>
-                <input
-                    type="text"
-                    value="5m"
-                    className="w-[100px] px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF]"
-                    readOnly
-                />
+                <input type="text" value="5m" className="w-[100px] px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF]" readOnly />
             </div>
-            <button className="px-4 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors">
-                Apply
-            </button>
+            <button className="px-4 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors">Apply</button>
             <span className="text-xs text-gray-500">(Enter "auto" or a number)</span>
         </div>
-
         <ResponsiveContainer width="100%" height={300}>
             <BarChart data={durationData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                <XAxis
-                    dataKey="range"
-                    tick={{ fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    axisLine={false}
-                    tickLine={false}
-                />
-                <YAxis
-                    label={{ value: 'Number of inspections', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
-                    tick={{ fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                />
+                <XAxis dataKey="range" tick={{ fontSize: 11 }} angle={-45} textAnchor="end" height={80} axisLine={false} tickLine={false} />
+                <YAxis label={{ value: 'Number of inspections', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="square" />
                 <Bar dataKey="count" name="Inspections" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
             </BarChart>
         </ResponsiveContainer>
-
-        <p className="text-xs text-gray-500 text-center mt-4">
-            Based on 33 inspections from 7/3/2025 to 10/23/2025 · Using 3 minute bins
-        </p>
     </div>
 );
 
 // Main App
 const AnalysisDashboard: React.FC = () => {
     const [time, setTime] = useState('All Time');
+    const [statusData, setStatusData] = useState<{ name: string; value: number; percentage: number; color: string }[]>([]);
+    const [totals, setTotals] = useState<{ total: number; pass: number; fail: number }>({ total: 0, pass: 0, fail: 0 });
+    const [breakdownData, setBreakdownData] = useState<{ period: string; total: number; pass: number; fail: number }[]>([]);
+    const [trends, setTrends] = useState<{ monthly: { passRate: { date: string; passRate: number }[]; volume: { date: string; inspections: number }[] }; quarterly: { passRate: { date: string; passRate: number }[]; volume: { date: string; inspections: number }[] }; yearly: { passRate: { date: string; passRate: number }[]; volume: { date: string; inspections: number }[] } }>({ monthly: { passRate: [], volume: [] }, quarterly: { passRate: [], volume: [] }, yearly: { passRate: [], volume: [] } });
+    const [duration, setDuration] = useState<{ range: string; count: number }[]>([]);
+    useEffect(() => {
+        const vendorId = sessionStorage.getItem('selectedVendorId');
+        const departmentId = sessionStorage.getItem('selectedDepartmentId');
+        const fetchAnalytics = async () => {
+            try {
+                const res = await apiRequest('/api/reports/get-analytics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vendorId, departmentId, timeRange: time })
+                });
+                const json = await res.json();
+                if (!res.ok || !json?.success) throw new Error(json?.message || 'Failed to load analytics');
+                const a = json.analytics;
+                setTotals({ total: a.status.total, pass: a.status.pass, fail: a.status.fail });
+                setStatusData(a.status.pie);
+                setBreakdownData([{ period: a.breakdown.period, total: a.breakdown.total, pass: a.breakdown.pass, fail: a.breakdown.fail }]);
+                setTrends(a.trends);
+                setDuration(a.durations);
+            } catch (e: any) {
+                toast.error(e?.message || 'Error loading analytics');
+            }
+        };
+        fetchAnalytics();
+    }, [time]);
     return (
         <div className="">
             <DashboardHeader time={time} setTime={setTime} />
-
             <div className="">
-                <InspectionStatusOverview />
-                <InspectionStatusBreakdown />
-                <InspectionTrends />
-                <InspectionDurationAnalysis />
+                <InspectionStatusOverview total={totals.total} pass={totals.pass} fail={totals.fail} statusData={statusData} />
+                <InspectionStatusBreakdown data={breakdownData} />
+                <InspectionTrends trends={trends} />
+                <InspectionDurationAnalysis durationData={duration} />
             </div>
         </div>
     );

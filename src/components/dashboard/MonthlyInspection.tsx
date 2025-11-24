@@ -40,6 +40,13 @@ type ViewType = "Monthly" | "Quarterly" | "Annually";
 
 export default function MonthlyInspectionChart({ data, loading }: { data?: monthlyInspection, loading: boolean }) {
     const [view, setView] = useState<ViewType>("Monthly");
+    const currentYear = new Date().getFullYear();
+    const last4Years = [
+        currentYear - 3,
+        currentYear - 2,
+        currentYear - 1,
+        currentYear
+    ];
 
     const chartData = useMemo(() => {
         if (!data) return null;
@@ -50,9 +57,9 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
                     data.annually;
 
         const labels =
-            view === "Monthly" ? ["W1", "W2", "W3", "W4"] :
+            view === "Monthly" ? MONTHS :
                 view === "Quarterly" ? ["Q1", "Q2", "Q3", "Q4"] :
-                    MONTHS; // 12 months
+                    last4Years; // 12 months
 
         const passData = selected.map(i => i.pass);
         const failData = selected.map(i => i.fail);
