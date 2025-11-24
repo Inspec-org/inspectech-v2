@@ -22,7 +22,7 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
         if (vendor) {
             setFormData((prev) => ({ ...prev, vendor: vendor }));
         }
-    },[])
+    }, [])
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -184,23 +184,40 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                     <label className="block text-sm font-medium text-gray-700">Date</label>
                     <div className="flex gap-2 items-center">
                         <input
-                            type="number" min={0}
-                            value={formData.dateDay}
-                            onChange={(e) => handleChange("dateDay", e.target.value)}
-                            className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
-                        />
-                        <span className="text-gray-400">/</span>
-                        <input
-                            type="number" min={0}
+                            type="number"
+                            min={1}
+                            max={12}
                             value={formData.dateMonth}
-                            onChange={(e) => handleChange("dateMonth", e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const raw = Number(e.target.value);
+                                const value = Math.min(12, Math.max(1, raw));
+                                handleChange("dateMonth", value.toString());
+                            }}
                             className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
                         />
                         <span className="text-gray-400">/</span>
                         <input
-                            type="number" min={0}
+                            type="number"
+                            min={1}
+                            max={31}
+                            value={formData.dateDay}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const raw = Number(e.target.value);
+                                const value = Math.min(31, Math.max(1, raw));
+                                handleChange("dateDay", value.toString());
+                            }}
+                            className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
+                        />
+                        <span className="text-gray-400">/</span>
+                        <input
+                            type="number" min={2000}
                             value={formData.dateYear}
-                            onChange={(e) => handleChange("dateYear", e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const currentYear = new Date().getFullYear();
+                                const raw = Number(e.target.value);
+                                const value = Math.min(currentYear, Math.max(2000, raw));
+                                handleChange("dateYear", value.toString());
+                            }}
                             className="w-20 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
                         />
                     </div>
