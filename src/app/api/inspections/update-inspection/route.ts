@@ -19,12 +19,28 @@ export async function PUT(req: NextRequest) {
 
     await connectDB();
 
+    // Validate unitId vs equipmentNumber
+    const { unitId, equipmentNumber } = body;
+
+    const isEmptyOrNA = (v: any) =>
+      v === undefined || v === null || v === "" || v === "N/A";
+
+    // If equipmentNumber exists AND is not empty/NA AND different → error
+    if (!isEmptyOrNA(equipmentNumber) && equipmentNumber !== unitId) {
+      return NextResponse.json(
+        { success: false, message: "unitId and Equipment Number must match" },
+        { status: 400 }
+      );
+    }
+
+    // Clean body
     const cleaned: any = { ...body };
     ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
       if (cleaned[key] === "" || cleaned[key] === undefined || cleaned[key] === null) {
         delete cleaned[key];
       }
     });
+
     if (cleaned["delivered_status"] && !cleaned["delivered"]) {
       cleaned["delivered"] = cleaned["delivered_status"];
       delete cleaned["delivered_status"];

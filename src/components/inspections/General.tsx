@@ -30,7 +30,7 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                 <div className="flex flex-col lg:flex-row justify-between gap-4 items-start border-b pb-2">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
-                            Unit ID
+                            Equipment ID
                         </label>
                         <p className="text-xs text-blue-600 mt-1">
                             Unit ID cannot be changed after creation

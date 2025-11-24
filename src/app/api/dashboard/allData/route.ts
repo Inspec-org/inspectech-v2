@@ -35,51 +35,52 @@ export async function POST(req: NextRequest) {
     // ---------- MONTHLY / QUARTERLY / ANNUAL PASS-FAIL ----------
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth(); // 0-11
 
-    //* -------- MONTHLY: 4 weeks in current month --------
-    const monthly = Array.from({ length: 4 }, () => ({ pass: 0, fail: 0 }));
+    // All arrays use { pass, fail }
 
-    inspections.forEach((i) => {
-      const date = new Date(i.createdAt);
-      if (date.getFullYear() === year && date.getMonth() === month) {
-        const weekIndex = Math.floor((date.getDate() - 1) / 7); // 0-3
-        if (weekIndex >= 0 && weekIndex < 4) {
-          i.inspectionStatus === "pass"
-            ? monthly[weekIndex].pass++
-            : monthly[weekIndex].fail++;
-        }
-      }
-    });
-
-    //* -------- QUARTERLY: 4 quarters in current year --------
-    const quarterly = Array.from({ length: 4 }, () => ({ pass: 0, fail: 0 }));
-
-    inspections.forEach((i) => {
-      const date = new Date(i.createdAt);
-      if (date.getFullYear() === year) {
-        const quarterIndex = Math.floor(date.getMonth() / 3); // 0=Jan–Mar, 1=Apr–Jun ...
-        i.inspectionStatus === "pass"
-          ? quarterly[quarterIndex].pass++
-          : quarterly[quarterIndex].fail++;
-      }
-    });
-
-    //* -------- ANNUALLY: 12 months of current year --------
-    const annually = Array.from({ length: 12 }, () => ({ pass: 0, fail: 0 }));
+    // -------- MONTHLY: 12 months of CURRENT YEAR --------
+    const monthly = Array.from({ length: 12 }, () => ({ pass: 0, fail: 0 }));
 
     inspections.forEach((i) => {
       const date = new Date(i.createdAt);
       if (date.getFullYear() === year) {
         const monthIndex = date.getMonth(); // 0–11
         i.inspectionStatus === "pass"
-          ? annually[monthIndex].pass++
-          : annually[monthIndex].fail++;
+          ? monthly[monthIndex].pass++
+          : monthly[monthIndex].fail++;
+      }
+    });
+
+    // -------- QUARTERLY: 4 quarters of CURRENT YEAR --------
+    const quarterly = Array.from({ length: 4 }, () => ({ pass: 0, fail: 0 }));
+
+    inspections.forEach((i) => {
+      const date = new Date(i.createdAt);
+      if (date.getFullYear() === year) {
+        const quarterIndex = Math.floor(date.getMonth() / 3); // 0,1,2,3
+        i.inspectionStatus === "pass"
+          ? quarterly[quarterIndex].pass++
+          : quarterly[quarterIndex].fail++;
+      }
+    });
+
+    // -------- ANNUALLY: LAST 4 YEARS (including current year) --------
+    const annually = Array.from({ length: 4 }, () => ({ pass: 0, fail: 0 }));
+    const startYear = year - 3; // e.g., if current is 2025, consider 2022–2025
+
+    inspections.forEach((i) => {
+      const date = new Date(i.createdAt);
+      const y = date.getFullYear();
+      if (y >= startYear && y <= year) {
+        const yearIndex = y - startYear; // 0–3
+        i.inspectionStatus === "pass"
+          ? annually[yearIndex].pass++
+          : annually[yearIndex].fail++;
       }
     });
 
     const monthlyInspection = { monthly, quarterly, annually };
-    console.log(pass)
+
 
     // ---------- OVERALL ----------
     const overall = {

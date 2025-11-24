@@ -1,5 +1,5 @@
-import Inspections from '@/components/inspections/Inspections'
-import Reports from '@/components/reports/Reports'
+
+import Reports from '@/components/reports/Reports-Admin'
 import React, { Suspense } from 'react'
 
 function page() {
