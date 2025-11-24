@@ -2,7 +2,8 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { FormData } from './Edit';
-
+import DatePicker from "react-datepicker";
+import YearPicker from '../ui/YearPicker';
 
 export default function CheckList({ prop, formData, setFormData }: { prop: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }) {
 
@@ -23,6 +24,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
     };
 
     const handleDropdownChange = (name: string, value: string) => {
+        console.log(name, value)
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -34,16 +36,6 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
             [section]: !prev[section]
         }));
     };
-
-    const currentYear = new Date().getFullYear();
-
-    const yearOptions = [
-        { value: "na", label: "N/A" }, // 👈 add this at the top
-        ...Array.from({ length: currentYear - 1980 + 1 }, (_, i) => {
-            const year = currentYear - i; // descending: 2025 → 1980
-            return { value: year.toString(), label: year.toString() };
-        }),
-    ];
 
     const handleSetNA = (field: string) => {
         setFormData(prev => ({
@@ -274,11 +266,11 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Model Year</label>
-                                    <CustomDropdown
-                                        options={yearOptions}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                    <YearPicker
                                         value={formData.modelYear}
-                                        onChange={(val) => handleDropdownChange("modelYear", val)}
+                                        onChange={(year) => handleDropdownChange("modelYear", year)}
+                                        minYear={1980}
+                                        maxYear={new Date().getFullYear()+1}
                                     />
                                 </div>
                             </div>
@@ -587,7 +579,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                     value={formData.grossAxleWeightRating}
-                                    onChange={(val) => handleDropdownChange("grossAxleWeightRating}", val)}
+                                    onChange={(val) => handleDropdownChange("grossAxleWeightRating", val)}
                                 />
                             </div>
 
