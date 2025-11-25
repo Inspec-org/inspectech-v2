@@ -1,5 +1,5 @@
 // /Users/mlb/Desktop/InspecTech/src/components/Modals/BatchEditInspectionsModal.tsx
-import React from 'react';
+import React, { useContext } from 'react';
 import { Edit3 } from 'lucide-react';
 import { Modal } from '../ui/modal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -7,6 +7,7 @@ import CheckList from '../inspections/CheckLIst';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import { set } from 'mongoose';
+import { UserContext } from '@/context/authContext';
 
 type Props = {
   isOpen: boolean;
@@ -20,6 +21,7 @@ type Props = {
 };
 
 const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData, setFormData, onChange, onDropdownChange, selectedUnitIds, onUpdated }) => {
+  const { user } = useContext(UserContext)
   const handleUpdate = async () => {
     const updates: any = {};
 
@@ -36,7 +38,7 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
     Object.keys(formData).forEach((key) => {
       const val = formData[key];
       if (val !== '' && val !== undefined && val !== null) {
-        if (!(key in updates) && !['status','delivered_status','date','duration'].includes(key)) {
+        if (!(key in updates) && !['status', 'delivered_status', 'date', 'duration'].includes(key)) {
           updates[key] = val;
         }
       }
@@ -94,17 +96,17 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
               <label className="w-32 text-gray-700 font-medium">Inspection Status</label>
               <CustomDropdown
                 options={[
-                  { value: 'pass', label: 'PASS' },
-                  { value: 'fail', label: 'FAIL' },
-                  { value: 'need_review', label: 'NEEDS REVIEW' },
-                  { value: 'out_of_cycle', label: 'OUT OF CYCLE (DELIVERED)' },
-                  { value: 'no_inspection', label: 'NO INSPECTION(DELIVERED)' },
-                  { value: 'incomplete', label: 'INCOMPLETE' },
-                  { value: 'complete', label: 'COMPLETE' },
+                  { value: "pass", label: `PASS${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                  { value: "fail", label: `FAIL${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                  { value: "needs review", label: `NEEDS REVIEW${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                  { value: "out of cycle (delivered)", label: `OUT OF CYCLE (DELIVERED)${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                  { value: "no inspection (delivered)", label: `NO INSPECTION (DELIVERED)${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                  { value: "incomplete", label: "INCOMPLETE" },
+                  { value: "complete", label: "COMPLETE" },
                 ]}
-                width='w-full'
-                value={formData.status}
-                onChange={(val) => onDropdownChange('status', val)}
+              width='w-full'
+              value={formData.status}
+              onChange={(val) => onDropdownChange('status', val)}
               />
             </div>
             {/* Type */}

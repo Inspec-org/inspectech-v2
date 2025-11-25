@@ -32,7 +32,7 @@ export default function Inspections({ recentInspections, loading, onRefresh }: {
         {
             header: "UNIT ID",
             accessor: "id",
-            cell: (row) => <div className="font-medium text-[var(--secondary)]">{row.unitId}</div>,
+            cell: (row) => <div className="opacity-70 whitespace-nowrap">{row.unitId}</div>,
         },
         {
             header: "STATUS",
@@ -59,39 +59,39 @@ export default function Inspections({ recentInspections, loading, onRefresh }: {
         {
             header: "TYPE",
             accessor: "type",
-            cell: (row) => <div className="font-medium text-[var(--secondary)]">{row.type}</div>,
+            cell: (row) => <div className="opacity-70 whitespace-nowrap">{row.type}</div>,
         },
         {
             header: "INSPECTOR",
             accessor: "inspector",
-            cell: (row) => <div className="opacity-70">{row.inspector}</div>,
+            cell: (row) => <div className="opacity-70 whitespace-nowrap">{row.inspector}</div>,
         },
         {
             header: "VENDOR",
             accessor: "vendor",
-            cell: (row) => <div className="opacity-70">{row.vendor}</div>,
+            cell: (row) => <div className="opacity-70 whitespace-nowrap">{row.vendor}</div>,
         },
         {
             header: "LOCATION",
             accessor: "location",
-            cell: (row) => <div className="opacity-70">{row.location}</div>,
+            cell: (row) => <div className="opacity-70 whitespace-nowrap">{row.location}</div>,
         },
         {
             header: "DURATION",
             accessor: "duration",
-            cell: (row) => <div className="opacity-70">{row.duration}</div>,
+            cell: (row) => <div className="opacity-70 whitespace-nowrap">{row.duration}</div>,
         },
         {
             header: "DATE",
             accessor: "date",
-            cell: (row) => <div className="opacity-70">{row.date}</div>,
+            cell: (row) => <div className="opacity-70 whitespace-nowrap">{row.date}</div>,
         },
 
     ];
 
     return (
-        <div className="h-full border p-6">
-            <GenericDataTable title="Recent Inspection Orders" min_height="450px" title_font_size="text-lg font-bold" data={recentInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} onRefresh={onRefresh} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
+        <div className="border p-6 rounded-2xl">
+            <GenericDataTable title="Recent Inspection Orders" min_height="410px" title_font_size="text-lg font-bold" data={recentInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} onRefresh={onRefresh} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
                 "All Users": "/images/No Users.svg"
             }}
             />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { Upload, ArrowLeft, FolderPlus, AlertCircle, X, Download, FileUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Modal } from '../ui/modal';
@@ -18,6 +19,56 @@ interface ValidationError {
     message: string;
 }
 
+const FIELD_CATEGORIES = {
+    identification: [
+        'poNumber',
+        'equipmentNumber',
+        'vin',
+        'licensePlateId',
+        'licensePlateCountry',
+        'licensePlateExpiration',
+        'licensePlateState',
+        'possessionOrigin',
+        'manufacturer',
+        'modelYear'
+    ],
+    sensor: [
+        'absSensor',
+        'airTankMonitor',
+        'rtbIndicator',
+        'lightOutSensor',
+        'sensorError',
+        'ultrasonicCargoSensor'
+    ],
+    dimensional: [
+        'length',
+        'height',
+        'grossAxleWeightRating',
+        'axleType',
+        'brakeType',
+        'suspensionType',
+        'tireModel'
+    ],
+    feature: [
+        'amenikis',
+        'doorBranding',
+        'doorColor',
+        'doorSensor',
+        'doorType',
+        'lashSystem',
+        'mudFlapType',
+        'panelBranding',
+        'noseBranding',
+        'skirted',
+        'skirtColor',
+        'captiveBeam',
+        'cargoCameras',
+        'cartbars',
+        'tpms',
+        'trailerHeightDecal'
+    ]
+};
+
 export default function BatchCreateInspections() {
     const { isOpen, openModal, closeModal } = useModal();
     const [file, setFile] = useState<File | null>(null);
@@ -30,6 +81,7 @@ export default function BatchCreateInspections() {
         stats: {
             inspections: number;
             columns: number;
+            identification: number;
             dimensional: number;
             feature: number;
             sensor: number;
@@ -62,6 +114,46 @@ export default function BatchCreateInspections() {
         // }
     };
 
+    const countFieldCategories = (headers: string[]) => {
+        const normalizeHeader = (h: string) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        const counts = {
+            identification: 0,
+            dimensional: 0,
+            feature: 0,
+            sensor: 0
+        };
+
+        headers.forEach(header => {
+            const normalized = normalizeHeader(header);
+
+            // Check each category with partial matching
+            if (FIELD_CATEGORIES.identification.some(field => {
+                const normalizedField = normalizeHeader(field);
+                return normalized.includes(normalizedField) || normalizedField.includes(normalized);
+            })) {
+                counts.identification++;
+            } else if (FIELD_CATEGORIES.sensor.some(field => {
+                const normalizedField = normalizeHeader(field);
+                return normalized.includes(normalizedField) || normalizedField.includes(normalized);
+            })) {
+                counts.sensor++;
+            } else if (FIELD_CATEGORIES.dimensional.some(field => {
+                const normalizedField = normalizeHeader(field);
+                return normalized.includes(normalizedField) || normalizedField.includes(normalized);
+            })) {
+                counts.dimensional++;
+            } else if (FIELD_CATEGORIES.feature.some(field => {
+                const normalizedField = normalizeHeader(field);
+                return normalized.includes(normalizedField) || normalizedField.includes(normalized);
+            })) {
+                counts.feature++;
+            }
+        });
+
+        return counts;
+    };
+
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
@@ -77,83 +169,149 @@ export default function BatchCreateInspections() {
             setFile(selectedFile);
             setValidationErrors([]);
             setPreviewData(null);
-            processCSVFile(selectedFile);
+            processFile(selectedFile);
         }
     };
 
-    const processCSVFile = async (file: File) => {
+    const processFile = async (file: File) => {
         setIsProcessing(true);
 
         try {
-            const text = await file.text();
-            const rows = text
-                .split(/\r?\n/)
-                .map(row => row.split(',').map(cell => cell.trim()))
-                .filter(row => row.length > 0 && row.some(cell => cell)); // remove empty lines
+            let rows: (string | number | null | undefined)[][] = [];
+            if (file.name.toLowerCase().endsWith('.xlsx')) {
+                const data = await file.arrayBuffer();
+                const wb = XLSX.read(data, { type: 'array' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number | null | undefined)[][];
+            } else {
+                const text = await file.text();
+                const wb = XLSX.read(text, { type: 'string' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number | null | undefined)[][];
+            }
+            rows = rows.filter((r) => Array.isArray(r) && r.some((c) => c !== null && c !== undefined && String(c).trim() !== ''));
 
             if (rows.length < 2) {
-                throw new Error('CSV file must contain headers and at least one data row.');
+                throw new Error('File must contain headers and at least one data row.');
             }
 
-            const headers = rows[0].filter(h => h !== '');
+            const headers = (rows[0] as (string | number | null | undefined)[]).map(h => (h === null || h === undefined ? '' : String(h))).filter(h => h !== '');
             if (headers.length === 0) {
-                throw new Error('Invalid CSV: No headers found.');
+                throw new Error('Invalid spreadsheet: No headers found.');
+            }
+            const isAllowedValuesCell = (val: string) => {
+                const s = String(val).trim();
+                if (!s) return false;
+                const hasComma = s.includes(',');
+                const hasSlash = s.includes('/');
+                const tokens = s.split(hasComma ? ',' : hasSlash ? '/' : ',').map(t => t.trim()).filter(t => t);
+                if (tokens.length < 2) return false;
+                if (tokens.every(t => /^[\w\s.-]+$/.test(t)) && tokens.some(t => t.length <= 5)) return true;
+                return hasComma || hasSlash;
+            };
+
+            const candidateAllowed = rows[1] as (string | number | null | undefined)[];
+            let allowedByHeader: Record<string, string[]> = {};
+            let dataStartIndex = 1;
+            if (candidateAllowed && candidateAllowed.length) {
+                const allowedSignals: number[] = candidateAllowed.map(c => (isAllowedValuesCell(String(c ?? '')) ? 1 : 0));
+                const ratio = allowedSignals.reduce((a, b) => a + b, 0) / Math.max(allowedSignals.length, 1);
+                if (ratio >= 0.5) {
+                    dataStartIndex = 2;
+                    headers.forEach((h, idx) => {
+                        const cell = candidateAllowed[idx];
+                        const s = String(cell ?? '').trim();
+                        if (isAllowedValuesCell(s)) {
+                            const sep = s.includes(',') ? ',' : s.includes('/') ? '/' : ',';
+                            allowedByHeader[h] = s.split(sep).map(t => t.trim()).filter(t => t);
+                        }
+                    });
+                }
             }
 
-            // Ensure all rows have the same number of columns
-            const inconsistentRows = rows
-                .slice(1)
-                .filter(r => r.length !== headers.length);
-
-            if (inconsistentRows.length > 0) {
-                throw new Error(
-                    `Invalid CSV format: Some rows do not match header column count (${headers.length}).`
-                );
-            }
-
-            // Simulated validation
             const errors: ValidationError[] = [];
             const parsedRows: InspectionData[] = [];
+            const norm = (v: string) => String(v || '').trim();
+            const normId = (v: string) => String(v || '').trim().toLowerCase();
+            const unitIdHeaderCandidates = ['unit id', 'unitid', 'unitid#', 'unit'];
+            const equipIdHeaderCandidates = ['equipment id/trailer number', 'equipment id', 'trailer number', 'equipment id #', 'equipment'];
+            const unitIdIndex = headers.findIndex(h => unitIdHeaderCandidates.includes(h.trim().toLowerCase()));
+            const equipIdIndex = headers.findIndex(h => equipIdHeaderCandidates.includes(h.trim().toLowerCase()));
+            const seenUnitIds = new Map<string, number>();
 
-            for (let i = 1; i < rows.length; i++) {
+            for (let i = dataStartIndex; i < rows.length; i++) {
                 const currentRow = rows[i];
-                if (!currentRow || currentRow.every(cell => !cell)) continue;
+                if (!currentRow || currentRow.every((cell) => cell === null || cell === undefined || String(cell).trim() === '')) continue;
 
                 const rowData: InspectionData = {};
                 headers.forEach((header, index) => {
-                    rowData[header] = currentRow[index] || '';
+                    const val = currentRow[index] ?? '';
+                    const strVal = String(val).trim();
+                    rowData[header] = strVal;
                 });
 
-                // Example validation
-                if (rowData['License Plate expiration'] === '"NO EXPIRY"') {
-                    errors.push({
-                        row: i + 1,
-                        field: 'License Plate expiration',
-                        value: '"NO EXPIRY"',
-                        message: 'Invalid format. Expected date format.',
-                    });
-                }
+                Object.keys(allowedByHeader).forEach(h => {
+                    const v = norm(String(rowData[h] ?? ''));
+                    if (!v) return;
+                    const allowed = allowedByHeader[h];
+                    const match = allowed.some(a => a.toLowerCase() === v.toLowerCase());
+                    if (!match) {
+                        errors.push({ row: i + 1, field: h, value: String(rowData[h] ?? ''), message: `Value must be one of: ${allowed.join(', ')}` });
+                    }
+                });
 
+                const unitVal = unitIdIndex >= 0 ? norm(String(currentRow[unitIdIndex] ?? '')) : '';
+                const equipVal = equipIdIndex >= 0 ? norm(String(currentRow[equipIdIndex] ?? '')) : '';
+                if (unitVal && equipVal) {
+                    if (normId(unitVal) !== normId(equipVal)) {
+                        errors.push({ row: i + 1, field: 'Unit ID / Equipment ID', value: `${unitVal} / ${equipVal}`, message: 'Both identifiers must match' });
+                    }
+                }
+                if (!unitVal && equipVal) {
+                    if (unitIdIndex >= 0) rowData[headers[unitIdIndex]] = equipVal;
+                }
+                if (unitVal && !equipVal) {
+                    if (equipIdIndex >= 0) rowData[headers[equipIdIndex]] = unitVal;
+                }
+                const effectiveId = unitVal || equipVal;
+                if (effectiveId) {
+                    const key = normId(effectiveId);
+                    if (seenUnitIds.has(key)) {
+                        const firstRow = seenUnitIds.get(key) || 0;
+                        errors.push({ row: i + 1, field: 'Unit ID', value: effectiveId, message: `Duplicate Unit ID, first seen at row ${firstRow}` });
+                    } else {
+                        seenUnitIds.set(key, i + 1);
+                    }
+                } else {
+                    errors.push({ row: i + 1, field: 'Unit ID', value: '', message: 'Missing Unit ID or Equipment ID/Trailer Number' });
+                }
+                rowData['Unit ID'] = effectiveId;
                 parsedRows.push(rowData);
             }
 
             if (parsedRows.length === 0) {
-                throw new Error('CSV contains no valid data rows.');
+                throw new Error('Spreadsheet contains no valid data rows.');
             }
+            parsedRows.forEach((row, index) => {
+                row['Sr No'] = index + 1;
+            });
 
             if (errors.length > 0) {
                 setValidationErrors(errors);
                 setPreviewData(null);
             } else {
+                const enhancedHeaders = ['Sr No', 'Unit ID', ...headers.filter(h =>
+                    !['Sr No', 'Unit ID'].includes(h) &&
+                    !unitIdHeaderCandidates.includes(h.trim().toLowerCase()) &&
+                    !equipIdHeaderCandidates.includes(h.trim().toLowerCase())
+                )];
                 setPreviewData({
-                    headers,
+                    headers: enhancedHeaders,
                     rows: parsedRows,
                     stats: {
                         inspections: parsedRows.length,
                         columns: headers.length,
-                        dimensional: 8,
-                        feature: 16,
-                        sensor: 6,
+                        ...countFieldCategories(headers)
                     },
                 });
                 setValidationErrors([]);
@@ -193,7 +351,7 @@ export default function BatchCreateInspections() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'validation-errors.txt';
+        a.download = 'validation-errors.csv';
         a.click();
     };
 
@@ -209,7 +367,7 @@ export default function BatchCreateInspections() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className=" bg-gray-50">
             {/* Header */}
             <div className="bg-[#F4EFFE] border-b border-gray-200">
                 <div className="px-4 sm:px-6 lg:px-8 py-4">
@@ -223,9 +381,7 @@ export default function BatchCreateInspections() {
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button
-                                className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
-                            >
+                            <button className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors" onClick={() => router.back()}>
                                 <ArrowLeft size={18} />
                                 <span>Back to Inspections</span>
                             </button>
@@ -274,11 +430,11 @@ export default function BatchCreateInspections() {
                                     </p>
                                 </div>
 
-                                {file && !isProcessing && !validationErrors.length && (
+                                {/* {file && !isProcessing && !validationErrors.length && (
                                     <div className="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm font-medium">
                                         Selected: {file.name}
                                     </div>
-                                )}
+                                )} */}
 
                                 <button
                                     onClick={handleUploadClick}
@@ -338,7 +494,7 @@ export default function BatchCreateInspections() {
 
                     {/* Import Preview */}
                     {previewData && (
-                        <div className="p-6">
+                        <div className="p-6 grid grid-cols-1">
                             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                                 <div className="p-6 border-b border-gray-200 flex items-start justify-between">
                                     <div>
@@ -347,7 +503,7 @@ export default function BatchCreateInspections() {
                                             {previewData.stats.inspections} inspection will be created with {previewData.stats.columns} column of data
                                         </p>
                                         <p className="text-sm text-gray-600">
-                                            {previewData.stats.dimensional} identification of {previewData.stats.dimensional} dimentional field, {previewData.stats.feature} feature fields, {previewData.stats.sensor} sensor fields
+                                            {previewData.stats.dimensional} identification fields, {previewData.stats.dimensional} dimentional field, {previewData.stats.feature} feature fields, {previewData.stats.sensor} sensor fields
                                         </p>
                                     </div>
                                     <button
@@ -359,8 +515,8 @@ export default function BatchCreateInspections() {
                                 </div>
 
                                 <div className="overflow-x-auto">
-                                    <div className="max-h-96 overflow-y-auto">
-                                        <table className="w-full">
+                                    <div className="max-h-96 overflow-x-auto">
+                                        <table className="min-w-full">
                                             <thead className="bg-gray-100 sticky top-0">
                                                 <tr>
                                                     {previewData.headers.map((header, index) => (
@@ -446,7 +602,7 @@ export default function BatchCreateInspections() {
                                 options={[
                                     { value: "pass", label: "PASS" },
                                     { value: "fail", label: "FAIL" },
-                                    { value: "need_review", label: "NEEDS REVIEW" },
+                                    { value: "needs review", label: "NEEDS REVIEW" },
                                     { value: "out_of_cycle", label: "OUT OF CYCLE (DELIVERED)" },
                                     { value: "no_inspection", label: "NO INSPECTION(DELIVERED)" },
                                     { value: "incomplete", label: "INCOMPLETE" },

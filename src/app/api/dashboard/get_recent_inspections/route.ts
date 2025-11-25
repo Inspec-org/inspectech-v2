@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       departmentId,
     })
       .sort({ createdAt: -1 })
-      .limit(5)
+      .limit(8)
       .select(
         "unitId inspectionStatus vendor location inspector type durationMin durationSec dateDay dateMonth dateYear createdAt"
       )
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const recent = recentDocs.map((i) => ({
       ...i,
       duration: `${i.durationMin} min ${i.durationSec} sec`,
-      date: `${String(i.dateDay).padStart(2, "0")} ${i.dateMonth} ${i.dateYear}`,
+      date: `${String(i.dateDay).padStart(2, "0")}-${i.dateMonth}-${i.dateYear}`,
     }));
 
     return NextResponse.json({

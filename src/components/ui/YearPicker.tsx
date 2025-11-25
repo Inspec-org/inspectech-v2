@@ -5,13 +5,15 @@ interface YearPickerProps {
     onChange: (year: string) => void;
     minYear?: number;
     maxYear?: number;
+    width?: string
 }
 
 const YearPicker: React.FC<YearPickerProps> = ({ 
     value, 
     onChange, 
     minYear = 1980, 
-    maxYear = new Date().getFullYear() 
+    maxYear = new Date().getFullYear(),
+    width
 }) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [displayYears, setDisplayYears] = useState<number[]>([]);
@@ -51,11 +53,11 @@ const YearPicker: React.FC<YearPickerProps> = ({
                 readOnly
                 onClick={() => setIsOpen(!isOpen)}
                 placeholder="Select year"
-                className="w-full xl:w-[230px] bg-[#FAF7FF] border border-gray-300 rounded-lg px-3 py-2 text-gray-700 cursor-pointer"
+                className={`${width} bg-[#FAF7FF] border border-gray-300 rounded-lg px-3 py-2 text-gray-700 cursor-pointer`}
             />
             
             {isOpen && (
-                <div className="absolute z-50 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-[230px]">
+                <div className={`absolute z-50 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 ${width}`}>
                     <div className="flex justify-between items-center mb-3">
                         <button
                             type="button"
