@@ -22,7 +22,7 @@ interface ValidationError {
 const FIELD_CATEGORIES = {
     identification: [
         'poNumber',
-        'equipmentNumber',
+        'equipmentId',
         'vin',
         'licensePlateId',
         'licensePlateCountry',
@@ -35,7 +35,7 @@ const FIELD_CATEGORIES = {
     sensor: [
         'absSensor',
         'airTankMonitor',
-        'rtbIndicator',
+        'atisregulator',
         'lightOutSensor',
         'sensorError',
         'ultrasonicCargoSensor'
@@ -50,7 +50,7 @@ const FIELD_CATEGORIES = {
         'tireModel'
     ],
     feature: [
-        'amenikis',
+        'aerokits',
         'doorBranding',
         'doorColor',
         'doorSensor',
@@ -130,27 +130,38 @@ export default function BatchCreateInspections() {
             // Check each category with partial matching
             if (FIELD_CATEGORIES.identification.some(field => {
                 const normalizedField = normalizeHeader(field);
-                return normalized.includes(normalizedField) || normalizedField.includes(normalized);
+                const isMatch = normalized.includes(normalizedField) || normalizedField.includes(normalized);
+                if (isMatch) console.log("MATCHED identification:", header, "->", field);
+                return isMatch;
             })) {
                 counts.identification++;
             } else if (FIELD_CATEGORIES.sensor.some(field => {
                 const normalizedField = normalizeHeader(field);
-                return normalized.includes(normalizedField) || normalizedField.includes(normalized);
+                const isMatch = normalized.includes(normalizedField) || normalizedField.includes(normalized);
+                if (isMatch) console.log("MATCHED sensor:", header, "->", field);
+                return isMatch;
             })) {
                 counts.sensor++;
             } else if (FIELD_CATEGORIES.dimensional.some(field => {
                 const normalizedField = normalizeHeader(field);
-                return normalized.includes(normalizedField) || normalizedField.includes(normalized);
+                const isMatch = normalized.includes(normalizedField) || normalizedField.includes(normalized);
+                if (isMatch) console.log("MATCHED dimensional:", header, "->", field);
+                return isMatch;
             })) {
                 counts.dimensional++;
             } else if (FIELD_CATEGORIES.feature.some(field => {
                 const normalizedField = normalizeHeader(field);
-                return normalized.includes(normalizedField) || normalizedField.includes(normalized);
+                const isMatch = normalized.includes(normalizedField) || normalizedField.includes(normalized);
+                if (isMatch) console.log("MATCHED feature:", header, "->", field);
+                return isMatch;
             })) {
                 counts.feature++;
+            } else {
+                console.log("UNMATCHED field:", header);
             }
         });
 
+        console.log("counts", counts);
         return counts;
     };
 
@@ -302,16 +313,48 @@ export default function BatchCreateInspections() {
             } else {
                 const enhancedHeaders = ['Sr No', 'Unit ID', ...headers.filter(h =>
                     !['Sr No', 'Unit ID'].includes(h) &&
-                    !unitIdHeaderCandidates.includes(h.trim().toLowerCase()) &&
-                    !equipIdHeaderCandidates.includes(h.trim().toLowerCase())
+                    !unitIdHeaderCandidates.includes(h.trim().toLowerCase())
                 )];
+
+                // Calculate stats from enhancedHeaders (excluding Sr No and Unit ID)
+                const dataHeaders = enhancedHeaders.filter(h => !['Sr No', 'Unit ID'].includes(h));
+                const categoryCounts = countFieldCategories(dataHeaders);
+
+                // Log missing fields
+                const allExpectedFields = [
+                    ...FIELD_CATEGORIES.identification,
+                    ...FIELD_CATEGORIES.sensor,
+                    ...FIELD_CATEGORIES.dimensional,
+                    ...FIELD_CATEGORIES.feature
+                ];
+
+                const normalizeHeader = (h: string) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                const normalizedHeaders = dataHeaders.map(normalizeHeader);
+
+                const missingFields = allExpectedFields.filter(field => {
+                    const normalizedField = normalizeHeader(field);
+                    return !normalizedHeaders.some(h =>
+                        h.includes(normalizedField) || normalizedField.includes(h)
+                    );
+                });
+                console.log('All headers in file:', dataHeaders);
+                console.log('Identification fields:', FIELD_CATEGORIES.identification.length);
+                console.log('Dimensional fields:', FIELD_CATEGORIES.dimensional.length);
+                console.log('Feature fields:', FIELD_CATEGORIES.feature.length);
+                console.log('Sensor fields:', FIELD_CATEGORIES.sensor.length);
+
+                console.log('Total expected fields:', allExpectedFields.length);
+                console.log('Fields found in file:', dataHeaders.length);
+                console.log('Missing fields:', missingFields);
+                console.log('Category breakdown:', categoryCounts);
+
                 setPreviewData({
                     headers: enhancedHeaders,
                     rows: parsedRows,
                     stats: {
                         inspections: parsedRows.length,
-                        columns: headers.length,
-                        ...countFieldCategories(headers)
+                        columns: dataHeaders.length,
+                        ...categoryCounts
                     },
                 });
                 setValidationErrors([]);

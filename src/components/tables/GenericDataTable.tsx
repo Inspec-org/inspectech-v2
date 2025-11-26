@@ -173,7 +173,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
       ) : (
         <>
           {/* Table */}
-          <div className={`overflow-x-auto border-t border-gray-200 h-[${min_height}]`}>
+          <div className={`overflow-x-auto border-t border-gray-200`} style={{ height: min_height }}>
             <table className="min-w-full text-sm">
               <thead>
                 <tr className={`text-left font-raleway ${title !== "Recent Inspection Orders" ? "bg-[#F2EBFF] text-[#3730A3]" : ""} `}>

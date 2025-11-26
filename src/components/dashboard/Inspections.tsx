@@ -91,7 +91,7 @@ export default function Inspections({ recentInspections, loading, onRefresh }: {
 
     return (
         <div className="border p-6 rounded-2xl">
-            <GenericDataTable title="Recent Inspection Orders" min_height="410px" title_font_size="text-lg font-bold" data={recentInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} onRefresh={onRefresh} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
+            <GenericDataTable title="Recent Inspection Orders" min_height="405px" title_font_size="text-lg font-bold" data={recentInspections} tabs={pageTabs} columns={columns} pageSize={limit} currentPage={currentPage} loading={loading} setLoading={setLoading} onRefresh={onRefresh} querykey="user_page" search={search} setSearch={setSearch} emptyStateImages={{
                 "All Users": "/images/No Users.svg"
             }}
             />
