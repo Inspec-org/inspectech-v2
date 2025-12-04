@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { Modal } from '../ui/modal';
 import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
 
 interface InspectionData {
     [key: string]: string | number;
@@ -27,7 +29,7 @@ const FIELD_CATEGORIES = {
         'licensePlateId',
         'licensePlateCountry',
         'licensePlateExpiration',
-        'licensePlateState',
+        'licensePlateState/Province',
         'possessionOrigin',
         'manufacturer',
         'modelYear'
@@ -47,7 +49,8 @@ const FIELD_CATEGORIES = {
         'axleType',
         'brakeType',
         'suspensionType',
-        'tireModel'
+        'tireModel',
+        'tireBrand'
     ],
     feature: [
         'aerokits',
@@ -62,7 +65,7 @@ const FIELD_CATEGORIES = {
         'skirted',
         'skirtColor',
         'captiveBeam',
-        'cargoCameras',
+        'cargoCamera',
         'cartbars',
         'tpms',
         'trailerHeightDecal'
@@ -73,6 +76,7 @@ export default function BatchCreateInspections() {
     const { isOpen, openModal, closeModal } = useModal();
     const [file, setFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const router = useRouter();
     const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
     const [previewData, setPreviewData] = useState<{
@@ -115,7 +119,8 @@ export default function BatchCreateInspections() {
     };
 
     const countFieldCategories = (headers: string[]) => {
-        const normalizeHeader = (h: string) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normalizeHeader = (h: string) =>
+            h.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
         const counts = {
             identification: 0,
@@ -127,43 +132,55 @@ export default function BatchCreateInspections() {
         headers.forEach(header => {
             const normalized = normalizeHeader(header);
 
-            // Check each category with partial matching
-            if (FIELD_CATEGORIES.identification.some(field => {
+            // Helper to check if a field matches
+            const matchesField = (field: string) => {
                 const normalizedField = normalizeHeader(field);
-                const isMatch = normalized.includes(normalizedField) || normalizedField.includes(normalized);
-                if (isMatch) console.log("MATCHED identification:", header, "->", field);
-                return isMatch;
-            })) {
+                // Exact match first
+                if (normalized === normalizedField) return true;
+                // Only allow partial matches if the normalized header is much longer
+                // This prevents "height" from matching "trailerheightdecal"
+                if (normalized.length > normalizedField.length + 3) {
+                    return normalized.includes(normalizedField);
+                }
+                return false;
+            };
+
+            // Check each category in order
+            // IDENTIFICATION
+            if (FIELD_CATEGORIES.identification.some(matchesField)) {
                 counts.identification++;
-            } else if (FIELD_CATEGORIES.sensor.some(field => {
-                const normalizedField = normalizeHeader(field);
-                const isMatch = normalized.includes(normalizedField) || normalizedField.includes(normalized);
-                if (isMatch) console.log("MATCHED sensor:", header, "->", field);
-                return isMatch;
-            })) {
-                counts.sensor++;
-            } else if (FIELD_CATEGORIES.dimensional.some(field => {
-                const normalizedField = normalizeHeader(field);
-                const isMatch = normalized.includes(normalizedField) || normalizedField.includes(normalized);
-                if (isMatch) console.log("MATCHED dimensional:", header, "->", field);
-                return isMatch;
-            })) {
-                counts.dimensional++;
-            } else if (FIELD_CATEGORIES.feature.some(field => {
-                const normalizedField = normalizeHeader(field);
-                const isMatch = normalized.includes(normalizedField) || normalizedField.includes(normalized);
-                if (isMatch) console.log("MATCHED feature:", header, "->", field);
-                return isMatch;
-            })) {
-                counts.feature++;
-            } else {
-                console.log("UNMATCHED field:", header);
+                console.log("MATCHED identification:", header, "updated count =", counts.identification);
+                return;
             }
+
+            // SENSOR
+            if (FIELD_CATEGORIES.sensor.some(matchesField)) {
+                counts.sensor++;
+                console.log("MATCHED sensor:", header, "updated count =", counts.sensor);
+                return;
+            }
+
+            // FEATURE (check before dimensional to catch specific compound names)
+            if (FIELD_CATEGORIES.feature.some(matchesField)) {
+                counts.feature++;
+                console.log("MATCHED feature:", header, "updated count =", counts.feature);
+                return;
+            }
+
+            // DIMENSIONAL
+            if (FIELD_CATEGORIES.dimensional.some(matchesField)) {
+                counts.dimensional++;
+                console.log("MATCHED dimensional:", header, "updated count =", counts.dimensional);
+                return;
+            }
+
+            console.log("UNMATCHED field:", header);
         });
 
-        console.log("counts", counts);
+        console.log("FINAL COUNTS →", counts);
         return counts;
     };
+
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
@@ -191,14 +208,14 @@ export default function BatchCreateInspections() {
             let rows: (string | number | null | undefined)[][] = [];
             if (file.name.toLowerCase().endsWith('.xlsx')) {
                 const data = await file.arrayBuffer();
-                const wb = XLSX.read(data, { type: 'array' });
+                const wb = XLSX.read(data, { type: 'array', cellDates: true });
                 const sheet = wb.Sheets[wb.SheetNames[0]];
-                rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number | null | undefined)[][];
+                rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'mm/dd/yyyy' }) as (string | number | null | undefined)[][];
             } else {
                 const text = await file.text();
-                const wb = XLSX.read(text, { type: 'string' });
+                const wb = XLSX.read(text, { type: 'string', cellDates: true });
                 const sheet = wb.Sheets[wb.SheetNames[0]];
-                rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number | null | undefined)[][];
+                rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'mm/dd/yyyy' }) as (string | number | null | undefined)[][];
             }
             rows = rows.filter((r) => Array.isArray(r) && r.some((c) => c !== null && c !== undefined && String(c).trim() !== ''));
 
@@ -307,6 +324,25 @@ export default function BatchCreateInspections() {
                 row['Sr No'] = index + 1;
             });
 
+            try {
+                const unitIdsToCheck = parsedRows.map(r => String(r['Unit ID'] || '').trim()).filter(Boolean);
+                const res = await apiRequest('/api/inspections/check-unit-ids', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unitIds: unitIdsToCheck }),
+                });
+                const dup = await res.json();
+                if (res.ok && dup.success && Array.isArray(dup.existing) && dup.existing.length) {
+                    const existingSet = new Set(dup.existing.map((s: string) => s.toLowerCase()));
+                    parsedRows.forEach((row, i) => {
+                        const id = String(row['Unit ID'] || '').trim().toLowerCase();
+                        if (id && existingSet.has(id)) {
+                            errors.push({ row: i + 1, field: 'Unit ID', value: String(row['Unit ID'] || ''), message: 'Unit ID already exists' });
+                        }
+                    });
+                }
+            } catch (e) { }
+
             if (errors.length > 0) {
                 setValidationErrors(errors);
                 setPreviewData(null);
@@ -336,17 +372,7 @@ export default function BatchCreateInspections() {
                     return !normalizedHeaders.some(h =>
                         h.includes(normalizedField) || normalizedField.includes(h)
                     );
-                });
-                console.log('All headers in file:', dataHeaders);
-                console.log('Identification fields:', FIELD_CATEGORIES.identification.length);
-                console.log('Dimensional fields:', FIELD_CATEGORIES.dimensional.length);
-                console.log('Feature fields:', FIELD_CATEGORIES.feature.length);
-                console.log('Sensor fields:', FIELD_CATEGORIES.sensor.length);
-
-                console.log('Total expected fields:', allExpectedFields.length);
-                console.log('Fields found in file:', dataHeaders.length);
-                console.log('Missing fields:', missingFields);
-                console.log('Category breakdown:', categoryCounts);
+                })
 
                 setPreviewData({
                     headers: enhancedHeaders,
@@ -394,12 +420,197 @@ export default function BatchCreateInspections() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'validation-errors.csv';
+        a.download = 'validation-errors.txt';
         a.click();
     };
 
     const handleAddGeneralInformation = () => {
         openModal();
+    };
+
+    const handleCreateInspections = async () => {
+        if (!previewData || !previewData.rows?.length) {
+            toast.error('No import data to create');
+            return;
+        }
+        const departmentId = sessionStorage.getItem('selectedDepartmentId') || '';
+        if (!departmentId) {
+            toast.error('No department selected');
+            return;
+        }
+        setIsSaving(true);
+        try {
+            const normalize = (h: string) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            const parseDate = (s: string) => {
+                const t = String(s).trim();
+                const m = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/.exec(t);
+                if (m) {
+                    const year = m[3].length === 2 ? `20${m[3]}` : m[3];
+                    return { dateMonth: m[1], dateDay: m[2], dateYear: year };
+                }
+                const d = new Date(t);
+                if (!isNaN(d.getTime())) {
+                    return { dateMonth: String(d.getMonth() + 1), dateDay: String(d.getDate()), dateYear: String(d.getFullYear()) };
+                }
+                return {};
+            };
+
+            const parseDuration = (s: string) => {
+                const t = String(s).trim().toLowerCase();
+                let mm: string | undefined, ss: string | undefined;
+                let m = /^(\d+)\s*m(?:in)?\s*(\d+)\s*s?$/.exec(t);
+                if (m) { mm = m[1]; ss = m[2]; }
+                else if ((m = /^(\d+):(\d{1,2})$/.exec(t))) { mm = m[1]; ss = m[2]; }
+                else if ((m = /^(\d+)\s*(?:m|min|minutes)$/.exec(t))) { mm = m[1]; ss = '0'; }
+                else if (/^\d+$/.test(t)) { mm = t; ss = '0'; }
+                if (mm) return { durationMin: String(mm), durationSec: String(ss || '0') };
+                return {};
+            };
+
+            // Field mapping with synonyms and variations
+            const fieldMap: Record<string, string[]> = {
+                poNumber: ['po', 'ponumber', 'purchaseorder', 'purchaseordernumber'],
+                equipmentNumber: ['equipment', 'equipmentid', 'equipmentidtrailernumber', 'trailer', 'trailernumber', 'trailerno', 'unit'],
+                vin: ['vin', 'vehicleidentificationnumber'],
+                licensePlateId: ['licenseplate', 'licenseplateid', 'licenseno', 'platenumber', 'plate'],
+                licensePlateCountry: ['licenseplatecountry', 'platecountry', 'country'],
+                licensePlateExpiration: ['licenseplateexpiration', 'licenseplateexp', 'plateexpiration', 'plateexp'],
+                licensePlateState: ['licenseplatestate', 'platestate', 'state', 'province', 'licenseprovince'],
+                possessionOrigin: ['possessionorigin', 'origin', 'possession','possessionoriginlocationpickuplocation','possessionoriginlocation', 'pickuplocation'],
+                manufacturer: ['manufacturer', 'make', 'mfg', 'mfr'],
+                modelYear: ['modelyear', 'year', 'model'],
+                absSensor: ['abssensor', 'abs'],
+                airTankMonitor: ['airtankmonitor', 'airtank', 'tankmonitor'],
+                rtbIndicator: ['rtbindicator', 'rtb'],
+                lightOutSensor: ['lightoutsensor', 'lightout', 'lightsensor'],
+                sensorError: ['sensorerror', 'error'],
+                ultrasonicCargoSensor: ['ultrasoniccargosensor', 'ultrasoniccargor', 'cargosensor', 'ultrasonic'],
+                length: ['length', 'len'],
+                height: ['height', 'ht'],
+                grossAxleWeightRating: ['grossaxleweightrating', 'axleweight', 'gawr', 'weightrating'],
+                axleType: ['axletype', 'axle'],
+                brakeType: ['braketype', 'brake', 'brakes'],
+                suspensionType: ['suspensiontype', 'suspension'],
+                tireModel: ['tiremodel', 'tire'],
+                tireBrand: ['tirebrand', 'tiremake'],
+                amenikis: ['aerokits', 'amenikis', 'aerokit'],
+                doorBranding: ['doorbranding', 'branding'],
+                doorColor: ['doorcolor', 'color'],
+                doorSensor: ['doorsensor'],
+                doorType: ['doortype', 'door'],
+                lashSystem: ['lashsystem', 'lash'],
+                mudFlapType: ['mudflaptype', 'mudflap', 'flap'],
+                panelBranding: ['panelbranding', 'panel'],
+                noseBranding: ['nosebranding', 'nose'],
+                skirted: ['skirted', 'skirt'],
+                skirtColor: ['skirtcolor'],
+                captiveBeam: ['captivebeam', 'beam'],
+                cargoCameras: ['cargocamera', 'cargocameras', 'camera', 'cameras'],
+                cartbars: ['cartbars', 'cart', 'bars'],
+                tpms: ['tpms', 'tirepressure'],
+                trailerHeightDecal: ['trailerheightdecal', 'heightdecal', 'decal'],
+                inspectionStatus: ['inspectionstatus', 'status'],
+                inspector: ['inspector', 'inspectedby', 'technician'],
+                location: ['location', 'loc', 'site'],
+            };
+
+            // Fuzzy matching function with scoring
+            const fuzzyMatch = (normalized: string, fieldKey: string): { match: boolean; score: number } => {
+                const variations = fieldMap[fieldKey];
+
+                // Exact match (highest priority)
+                if (variations.includes(normalized)) {
+                    return { match: true, score: 100 };
+                }
+
+                // Check if any variation is contained in the normalized string
+                for (const variation of variations) {
+                    if (normalized.includes(variation)) {
+                        // Score based on how much of the string matches
+                        const score = (variation.length / normalized.length) * 90;
+                        if (score > 60) { // Only match if >60% similar
+                            return { match: true, score };
+                        }
+                    }
+                }
+
+                // Check if normalized string is contained in any variation
+                for (const variation of variations) {
+                    if (variation.includes(normalized) && normalized.length >= 3) {
+                        const score = (normalized.length / variation.length) * 80;
+                        if (score > 50) {
+                            return { match: true, score };
+                        }
+                    }
+                }
+
+                return { match: false, score: 0 };
+            };
+
+            // Find best matching field for a header
+            const findBestMatch = (header: string): string | null => {
+                const normalized = normalize(header);
+                let bestMatch: { key: string; score: number } | null = null;
+
+                for (const [key, _] of Object.entries(fieldMap)) {
+                    const result = fuzzyMatch(normalized, key);
+                    if (result.match && (!bestMatch || result.score > bestMatch.score)) {
+                        bestMatch = { key, score: result.score };
+                    }
+                }
+
+                return bestMatch?.key || null;
+            };
+
+            let success = 0, fail = 0;
+            for (const row of previewData.rows) {
+                const payload: any = { unitId: String(row['Unit ID'] || '').trim(), departmentId };
+
+                previewData.headers
+                    .filter(h => !['Sr No', 'Unit ID'].includes(h))
+                    .forEach(h => {
+                        const normalized = normalize(h);
+                        const v = row[h];
+
+                        // Check for special fields first
+                        if (normalized === 'date') {
+                            Object.assign(payload, parseDate(String(v ?? '')));
+                        } else if (normalized === 'duration') {
+                            Object.assign(payload, parseDuration(String(v ?? '')));
+                        } else {
+                            // Use fuzzy matching for regular fields
+                            const key = findBestMatch(h);
+                            console.log(`Header "${h}" (${normalized}) → Matched to: ${key || 'NO MATCH'}`);
+                            if (key) {
+                                payload[key] = v;
+                            }
+                        }
+                    });
+
+                console.log('Payload for row:', payload);
+
+                const res = await apiRequest('/api/inspections/add-new-inspection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message);
+                }
+                if (res.ok && data.success) success++; else fail++;
+            }
+
+            toast.success(`Created ${success} inspections${fail ? `, ${fail} failed` : ''}`);
+            router.back();
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+            toast.error(`Failed to create inspections: ${errorMessage}`);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleDropdownChange = (name: string, value: string) => {
@@ -428,9 +639,9 @@ export default function BatchCreateInspections() {
                                 <ArrowLeft size={18} />
                                 <span>Back to Inspections</span>
                             </button>
-                            <button className="flex items-center gap-2 px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm">
+                            <button onClick={handleCreateInspections} disabled={!previewData || isSaving} className="flex items-center gap-2 px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                 <FolderPlus size={18} />
-                                <span>Create Inspections</span>
+                                <span>{isSaving ? 'Creating...' : 'Create Inspections'}</span>
                             </button>
                         </div>
                     </div>
@@ -546,7 +757,7 @@ export default function BatchCreateInspections() {
                                             {previewData.stats.inspections} inspection will be created with {previewData.stats.columns} column of data
                                         </p>
                                         <p className="text-sm text-gray-600">
-                                            {previewData.stats.dimensional} identification fields, {previewData.stats.dimensional} dimentional field, {previewData.stats.feature} feature fields, {previewData.stats.sensor} sensor fields
+                                            {previewData.stats.identification} identification fields, {previewData.stats.dimensional} dimentional field, {previewData.stats.feature} feature fields, {previewData.stats.sensor} sensor fields
                                         </p>
                                     </div>
                                     <button
@@ -597,12 +808,7 @@ export default function BatchCreateInspections() {
                                     >
                                         Cancel Import
                                     </button>
-                                    <button
-                                        onClick={handleAddGeneralInformation}
-                                        className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
-                                    >
-                                        Add General Information
-                                    </button>
+                                    {/* Add General Information button temporarily disabled */}
                                 </div>
                             </div>
                         </div>
@@ -618,27 +824,17 @@ export default function BatchCreateInspections() {
                 {/* )} */}
             </div>
 
-            <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[600px]">
+            {/* <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[600px]">
                 <div className="bg-white rounded-lg w-full">
-                    {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">Add General Information</h2>
                             <p className="text-xs text-gray-600 mt-1">The information will be applied to at 2 inspections.</p>
                         </div>
-                        {/* <button
-                                onClick={handleCancel}
-                                className="text-gray-400 hover:text-gray-600 transition"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button> */}
+                       
                     </div>
 
-                    {/* Form */}
                     <div className="p-4 space-y-5">
-                        {/* Status */}
                         <div className="flex items-center gap-4">
                             <label className="w-32 text-gray-700 font-medium">Status</label>
                             <CustomDropdown
@@ -657,7 +853,6 @@ export default function BatchCreateInspections() {
                             />
                         </div>
 
-                        {/* Type */}
                         <div className="flex items-center gap-4">
                             <label className="w-32 text-gray-700 font-medium">Type</label>
                             <input
@@ -670,7 +865,6 @@ export default function BatchCreateInspections() {
                             />
                         </div>
 
-                        {/* Inspector */}
                         <div className="flex items-center gap-4">
                             <label className="w-32 text-gray-700 font-medium">Inspector</label>
                             <input
@@ -682,7 +876,6 @@ export default function BatchCreateInspections() {
                             />
                         </div>
 
-                        {/* Vendor */}
                         <div className="flex items-center gap-4">
                             <label className="w-32 text-gray-700 font-medium">Vendor</label>
                             <input
@@ -694,7 +887,6 @@ export default function BatchCreateInspections() {
                             />
                         </div>
 
-                        {/* Location */}
                         <div className="flex items-center gap-4">
                             <label className="w-32 text-gray-700 font-medium">Location</label>
                             <input
@@ -706,7 +898,6 @@ export default function BatchCreateInspections() {
                             />
                         </div>
 
-                        {/* Date */}
                         <div className="flex items-center gap-4">
                             <label className="w-32 text-gray-700 font-medium">Date</label>
                             <input
@@ -718,7 +909,6 @@ export default function BatchCreateInspections() {
                             />
                         </div>
 
-                        {/* Duration */}
                         <div className="flex items-center gap-4">
                             <label className="w-32 text-gray-700 font-medium">Duration</label>
                             <input
@@ -730,7 +920,6 @@ export default function BatchCreateInspections() {
                             />
                         </div>
 
-                        {/* Notes */}
                         <div className="flex items-start gap-4">
                             <label className="w-32 text-gray-700 font-medium pt-3">Notes</label>
                             <textarea
@@ -742,7 +931,6 @@ export default function BatchCreateInspections() {
                         </div>
                     </div>
 
-                    {/* Footer */}
                     <div className="flex justify-end gap-3 p-4 border-t">
                         <button
                             onClick={closeModal}
@@ -758,8 +946,7 @@ export default function BatchCreateInspections() {
                         </button>
                     </div>
                 </div>
-                {/* </div> */}
-            </Modal>
+            </Modal> */}
         </div>
     );
 }

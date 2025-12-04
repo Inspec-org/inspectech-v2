@@ -8,7 +8,6 @@ const InspectionSchema = new mongoose.Schema({
   reviewReason: { type: String, default: null },
   type: { type: String },
   inspector: { type: String },
-  vendor: { type: String },
   location: { type: String },
   delivered: { type: String, enum: ['yes', 'no'], default: 'no' },
   durationMin: { type: String },
@@ -43,6 +42,7 @@ const InspectionSchema = new mongoose.Schema({
   brakeType: { type: String },
   suspensionType: { type: String },
   tireModel: { type: String },
+  tireBrand: { type: String },
 
   amenikis: { type: String },
   doorBranding: { type: String },

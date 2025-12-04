@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const deliveredStatuses: string[] | undefined = Array.isArray(filter.deliveredStatuses) ? filter.deliveredStatuses : undefined;
     const search = filter.search ?? undefined;
     const duration = filter.duration ?? undefined;
-   
+
     await connectDB();
 
     const query: any = {};
@@ -104,10 +104,18 @@ export async function POST(req: NextRequest) {
     }
     console.log(query);
 
-    const inspections = await Inspection.find(query)
+    const result = await Inspection.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .populate({ path: 'userId', select: 'username' })
+      .lean();
+
+    const inspections = result.map(item => ({
+      ...item,
+      vendor: item.userId?.username || null
+    }));
+
 
     return NextResponse.json({ success: true, inspections, total, page, limit });
   } catch (error: any) {
