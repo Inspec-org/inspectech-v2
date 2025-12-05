@@ -62,7 +62,7 @@ export default function AdminLayout({
         )}
 
         {/* Page Content */}
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 h-full">
+        <div className="p-4 mx-auto max-w-7xl md:p-6 h-full">
           {children}
         </div>
       </div>

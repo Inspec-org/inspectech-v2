@@ -39,7 +39,7 @@ export default function QuickActions({ role }: { role: string }) {
       iconColor: 'text-green-600',
       onClick: () => {
         // Override filters with only pass status
-        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatus: ['5'] })); // '5' is pass status ID
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatus: ['pass'] })); // '5' is pass status ID
         router.push(`inspections`)
       }
     },
@@ -84,7 +84,7 @@ export default function QuickActions({ role }: { role: string }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm h-full">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 h-full">
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <Zap className="w-5 h-5 text-indigo-600" />
@@ -99,7 +99,7 @@ export default function QuickActions({ role }: { role: string }) {
           <button
             key={action.id}
             onClick={() => action.onClick && action.onClick()}
-            className={`w-full flex items-center gap-3 px-5 2xl:py-5 py-6 rounded-xl ${action.bgColor} ${action.textColor} font-medium text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
+            className={`w-full flex items-center gap-3 px-5 2xl:py-5 py-5.5 rounded-xl ${action.bgColor} ${action.textColor} font-medium text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
           >
             <span className={`${action.iconColor} bg-white p-2 rounded-full`}>
               {action.icon}

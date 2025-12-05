@@ -13,34 +13,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { departmentId, vendorId } = body;
+    const unitIds: string[] = Array.isArray(body?.unitIds) ? body.unitIds : [];
+    if (!unitIds.length) {
+      return NextResponse.json({ success: false, message: "unitIds required" }, { status: 400 });
+    }
 
     await connectDB();
 
-    // ---------- RECENT INSPECTIONS (BASED ON USER + DEPT) ----------
-    const recentDocs = await Inspection.find({
-      userId: vendorId,
-      departmentId,
-    })
-      .sort({ createdAt: -1 })
-      .limit(8)
-      .select(
-        "unitId inspectionStatus vendor location inspector type durationMin durationSec dateDay dateMonth dateYear createdAt"
-      )
-      .lean(); 
+    const docs = await Inspection.find({ unitId: { $in: unitIds } })
+      .select("unitId")
+      .lean();
 
-    const recent = recentDocs.map((i) => ({
-      ...i,
-      duration: `${i.durationMin} min ${i.durationSec} sec`,
-      date: `${String(i.dateDay).padStart(2, "0")}-${i.dateMonth}-${i.dateYear}`,
-    }));
-
-    return NextResponse.json({
-      success: true,
-      dashboard: {
-        recent
-      }
-    });
+    const existing = docs.map((d: any) => String(d.unitId));
+    return NextResponse.json({ success: true, existing }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error?.message || "Internal Server Error" },

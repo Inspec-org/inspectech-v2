@@ -240,23 +240,23 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
                                     <CustomDropdown
                                         options={[
-                                            { value: "n/a", label: "N\A" },
-                                            { value: "atro", label: "Atro" },
-                                            { value: "cartwright", label: "Cartwright" },
-                                            { value: "dimond", label: "DiMond" },
-                                            { value: "don-bur", label: "Don-Bur" },
-                                            { value: "great-dane", label: "Great Dane" },
-                                            { value: "hyundai", label: "Hyundai" },
-                                            { value: "lufkin", label: "Lufkin" },
-                                            { value: "manac", label: "Manac" },
-                                            { value: "operbus", label: "Operbus" },
-                                            { value: "stoughton", label: "Stoughton" },
-                                            { value: "strick", label: "Strick" },
-                                            { value: "tiger", label: "Tiger" },
-                                            { value: "trailer-mobile", label: "TrailerMobile" },
-                                            { value: "unity", label: "Unity" },
-                                            { value: "vanguard", label: "Vanguard" },
-                                            { value: "wabash", label: "Wabash" },
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "Atro", label: "Atro" },
+                                            { value: "Cartwright", label: "Cartwright" },
+                                            { value: "DiMond", label: "DiMond" },
+                                            { value: "Don-Bur", label: "Don-Bur" },
+                                            { value: "Great Dane", label: "Great Dane" },
+                                            { value: "Hyundai", label: "Hyundai" },
+                                            { value: "Lufkin", label: "Lufkin" },
+                                            { value: "Manac", label: "Manac" },
+                                            { value: "Operbus", label: "Operbus" },
+                                            { value: "Stoughton", label: "Stoughton" },
+                                            { value: "Strick", label: "Strick" },
+                                            { value: "Tiger", label: "Tiger" },
+                                            { value: "TrailerMobile", label: "TrailerMobile" },
+                                            { value: "Unity", label: "Unity" },
+                                            { value: "Vanguard", label: "Vanguard" },
+                                            { value: "Wabash", label: "Wabash" },
                                         ]}
                                         width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                         value={formData.manufacturer}
@@ -269,8 +269,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <YearPicker
                                         value={formData.modelYear}
                                         onChange={(year) => handleDropdownChange("modelYear", year)}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
                                         minYear={1980}
-                                        maxYear={new Date().getFullYear()+1}
+                                        maxYear={new Date().getFullYear() + 1}
                                     />
                                 </div>
                             </div>
@@ -278,7 +279,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                     </div>
 
                     {/* Sensors & Electrical */}
-                    <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full"}`}>
+                    <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full mb-4"}`}>
                         <button
                             onClick={() => toggleSection('sensors')}
                             className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
@@ -289,7 +290,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
 
                         {expandedSections.sensors && (
                             <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg w-full">
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">ABS Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -328,7 +329,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Air Tank Monitor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -367,8 +368,8 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">RTB Indicator</label>
+                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">ATIS Regulator</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
                                             <input
@@ -406,7 +407,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Light Out Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -445,7 +446,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Sensor Error</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -484,7 +485,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </div>
                                 </div>
 
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Ultrasonic Cargo Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
@@ -542,10 +543,10 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Length</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "28", label: "28 ft" },
-                                        { value: "48", label: "48 ft" },
-                                        { value: "53", label: "53 ft" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "28 ft", label: "28 ft" },
+                                        { value: "48 ft", label: "48 ft" },
+                                        { value: "53 ft", label: "53 ft" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -558,8 +559,8 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Height</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "13-6", label: "13 ft 6 in" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "13 ft 6 in", label: "13 ft 6 in" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -572,9 +573,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Gross Axle Weight Rating</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "20000", label: "20000 lbs" },
-                                        { value: "34000", label: "34000 lbs" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "20000 lbs", label: "20000 lbs" },
+                                        { value: "34000 lbs", label: "34000 lbs" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -587,9 +588,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Axle Type</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "dual", label: "Dual Axle" },
-                                        { value: "single", label: "Single Axle" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Dual Axle", label: "Dual Axle" },
+                                        { value: "Single Axle", label: "Single Axle" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -602,9 +603,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Brake Type</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "disc", label: "Disc" },
-                                        { value: "drum", label: "Drum" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Disc", label: "Disc" },
+                                        { value: "Drum", label: "Drum" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -617,9 +618,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "air", label: "Air" },
-                                        { value: "spring", label: "Spring" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Air", label: "Air" },
+                                        { value: "Spring", label: "Spring" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -665,7 +666,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                     {expandedSections.features && (
                         <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg">
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Amenikis</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Aerokits</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -728,9 +729,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Door Color</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "pantone", label: "Pantone 432 C" },
-                                        { value: "white", label: "White" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Pantone 432 C", label: "Pantone 432 C" },
+                                        { value: "White", label: "White" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -782,9 +783,9 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Door Type</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "swing", label: "Swing" },
-                                        { value: "roll", label: "Roll" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Swing", label: "Swing" },
+                                        { value: "Roll", label: "Roll" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -836,8 +837,8 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Mud Flap Type</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
-                                        { value: "fast-flap", label: "Fast-Flap" },
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Fast-Flap", label: "Fast-Flap" },
 
                                     ]}
                                     width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
@@ -849,7 +850,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Panel Branding</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
+                                        { value: "N/A", label: "N/A" },
                                         { value: "Bowman", label: "Bowman" },
                                         { value: "Prime", label: "Prime" },
                                         { value: "Tape on White", label: "Tape on White" },
@@ -869,7 +870,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nose Branding</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
+                                        { value: "N/A", label: "N/A" },
                                         { value: "Captive Mean", label: "Captive Mean" },
 
                                     ]}
@@ -884,7 +885,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="lashSystem"
+                                            name="skirted"
                                             value="N/A"
                                             checked={formData.skirted === 'N/A'}
                                             onChange={handleChange}
@@ -895,7 +896,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="lashSystem"
+                                            name="skirted"
                                             value="Yes"
                                             checked={formData.skirted === 'Yes'}
                                             onChange={handleChange}
@@ -906,7 +907,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="lashSystem"
+                                            name="skirted"
                                             value="No"
                                             checked={formData.skirted === 'No'}
                                             onChange={handleChange}
@@ -920,7 +921,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Skirt Color</label>
                                 <CustomDropdown
                                     options={[
-                                        { value: "n/a", label: "N\A" },
+                                        { value: "N/A", label: "N/A" },
                                         { value: "Ekostinger", label: "Ekostinger" },
                                         { value: "Pantone 432 C", label: "Pantone 432 C" },
                                         { value: "Transtex", label: "Transtex" },
@@ -938,7 +939,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="beam"
+                                            name="captiveBeam"
                                             value="N/A"
                                             checked={formData.captiveBeam === 'N/A'}
                                             onChange={handleChange}
@@ -949,7 +950,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="beam"
+                                            name="captiveBeam"
                                             value="Yes"
                                             checked={formData.captiveBeam === 'Yes'}
                                             onChange={handleChange}
@@ -960,7 +961,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="beam"
+                                            name="captiveBeam"
                                             value="No"
                                             checked={formData.captiveBeam === 'No'}
                                             onChange={handleChange}
@@ -976,7 +977,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="cargo"
+                                            name="cargoCameras"
                                             value="N/A"
                                             checked={formData.cargoCameras === 'N/A'}
                                             onChange={handleChange}
@@ -987,7 +988,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="cargo"
+                                            name="cargoCameras"
                                             value="Yes"
                                             checked={formData.cargoCameras === 'Yes'}
                                             onChange={handleChange}
@@ -998,7 +999,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="cargo"
+                                            name="cargoCameras"
                                             value="No"
                                             checked={formData.cargoCameras === 'No'}
                                             onChange={handleChange}
