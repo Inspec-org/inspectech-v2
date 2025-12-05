@@ -266,63 +266,46 @@ const InspectionTrends: React.FC<{
         };
     };
 }> = ({ trends }) => {
-    const [activeTimeTab, setActiveTimeTab] = useState("Monthly");
     const [activeTab, setActiveTab] = useState("Pass Rate");
 
-    const displayedTrend =
-        activeTimeTab === "Monthly"
-            ? trends.monthly[activeTab === "Pass Rate" ? "passRate" : "volume"]
-            : activeTimeTab === "Quarterly"
-                ? trends.quarterly[activeTab === "Pass Rate" ? "passRate" : "volume"]
-                : trends.yearly[activeTab === "Pass Rate" ? "passRate" : "volume"];
+    const displayedTrend = trends.monthly[activeTab === "Pass Rate" ? "passRate" : "volume"];
 
     return (
         <div className="bg-white mt-4 rounded-lg">
-            <div className="flex items-start gap-2 mb-4">
-                <div>
-                    <Activity size={18} className="text-[#7522BB] mt-1" />
+            <div className="flex justify-between items-start gap-2 mb-4">
+                <div className="flex items-start gap-2 ">
+                    <div>
+                        <Activity size={18} className="text-[#7522BB] mt-1" />
+                    </div>
+                    <div className='flex flex-col justify-start items-start'>
+                        <h2 className="text-lg font-semibold text-[#7522BB]">Inspection Trends</h2>
+                        <p className="text-sm text-gray-600">
+                            Inspection volumes and pass rates over time
+                        </p>
+                    </div>
                 </div>
-                <div className='flex flex-col justify-start items-start'>
-                    <h2 className="text-lg font-semibold text-[#7522BB]">Inspection Trends</h2>
-                    <p className="text-sm text-gray-600">
-                        Inspection volumes and pass rates over time
-                    </p>
+                <div className="flex justify-start gap-10 mb-6">
+                    {/* Tab for Pass Rate / Volume */}
+                    <div className="flex bg-purple-100 p-1 rounded-lg">
+                        {["Pass Rate", "Volume"].map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTab === tab
+                                    ? "bg-purple-600 text-white"
+                                    : "text-gray-700"
+                                    }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+
+
                 </div>
             </div>
 
-            <div className="flex justify-between gap-10 mb-6">
-                {/* Tab for Pass Rate / Volume */}
-                <div className="flex bg-purple-100 p-1 rounded-lg">
-                    {["Pass Rate", "Volume"].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTab === tab
-                                ? "bg-purple-600 text-white"
-                                : "text-gray-700"
-                                }`}
-                        >
-                            {tab}
-                        </button>
-                    ))}
-                </div>
 
-                {/* Tab for Monthly / Quarterly / Yearly */}
-                <div className="flex bg-purple-100 p-1 rounded-lg">
-                    {["Monthly", "Quarterly", "Yearly"].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTimeTab(tab)}
-                            className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTimeTab === tab
-                                ? "bg-purple-600 text-white"
-                                : "text-gray-700"
-                                }`}
-                        >
-                            {tab}
-                        </button>
-                    ))}
-                </div>
-            </div>
 
             <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={displayedTrend}>

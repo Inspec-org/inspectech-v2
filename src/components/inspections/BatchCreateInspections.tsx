@@ -482,7 +482,7 @@ export default function BatchCreateInspections() {
                 modelYear: ['modelyear', 'year', 'model'],
                 absSensor: ['abssensor', 'abs'],
                 airTankMonitor: ['airtankmonitor', 'airtank', 'tankmonitor'],
-                rtbIndicator: ['rtbindicator', 'rtb'],
+                rtbIndicator: ['rtbindicator', 'rtb', 'atisregulator'],
                 lightOutSensor: ['lightoutsensor', 'lightout', 'lightsensor'],
                 sensorError: ['sensorerror', 'error'],
                 ultrasonicCargoSensor: ['ultrasoniccargosensor', 'ultrasoniccargor', 'cargosensor', 'ultrasonic'],
@@ -513,6 +513,7 @@ export default function BatchCreateInspections() {
                 inspectionStatus: ['inspectionstatus', 'status'],
                 inspector: ['inspector', 'inspectedby', 'technician'],
                 location: ['location', 'loc', 'site'],
+                type:['type']
             };
 
             // Fuzzy matching function with scoring

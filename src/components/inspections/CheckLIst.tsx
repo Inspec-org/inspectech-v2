@@ -369,7 +369,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                 </div>
 
                                 <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">ATIS Indicator</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">ATIS Regulator</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
                                             <input
