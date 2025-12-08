@@ -4,6 +4,7 @@ import { TrendingUp, CheckCircle, XCircle, Clock, BarChart3, CalendarClock, Acti
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import { ClipLoader } from 'react-spinners';
 
 // Types
 interface StatCardProps {
@@ -438,6 +439,7 @@ const AnalysisDashboard: React.FC = () => {
     const [binSize, setBinSize] = useState<string>("auto")
     const [trends, setTrends] = useState<{ monthly: { passRate: { date: string; passRate: number }[]; volume: { date: string; pass: number; fail: number }[] }; quarterly: { passRate: { date: string; passRate: number }[]; volume: { date: string; pass: number; fail: number }[] }; yearly: { passRate: { date: string; passRate: number }[]; volume: { date: string; pass: number; fail: number }[] } }>({ monthly: { passRate: [], volume: [] }, quarterly: { passRate: [], volume: [] }, yearly: { passRate: [], volume: [] } });
     const [duration, setDuration] = useState<{ range: string; count: number }[]>([]);
+    const [loading, setLoading] = useState(true);
     const [vendor, setVendor] = useState('');
     const [dept, setDept] = useState('');
     const [inspectionCount, setInspectionCount] = useState(0);
@@ -482,6 +484,7 @@ const AnalysisDashboard: React.FC = () => {
     // 🔹 Fetch other analytics
     const fetchAnalytics = async () => {
         try {
+            setLoading(true);
             const res = await apiRequest('/api/reports/get-analytics', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -496,6 +499,8 @@ const AnalysisDashboard: React.FC = () => {
             setTrends(a.trends);
         } catch (e: any) {
             toast.error(e?.message || 'Error loading analytics');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -517,6 +522,11 @@ const AnalysisDashboard: React.FC = () => {
     };
     return (
         <div className="">
+            {loading && (
+                <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
+                    <ClipLoader color="#0075FF" size={40} />
+                </div>
+            )}
             <DashboardHeader time={time} setTime={setTime} />
             <div className="">
                 <InspectionStatusOverview total={totals.total} pass={totals.pass} fail={totals.fail} statusData={statusData} />

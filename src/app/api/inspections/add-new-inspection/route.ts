@@ -22,11 +22,10 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
+    await Inspection.syncIndexes();
+
     const cleaned: any = { ...body };
-    // console.log("cleaned", cleaned);
-    console.log("body", body);
     cleaned.userId = user._id;
-    console.log("cleaned", cleaned);
     ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
       if (cleaned[key] === "" || cleaned[key] === undefined || cleaned[key] === null) {
         delete cleaned[key];
