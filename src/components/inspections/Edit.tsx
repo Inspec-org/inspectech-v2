@@ -10,7 +10,7 @@ import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import { UserContext } from '@/context/authContext';
 import { ClipLoader } from 'react-spinners';
-import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
+import ReassignDepartmentModal from '../Modals/invitationModal';
 import { useModal } from '@/hooks/useModal';
 
 export interface FormData {

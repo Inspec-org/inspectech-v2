@@ -413,7 +413,7 @@ const Reports: React.FC = () => {
                 <h1 className="font-bold text-2xl px-2 py-3">Reports</h1>
                 {/* Tabs */}
                 {user && user.role === 'admin' && (
-                    <div className="flex bg-purple-100 p-2 rounded-lg mb-4 w-[550px]">
+                    <div className="inline-block bg-purple-100 p-2 rounded-lg mb-4">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}

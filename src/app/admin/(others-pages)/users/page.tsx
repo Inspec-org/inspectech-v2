@@ -1,9 +1,10 @@
+import Users from '@/components/users/Users'
 import React from 'react'
 
 function page() {
   return (
     <div>
-      Users
+      <Users />
     </div>
   )
 }

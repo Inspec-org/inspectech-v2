@@ -178,7 +178,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
               <thead>
                 <tr className={`text-left font-raleway ${title !== "Recent Inspection Orders" ? "bg-[#F2EBFF] text-[#3730A3]" : ""} `}>
                   {columns.map((col, i) => (
-                    <th key={i} className="py-2 px-4 font-medium text-center">
+                    <th key={i} className="py-2 px-4 font-medium">
                       {col.header}
                     </th>
                   ))}
@@ -188,7 +188,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                 {currentData.map((row) => (
                   <tr key={row.id} className={`border-b hover:bg-gray-50  ${onRowClick ? "cursor-pointer" : ""}`} onClick={() => onRowClick?.(row)}>
                     {columns.map((col, i) => (
-                      <td key={i} className="py-3 px-4 font-raleway text-center">
+                      <td key={i} className="py-3 px-4 font-raleway">
                         {col.cell ? col.cell(row) : (row as any)[col.accessor]}
                       </td>
                     ))}

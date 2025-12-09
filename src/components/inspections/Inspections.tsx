@@ -10,7 +10,7 @@ import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import CheckList from './CheckLIst';
 import FilterInspectionsModal, { dateOptions, deliveredOptions, durationOptions, filterOptions, inspectionStatusOptions, inspectorOptions, locationOptions, typeOptions, unitIdOptions, vendorOptions } from '../Modals/FilterInspectionsModal';
-import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
+import ReassignDepartmentModal from '../Modals/invitationModal';
 import BatchEditInspectionsModal from '../Modals/BatchEditInspectionsModal';
 import ExportInspectionsModal from '../Modals/ExportInspectionsModal';
 import { apiRequest } from '@/utils/apiWrapper';
