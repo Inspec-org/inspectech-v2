@@ -10,7 +10,7 @@ import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import { UserContext } from '@/context/authContext';
 import { ClipLoader } from 'react-spinners';
-import ReassignDepartmentModal from '../Modals/invitationModal';
+import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
 import { useModal } from '@/hooks/useModal';
 
 export interface FormData {
@@ -52,6 +52,7 @@ export interface FormData {
   brakeType: string;
   suspensionType: string;
   tireModel: string;
+  tireBrand: string;
   amenikis: string;
   doorBranding: string;
   doorColor: string;
@@ -136,6 +137,7 @@ export default function Edit({ type }: { type: string }) {
     brakeType: '',
     suspensionType: '',
     tireModel: '',
+    tireBrand: '',
     amenikis: '',
     doorBranding: '',
     doorColor: '',

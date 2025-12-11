@@ -66,7 +66,7 @@ const InvitationModal: React.FC<Props> = ({
         <div className="mb-3">
           <div className="flex items-start gap-3">
             <Image src="/images/users/house.svg" alt='' width="26" height="26" />
-            <h2 className="text-lg font-semibold text-gray-900">{role.charAt(0).toUpperCase() + role.slice(1)} User Invitation</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{role?.charAt(0).toUpperCase() + role?.slice(1)} User Invitation</h2>
           </div>
           <div className="flex-1">
 
@@ -79,10 +79,10 @@ const InvitationModal: React.FC<Props> = ({
         {/* Vendor ID Badge */}
         <div className="mb-6">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-purple-50 text-purple-700 text-sm font-medium">
-            <span className="text-xs">{role} ID: 15</span>
+            <span className="text-xs">{role?.charAt(0).toUpperCase() + role?.slice(1)} ID: 15</span>
             <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-purple-600 text-white text-xs">
               <Briefcase className="w-3 h-3" />
-              {role} User
+              {role?.charAt(0).toUpperCase() + role?.slice(1)} User
             </span>
           </span>
         </div>
@@ -163,7 +163,7 @@ const InvitationModal: React.FC<Props> = ({
                   <Image src="/images/users/house.svg" alt='' width="33" height="33" />
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900 text-sm">{role} User</div>
+                  <div className="font-medium text-gray-900 text-sm">{role?.charAt(0).toUpperCase() + role?.slice(1)} User</div>
                   <div className="text-xs text-gray-600 mt-0.5">
                     {role==="admin"? "Will have access to data from vendors assigned to them": "Will only have access to their company data"}
                     {/* Will only have access to their company data */}

@@ -649,6 +649,24 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                     </button>
                                 </div>
                             </div>
+
+                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tyre Brand</label>
+                                <CustomDropdown
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Bridgestone", label: "Bridgestone" },
+                                        { value: "Continental", label: "Continental" },
+                                        { value: "Firestone", label: "Firestone" },
+                                        { value: "Goodyear", label: "Goodyear" },
+                                        { value: "Michelin", label: "Michelin" },
+
+                                    ]}
+                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                    value={formData.tireBrand}
+                                    onChange={(val) => handleDropdownChange("tireBrand", val)}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>

@@ -10,7 +10,7 @@ import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import CheckList from './CheckLIst';
 import FilterInspectionsModal, { dateOptions, deliveredOptions, durationOptions, filterOptions, inspectionStatusOptions, inspectorOptions, locationOptions, typeOptions, unitIdOptions, vendorOptions } from '../Modals/FilterInspectionsModal';
-import ReassignDepartmentModal from '../Modals/invitationModal';
+import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
 import BatchEditInspectionsModal from '../Modals/BatchEditInspectionsModal';
 import ExportInspectionsModal from '../Modals/ExportInspectionsModal';
 import { apiRequest } from '@/utils/apiWrapper';
@@ -488,7 +488,7 @@ function Inspections() {
                     </div>
                 )}
                 {/* table */}
-                <div className="h-full">
+                <div className="h-full mt-4">
                     <GenericDataTable title="" data={inspections} totalCount={totalInspections} tabs={pageTabs} columns={columns} pageSize={limit} setPageSize={setLimit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onRowClick={(row) => { router.push(`/${user?.role}/inspections/Edit/${row.id}`) }} emptyStateImages={{
                         "All Users": "/images/No Users.svg"
                     }}
