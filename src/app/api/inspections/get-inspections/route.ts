@@ -91,11 +91,7 @@ export async function POST(req: NextRequest) {
       ];
     }
     if (department) query.departmentId = department;
-    
-
-    // if (vendorId) query.vendorId = vendorId;
-
-
+    if (vendorId) query.vendorId = vendorId;
 
     const total = await Inspection.countDocuments(query);
     if (idsOnly) {

@@ -5,6 +5,7 @@ import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { UserContext } from '@/context/authContext';
 import { FaSuitcase } from 'react-icons/fa';
+import Cookies from 'js-cookie';
 
 import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -115,10 +116,10 @@ function Inspections() {
     const [vendor, setVendor] = useState<string | null>(null);
 
     useEffect(() => {
-        const storedDept = sessionStorage.getItem("selectedDepartmentId");
+        const storedDept = Cookies.get("selectedDepartmentId") || '';
         setDept(storedDept);
         setDepartment(storedDept || '');
-        const storedVendor = sessionStorage.getItem("selectedVendorId");
+        const storedVendor = Cookies.get("selectedVendorId") || '';
         setVendor(storedVendor);
     }, []);
 

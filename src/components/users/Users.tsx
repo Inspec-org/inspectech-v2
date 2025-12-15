@@ -10,6 +10,7 @@ import { ThemeToggleButton } from '../common/ThemeToggleButton';
 import InvitationModal from '../Modals/invitationModal';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import Cookies from 'js-cookie';
 
 // Types
 interface Tab {
@@ -133,12 +134,12 @@ const Users: React.FC = () => {
         { id: 'invites', label: 'Invitations', color: 'gray' },
     ];
     const [vendorId, setVendorId] = useState(() => {
-        return sessionStorage.getItem('selectedVendorId') || '';
+        return Cookies.get('selectedVendorId') || '';
     });
 
 
     useEffect(() => {
-        setVendorId(sessionStorage.getItem('selectedVendorId') || '');
+        setVendorId(Cookies.get('selectedVendorId') || '');
         console.log('vendorId', vendorId)
     }, []);
 

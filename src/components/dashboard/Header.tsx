@@ -4,6 +4,7 @@ import { ChevronDown, Folder, Building2 } from 'lucide-react';
 import { Department } from '../departments/DepartmentCard';
 import { Vendor } from './Dashboard';
 import { UserContext } from '@/context/authContext';
+import Cookies from 'js-cookie';
 
 function Header({
   departments,
@@ -52,8 +53,8 @@ function Header({
                       console.log('Selected department:', dept);
                       setSelectedDepartment(dept);
                       setDepartmentOpen(false);
-                      sessionStorage.setItem('selectedDepartment', dept.name);
-                      sessionStorage.setItem('selectedDepartmentId', dept._id || '');
+                      Cookies.set('selectedDepartment', dept.name || '');
+                      Cookies.set('selectedDepartmentId', dept._id || '');
                       window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: dept.name }));
                     }}
                     className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
@@ -100,8 +101,8 @@ function Header({
                       console.log('Selected vendor:', vendor);
                       setSelectedVendor(vendor);
                       setVendorOpen(false);
-                      sessionStorage.setItem('selectedVendor', vendor.name);
-                      sessionStorage.setItem('selectedVendorId', vendor._id || '');
+                      Cookies.set('selectedVendor', vendor.name || '');
+                      Cookies.set('selectedVendorId', vendor._id || '');
                     }}
                     className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
                   >

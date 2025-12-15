@@ -9,6 +9,7 @@ import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import Cookies from 'js-cookie';
 
 interface InspectionData {
     [key: string]: string | number;
@@ -105,7 +106,7 @@ export default function BatchCreateInspections() {
     });
 
     useEffect(() => {
-        const deptId = sessionStorage.getItem('selectedDepartmentId');
+        const deptId = Cookies.get('selectedDepartmentId') || '';
         setDepartment(deptId || '');
     }, []);
 

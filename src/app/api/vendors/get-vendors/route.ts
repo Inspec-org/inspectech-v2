@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     let vendors: any[] = [];
 
-
+    console.log("user", user)
     if (user.role === "admin") {
       if (user.vendorAccess && user.vendorAccess.length > 0) {
         // Only fetch vendors the admin has access to
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         vendors = await Vendor.find({ _id: { $in: vendorIds } }).select("_id name");
       }
     }
-    else if (user.role === "vendor") {
+    else if (user.role === "vendor" || user.role === "user") {
       vendors = await Vendor.find().select("_id name");
     }
     console.log("get vendors api", vendors)

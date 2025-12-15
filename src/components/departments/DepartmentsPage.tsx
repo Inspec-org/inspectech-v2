@@ -6,6 +6,7 @@ import { apiRequest } from "@/utils/apiWrapper";
 import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import Cookies from 'js-cookie';
 
 
 export default function DepartmentsPage() {
@@ -34,8 +35,8 @@ export default function DepartmentsPage() {
   const handleDepartmentSelect = (department: Department) => {
     console.log('Selected department:', department);
     router.push(`dashboard?department=${department.name}`);
-    sessionStorage.setItem('selectedDepartment', department.name);
-    sessionStorage.setItem('selectedDepartmentId', department._id || '');
+    Cookies.set('selectedDepartment', department.name || '');
+    Cookies.set('selectedDepartmentId', department._id || '');
     window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: department.name }));
     // Navigate to department dashboard
   };

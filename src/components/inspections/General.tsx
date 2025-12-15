@@ -3,6 +3,7 @@ import React, { useContext, useEffect } from 'react'
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { FormData } from './Edit';
 import { UserContext } from '@/context/authContext';
+import Cookies from 'js-cookie';
 
 function General({ type, formData, setFormData, disabledUnitId }: { type: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; disabledUnitId?: boolean }) {
     const { user } = useContext(UserContext);
@@ -18,9 +19,9 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
         // You can now send `formData` to backend API here
     };
     useEffect(() => {
-        const vendor = sessionStorage.getItem("selectedVendor");
+        const vendor = Cookies.get("selectedVendor") || '';
         if (vendor) {
-            setFormData((prev) => ({ ...prev, vendor: vendor }));
+            setFormData((prev) => ({ ...prev, vendor }));
         }
     }, [])
     return (

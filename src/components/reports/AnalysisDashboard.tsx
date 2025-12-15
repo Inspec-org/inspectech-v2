@@ -5,6 +5,7 @@ import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
+import Cookies from 'js-cookie';
 
 // Types
 interface StatCardProps {
@@ -447,8 +448,8 @@ const AnalysisDashboard: React.FC = () => {
     const [appliedBinSize, setAppliedBinSize] = useState(3);
 
     useEffect(() => {
-        const vendorId = sessionStorage.getItem('selectedVendorId');
-        const departmentId = sessionStorage.getItem('selectedDepartmentId');
+        const vendorId = Cookies.get('selectedVendorId') || '';
+        const departmentId = Cookies.get('selectedDepartmentId') || '';
         if (vendorId && departmentId) {
             setVendor(vendorId);
             setDept(departmentId);

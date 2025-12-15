@@ -12,6 +12,7 @@ import { Department } from '../departments/DepartmentCard';
 import { useSearchParams } from 'next/navigation';
 import { set } from 'mongoose';
 import { UserContext } from '@/context/authContext';
+import Cookies from 'js-cookie';
 
 export interface Vendor {
     _id: string;
@@ -74,7 +75,7 @@ function Dashboard() {
     const { user } = useContext(UserContext);
 
     useEffect(() => {
-        const department = sessionStorage.getItem("selectedDepartment");
+        const department = Cookies.get("selectedDepartment");
         if (departments.length > 0) {
             console.log(department)
             const dept = departments.find(d => d.name === department) ?? null;
@@ -120,13 +121,15 @@ function Dashboard() {
     }, []);
     useEffect(() => {
         setSelectedVendor(vendors[0]);
-        sessionStorage.setItem('selectedVendor', vendors[0]?.name);
-        sessionStorage.setItem('selectedVendorId', vendors[0]?._id || '');
+        if (vendors[0]) {
+            Cookies.set('selectedVendor', vendors[0].name || '');
+            Cookies.set('selectedVendorId', vendors[0]._id || '');
+        }
     }, [vendors])
 
     const getRecent = async () => {
-        const vendorId = sessionStorage.getItem('selectedVendorId')
-        const departmentId = sessionStorage.getItem('selectedDepartmentId')
+        const vendorId = Cookies.get('selectedVendorId') || ''
+        const departmentId = Cookies.get('selectedDepartmentId') || ''
         try {
             setRecentLoading(true)
             const res = await apiRequest(("/api/dashboard/get_recent_inspections"), {
@@ -153,8 +156,8 @@ function Dashboard() {
 
     useEffect(() => {
         const getStats = async () => {
-            const vendorId = sessionStorage.getItem('selectedVendorId')
-            const departmentId = sessionStorage.getItem('selectedDepartmentId')
+            const vendorId = Cookies.get('selectedVendorId') || ''
+            const departmentId = Cookies.get('selectedDepartmentId') || ''
             console.log("stats api")
             try {
                 const res = await apiRequest(("/api/dashboard/allData"), {

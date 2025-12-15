@@ -5,6 +5,7 @@ import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import Image from 'next/image';
+import Cookies from 'js-cookie';
 
 type Props = {
     isOpen: boolean;
@@ -27,23 +28,48 @@ const RequestAdminReviewModal: React.FC<Props> = ({
     const [selectedInspections, setSelectedInspections] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [inspections, setInspections] = useState<{ unitId: string; inspectionStatus: string }[]>([]);
+    const [totalInspections, setTotalInspections] = useState(0);
+    const [recipientsInput, setRecipientsInput] = useState('');
 
-    // Mock data - replace with actual data
-    const totalInspections = 40;
-    const inspections = Array.from({ length: totalInspections }, (_, i) => ({
-        id: `New_0001`,
-        status: 'COMPLETE'
-    }));
-
-    const filteredInspections = inspections.filter(inspection =>
-        inspection.id.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const totalPages = Math.ceil(filteredInspections.length / rowsPerPage);
+    const totalPages = Math.ceil(totalInspections / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const currentInspections = filteredInspections.slice(startIndex, endIndex);
+    const endIndex = Math.min(startIndex + rowsPerPage, totalInspections);
+
+    const fetchInspections = async () => {
+        setLoading(true);
+        try {
+            const vendorId = Cookies.get('selectedVendorId') || '';
+            const departmentId = Cookies.get('selectedDepartmentId') || '';
+            const res = await apiRequest('/api/inspections/get-inspections', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: currentPage,
+                    limit: rowsPerPage,
+                    department: departmentId,
+                    vendorId,
+                    filter: { inspectionStatuses: ['complete','completed'], search: searchQuery }
+                })
+            });
+            const json = await res.json();
+            if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load inspections');
+            const list = (json.inspections || []).map((i: any) => ({ unitId: i.unitId, inspectionStatus: i.inspectionStatus || 'complete' }));
+            setInspections(list);
+            setTotalInspections(json.total || list.length);
+        } catch (e: any) {
+            toast.error(e?.message || 'Error fetching inspections');
+            setInspections([]);
+            setTotalInspections(0);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { if (isOpen) { setCurrentPage(1); fetchInspections(); } }, [isOpen]);
+    useEffect(() => { if (isOpen) { fetchInspections(); } }, [currentPage, rowsPerPage]);
+    useEffect(() => { if (isOpen) { const t = setTimeout(fetchInspections, 300); return () => clearTimeout(t); } }, [searchQuery]);
 
     const toggleInspection = (id: string) => {
         setSelectedInspections(prev =>
@@ -51,13 +77,36 @@ const RequestAdminReviewModal: React.FC<Props> = ({
         );
     };
 
-    const handleProcessRequest = () => {
+    const handleProcessRequest = async () => {
         if (selectedInspections.length === 0) {
             toast.error('Please select at least one inspection');
             return;
         }
-        // Handle process request
-        console.log('Processing request for:', selectedInspections);
+        const recipients = recipientsInput.split(',').map(s => s.trim()).filter(Boolean);
+        if (!recipients.length) {
+            toast.error('Please enter at least one email recipient');
+            return;
+        }
+        setLoading(true);
+        try {
+            const vendorName = Cookies.get('selectedVendor') || '';
+            const res = await apiRequest('/api/admin-review/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recipients, unitIds: selectedInspections, vendorName })
+            });
+            const json = await res.json();
+            if (!res.ok || !json.success) throw new Error(json.message || 'Failed to send email');
+            toast.success('Admin review request sent');
+            setSelectedInspections([]);
+            setRecipientsInput('');
+            if (onUpdated) onUpdated();
+            onClose();
+        } catch (e: any) {
+            toast.error(e?.message || 'Error sending email');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -68,9 +117,13 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                 {/* Email Recipients */}
                 <div className="mb-6 border bg-white p-4">
                     <label className="block text-base font-medium mb-2">Email Recipients</label>
-                    <div className="bg-[#F9F6FE] rounded-lg p-3 text-sm text-gray-700">
-                        johposte@amazon.com, adduffe@amazon.com, yteffera@amazon.com, mizysak@amazon.com, InspecTech@nectarsix.com
-                    </div>
+                    <input
+                        type="text"
+                        placeholder="Enter comma-separated emails (e.g. a@b.com, c@d.com)"
+                        value={recipientsInput}
+                        onChange={(e) => setRecipientsInput(e.target.value)}
+                        className="w-full bg-[#F9F6FE] rounded-lg p-3 text-sm text-gray-700 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
                     <p className="text-xs text-gray-500 mt-2">Add team members who should receive this review request</p>
                 </div>
 
@@ -84,30 +137,30 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                         className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                     <span className="text-sm text-gray-500 whitespace-nowrap">
-                        {filteredInspections.length} inspections
+                        {totalInspections} inspections
                     </span>
                 </div>
 
 
                 {/* Inspections List */}
                 <div className="border border-gray-200 rounded-lg mb-4">
-                    {currentInspections.map((inspection, index) => (
+                    {inspections.map((inspection, index) => (
                         <div
-                            key={`${inspection.id}-${index}`}
-                            className={`flex items-center justify-between px-4 py-4 ${index !== currentInspections.length - 1 ? 'border-b border-gray-200' : ''
+                            key={`${inspection.unitId}-${index}`}
+                            className={`flex items-center justify-between px-4 py-4 ${index !== inspections.length - 1 ? 'border-b border-gray-200' : ''
                                 } hover:bg-gray-50 transition-colors`}
                         >
                             <div className="flex items-center gap-3">
                                 <input
                                     type="checkbox"
-                                    checked={selectedInspections.includes(`${inspection.id}-${index}`)}
-                                    onChange={() => toggleInspection(`${inspection.id}-${index}`)}
+                                    checked={selectedInspections.includes(inspection.unitId)}
+                                    onChange={() => toggleInspection(inspection.unitId)}
                                     className="circle-checkbox"
                                 />
-                                <span className="text-sm font-medium">{inspection.id}</span>
+                                <span className="text-sm font-medium">{inspection.unitId}</span>
                             </div>
                             <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                                {inspection.status}
+                                {(inspection.inspectionStatus || 'complete').toUpperCase()}
                             </span>
                             <div></div>
                         </div>
@@ -119,8 +172,8 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                     {/* Left side: Showing results */}
                     <div className="flex sm:flex-row flex-col sm:items-center sm:gap-4">
                         <div className="text-sm text-gray-600">
-                            Showing {startIndex + 1} to {Math.min(endIndex, filteredInspections.length)} of {filteredInspections.length} results
-                        </div>
+                                Showing {startIndex + 1} to {endIndex} of {totalInspections} results
+                            </div>
                         <div className="h-5 w-0.5 bg-black sm:block hidden" />
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                             <span>Row per page:</span>
@@ -156,18 +209,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                         >
                             <ChevronLeft className="w-4 h-4" color="#7522BB" />
                         </button>
-                        {[1, 2, 3].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setCurrentPage(tab)}
-                                className={`w-6 h-6 rounded text-xs font-medium ${currentPage === Number(tab)
-                                    ? "bg-purple-600 text-white"
-                                    : "text-gray-700 hover:bg-gray-100"
-                                    }`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
+                        <span className="mx-2 text-sm text-gray-700">Page {currentPage} of {totalPages}</span>
                         <button
                             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={currentPage >= totalPages}

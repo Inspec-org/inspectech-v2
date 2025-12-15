@@ -20,6 +20,7 @@ import {
 import { BarChart, BarChart2, BarChart4, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
 import { UserContext } from "@/context/authContext";
 import RequestAdminReviewModal from "@/components/Modals/RequestAdminReviewModal";
+import Cookies from 'js-cookie';
 
 type NavItem = {
   name: string;
@@ -58,7 +59,7 @@ const AppSidebar: React.FC = () => {
       name: "Users",
       path: `/${user?.role}/users`
     },
-    user?.role === "vendor"
+    user?.role === "vendor" || user?.role === "user"
       ? {
         icon: <Mail />,
         name: "Request Admin Review",
@@ -251,7 +252,7 @@ const AppSidebar: React.FC = () => {
 
   useEffect(() => {
     const read = () => {
-      const v = sessionStorage.getItem("selectedDepartment") || "";
+      const v = Cookies.get("selectedDepartment") || "";
       setDept(v);
     };
 

@@ -12,6 +12,7 @@ import { UserContext } from '@/context/authContext';
 import { ClipLoader } from 'react-spinners';
 import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
 import { useModal } from '@/hooks/useModal';
+import Cookies from 'js-cookie';
 
 export interface FormData {
   unitId: string;
@@ -171,8 +172,8 @@ export default function Edit({ type }: { type: string }) {
 
   const params = useParams<{ inspection_id: string }>();
   useEffect(() => {
-    const deptName = sessionStorage.getItem('selectedDepartment');
-    const deptId = sessionStorage.getItem('selectedDepartmentId');
+    const deptName = Cookies.get('selectedDepartment') || '';
+    const deptId = Cookies.get('selectedDepartmentId') || '';
     setDepartment(deptId || '');
     (async () => {
       try {
@@ -189,8 +190,8 @@ export default function Edit({ type }: { type: string }) {
   }, []);
 
   useEffect(() => {
-    const vendorName = sessionStorage.getItem('selectedVendor');
-    const vendorId = sessionStorage.getItem('selectedVendorId');
+    const vendorName = Cookies.get('selectedVendor') || '';
+    const vendorId = Cookies.get('selectedVendorId') || '';
     (async () => {
       try {
         const res = await apiRequest('/api/vendors/get-vendors');
