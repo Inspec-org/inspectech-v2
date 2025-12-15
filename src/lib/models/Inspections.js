@@ -2,7 +2,8 @@ import mongoose from 'mongoose'
 
 const InspectionSchema = new mongoose.Schema({
   unitId: { type: String, required: true, trim: true },
-  userId: {type:mongoose.Schema.Types.ObjectId, ref:'User', required: true},
+  // userId: {type:mongoose.Schema.Types.ObjectId, ref:'User', required: true},
+  vendorId: {type:mongoose.Schema.Types.ObjectId, ref:'Vendor', required: true},
   departmentId: {type:mongoose.Schema.Types.ObjectId, ref:'Department', required: true},
   inspectionStatus: { type: String, default: 'incomplete' },
   reviewReason: { type: String, default: null },
@@ -77,7 +78,7 @@ const InspectionSchema = new mongoose.Schema({
 })
 
 InspectionSchema.index(
-  { unitId: 1, departmentId: 1, userId: 1 },
+  { unitId: 1, departmentId: 1, vendorId: 1 },
   { unique: true }
 );
 

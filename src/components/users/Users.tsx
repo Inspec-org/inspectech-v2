@@ -298,7 +298,7 @@ const Users: React.FC = () => {
         <div className="">
             <div className="relative">
                 {/* Page Title */}
-                <h1 className="font-bold text-2xl px-2 py-3">Reports</h1>
+                <h1 className="font-bold text-2xl px-2 py-3">Users</h1>
                 <div className="flex justify-between mb-5">
                     {/* Tabs */}
                     <div className="inline-block bg-purple-100 p-2 rounded-lg ">

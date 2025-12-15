@@ -46,9 +46,19 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'vendor'],
-    default: 'vendor',
+    enum: ['user', 'admin', 'superadmin'],
+    default: 'user',
   },
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+  },
+  vendorAccess: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Vendor',
+    }
+  ],
   verificationOTPExpires: {
     type: Date,
     select: false
@@ -86,5 +96,12 @@ UserSchema.pre('save', async function (next) {
 UserSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password)
 }
+
+UserSchema.pre('save', function (next) {
+  if (this.role === 'user' && !this.vendorId) {
+    return next(new Error('vendorId is required for user role'));
+  }
+  next();
+})
 
 export default mongoose.models.User || mongoose.model('User', UserSchema)
