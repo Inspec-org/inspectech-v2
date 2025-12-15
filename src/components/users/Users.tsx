@@ -1,5 +1,5 @@
 'use client';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { Suspense, useContext, useEffect, useState } from 'react';
 import { Filter, FileDown, Edit, Send, Trash2, X, FileText, Edit3, Mail, Plus, Divide } from 'lucide-react';
 import GenericDataTable, { Column } from '../tables/GenericDataTable';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -297,7 +297,7 @@ const Users: React.FC = () => {
 
 
     return (
-        <div className="">
+        <Suspense fallback={<div>Loading...</div>}>
             <div className="relative">
                 {/* Page Title */}
                 <h1 className="font-bold text-2xl px-2 py-3">Users</h1>
@@ -376,7 +376,7 @@ const Users: React.FC = () => {
                 role={user?.role === "user" ? "vendor" : "admin"}
                 vendorId={vendorId}
             />
-        </div>
+        </Suspense>
     );
 };
 

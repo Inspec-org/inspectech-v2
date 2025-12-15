@@ -1,6 +1,6 @@
 'use client'
 import { Edit3, FileText, Filter, Mail, Trash2, X } from 'lucide-react';
-import React, { useState } from 'react'
+import React, { Suspense, useState } from 'react'
 import GenericDataTable, { Column } from '../tables/GenericDataTable';
 import { ReportDropdown } from '../ui/dropdown/reportsDropdown';
 import GeneratedReport from '../reports/GeneratedReport';
@@ -356,32 +356,34 @@ function Inspections() {
         },
     ];
     return (
-        <div className='bg-white pb-5 max-w-[1080px]'>
-            <Header
-                title="Inspection Log & Vendor Performance Tracker"
-                description="Track inspection requests, turnaround times, and vendor performance"
-                onFilterClick={handleFilterClick}
-                onGenerateReport={handleGenerateReport}
-                onBatchEdit={handleBatchEdit}
-                onSendNotification={handleSendNotification}
-                onRemoveFromHistory={handleRemoveFromHistory}
-                selectedCount={selectedCount}
-                onClearSelection={handleClearSelection}
-            />
-            <div className="px-4">
-                <div className="h-full">
-                    <GenericDataTable title="" data={dummyReports} tabs={["2"]} columns={columns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
-                        "All Users": "/images/No Users.svg"
-                    }}
-                    />
+        <Suspense fallback={<div>Loading...</div>}>
+            <div className='bg-white pb-5 max-w-[1080px]'>
+                <Header
+                    title="Inspection Log & Vendor Performance Tracker"
+                    description="Track inspection requests, turnaround times, and vendor performance"
+                    onFilterClick={handleFilterClick}
+                    onGenerateReport={handleGenerateReport}
+                    onBatchEdit={handleBatchEdit}
+                    onSendNotification={handleSendNotification}
+                    onRemoveFromHistory={handleRemoveFromHistory}
+                    selectedCount={selectedCount}
+                    onClearSelection={handleClearSelection}
+                />
+                <div className="px-4">
+                    <div className="h-full">
+                        <GenericDataTable title="" data={dummyReports} tabs={["2"]} columns={columns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                            "All Users": "/images/No Users.svg"
+                        }}
+                        />
+                    </div>
                 </div>
+                {openGeneratedReport && <GeneratedReport close={() => setOpenGeneratedReport(false)} />}
+                <AdminNotificationModal
+                    isOpen={isNotificationModalOpen}
+                    onClose={() => setIsNotificationModalOpen(false)}
+                />
             </div>
-            {openGeneratedReport && <GeneratedReport close={() => setOpenGeneratedReport(false)} />}
-            <AdminNotificationModal
-                isOpen={isNotificationModalOpen}
-                onClose={() => setIsNotificationModalOpen(false)}
-            />
-        </div>
+        </Suspense>
     )
 }
 
