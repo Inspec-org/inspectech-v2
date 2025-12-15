@@ -5,19 +5,22 @@ import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("in all data api")
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
     const user = await getUserFromToken(token);
     if (!user) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
+    console.log(user)
 
     const body = await req.json();
     const { departmentId, vendorId } = body;
 
     await connectDB();
 
-    const inspections = await Inspection.find({ departmentId, userId: vendorId });
+    const inspections = await Inspection.find({ departmentId });
+    console.log(inspections)
 
     // ---------- STATS ----------
     const total = inspections.length;
@@ -45,9 +48,11 @@ export async function POST(req: NextRequest) {
       const date = new Date(i.createdAt);
       if (date.getFullYear() === year) {
         const monthIndex = date.getMonth(); // 0–11
-        i.inspectionStatus === "pass"
-          ? monthly[monthIndex].pass++
-          : monthly[monthIndex].fail++;
+        if (i.inspectionStatus === "pass") {
+          monthly[monthIndex].pass++;
+        } else if (i.inspectionStatus === "fail") {
+          monthly[monthIndex].fail++;
+        }
       }
     });
 
@@ -58,9 +63,11 @@ export async function POST(req: NextRequest) {
       const date = new Date(i.createdAt);
       if (date.getFullYear() === year) {
         const quarterIndex = Math.floor(date.getMonth() / 3); // 0,1,2,3
-        i.inspectionStatus === "pass"
-          ? quarterly[quarterIndex].pass++
-          : quarterly[quarterIndex].fail++;
+        if (i.inspectionStatus === "pass") {
+          quarterly[quarterIndex].pass++;
+        } else if (i.inspectionStatus === "fail") {
+          quarterly[quarterIndex].fail++;
+        }
       }
     });
 
@@ -73,9 +80,11 @@ export async function POST(req: NextRequest) {
       const y = date.getFullYear();
       if (y >= startYear && y <= year) {
         const yearIndex = y - startYear; // 0–3
-        i.inspectionStatus === "pass"
-          ? annually[yearIndex].pass++
-          : annually[yearIndex].fail++;
+        if (i.inspectionStatus === "pass") {
+          annually[yearIndex].pass++;
+        } else if (i.inspectionStatus === "fail") {
+          annually[yearIndex].fail++;
+        }
       }
     });
 
@@ -88,6 +97,7 @@ export async function POST(req: NextRequest) {
       failCount: fail,
       passRate: total ? ((pass / total) * 100).toFixed(2) : "0",
     };
+    console.log(monthly)
 
     return NextResponse.json({
       success: true,

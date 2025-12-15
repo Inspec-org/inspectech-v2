@@ -1,3 +1,4 @@
+'use client'
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Briefcase, Home } from 'lucide-react';
 import { Modal } from '../ui/modal';
@@ -10,7 +11,8 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onUpdated?: () => void;
-  role: string
+  role: string;
+  vendorId: string;
 };
 
 type Department = {
@@ -22,7 +24,8 @@ const InvitationModal: React.FC<Props> = ({
   isOpen,
   onClose,
   onUpdated,
-  role
+  role,
+  vendorId
 }) => {
 
   const [loading, setLoading] = useState(false);
@@ -30,24 +33,32 @@ const InvitationModal: React.FC<Props> = ({
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [vendor, setVendor] = useState('');
+  
+
+
   const handleSendInvitation = async () => {
-    if (!firstName || !lastName || !email || !vendor) {
+    if (!firstName || !lastName || !email) {
       toast.error('Please fill in all fields');
       return;
     }
 
     setLoading(true);
     try {
-      await apiRequest('/api/invitations', {
+      const res = await apiRequest('/api/invite', {
         method: 'POST',
         body: JSON.stringify({
-          firstName,
-          lastName,
+          name: `${firstName} ${lastName}`,
           email,
-          vendor,
-          role: 'vendor_user'
+          vendorName: vendor,
+          role: role,
+          vendorId: vendorId,
         })
       });
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.message)
+        return
+      }
       toast.success('Invitation sent successfully');
       onUpdated?.();
       onClose();
@@ -79,7 +90,7 @@ const InvitationModal: React.FC<Props> = ({
         {/* Vendor ID Badge */}
         <div className="mb-6">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-purple-50 text-purple-700 text-sm font-medium">
-            <span className="text-xs">{role?.charAt(0).toUpperCase() + role?.slice(1)} ID: 15</span>
+            <span className="text-xs">{role?.charAt(0).toUpperCase() + role?.slice(1)} ID: {vendorId}</span>
             <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-purple-600 text-white text-xs">
               <Briefcase className="w-3 h-3" />
               {role?.charAt(0).toUpperCase() + role?.slice(1)} User
@@ -135,7 +146,7 @@ const InvitationModal: React.FC<Props> = ({
           </div>
 
           {/* Vendor Field */}
-          {role != "admin" && (
+          {/* {role != "admin" && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Vendor
@@ -151,7 +162,7 @@ const InvitationModal: React.FC<Props> = ({
                 The vendor name will be displayed in inspection records.
               </p>
             </div>
-          )}
+          )} */}
           {/* User Role Section */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -165,7 +176,7 @@ const InvitationModal: React.FC<Props> = ({
                 <div>
                   <div className="font-medium text-gray-900 text-sm">{role?.charAt(0).toUpperCase() + role?.slice(1)} User</div>
                   <div className="text-xs text-gray-600 mt-0.5">
-                    {role==="admin"? "Will have access to data from vendors assigned to them": "Will only have access to their company data"}
+                    {role === "admin" ? "Will have access to data from vendors assigned to them" : "Will only have access to their company data"}
                     {/* Will only have access to their company data */}
                   </div>
                 </div>
@@ -204,7 +215,7 @@ const InvitationModal: React.FC<Props> = ({
           </button>
           <button
             onClick={handleSendInvitation}
-            disabled={loading}
+            disabled={loading || !vendorId}
             className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowRight className="w-4 h-4" />

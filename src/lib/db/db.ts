@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { startInvitationCron } from "@/lib/cron/invitations";
 
 const MONGODB_URI = process.env.MONGO_URI;
 
@@ -22,4 +23,5 @@ export async function connectDB() {
     // Not connected → connect now
     await mongoose.connect(MONGODB_URI || "");
     console.log("MongoDB Connected");
+    startInvitationCron();
 }

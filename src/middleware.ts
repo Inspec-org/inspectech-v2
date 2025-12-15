@@ -6,6 +6,7 @@ const PUBLIC_PATHS = new Set([
   "/signup",
   "/forget-password",
   "/reset-password",
+  "/accept-invitation",
 ]);
 
 export async function middleware(req: NextRequest) {

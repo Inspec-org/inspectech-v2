@@ -94,7 +94,7 @@ export default function QuickActions({ role }: { role: string }) {
       </div>
 
       {/* Action Buttons */}
-      <div className="space-y-3">
+      <div className="flex gap-2 w-full justify-between">
         {quickActions.map((action) => (
           <button
             key={action.id}

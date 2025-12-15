@@ -14,7 +14,7 @@ export default function AdminLayout({
   const { isExpanded, isHovered, isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const pathname = usePathname();
 
-  const isDepartmentsPage = (pathname === "/admin/departments" || pathname === "/vendor/departments");
+  const isDepartmentsPage = (pathname === "/admin/departments" || pathname === "/user/departments");
 
   const handleToggle = () => {
     if (typeof window !== "undefined" && window.innerWidth >= 1024) {

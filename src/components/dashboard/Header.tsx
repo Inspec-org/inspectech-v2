@@ -84,7 +84,7 @@ function Header({
             <Building2 className="w-4 h-4 text-purple-600" />
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-gray-700 flex-1 text-left">
-              {selectedVendor?.username || 'ABC Vendor'}
+              {selectedVendor?.name || 'ABC Vendor'}
             </span>
             {user?.role === 'admin' && (
               <ChevronDown className="w-4 h-4 text-gray-500" />
@@ -100,13 +100,13 @@ function Header({
                       console.log('Selected vendor:', vendor);
                       setSelectedVendor(vendor);
                       setVendorOpen(false);
-                      sessionStorage.setItem('selectedVendor', vendor.username);
+                      sessionStorage.setItem('selectedVendor', vendor.name);
                       sessionStorage.setItem('selectedVendorId', vendor._id || '');
                     }}
                     className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
                   >
                     <Building2 className="w-4 h-4 text-purple-600" />
-                    {vendor.username}
+                    {vendor.name}
                   </button>
                 ))}
                 {/* <button className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2">

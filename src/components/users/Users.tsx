@@ -8,6 +8,8 @@ import User from '@/lib/models/User';
 import { UserContext } from '@/context/authContext';
 import { ThemeToggleButton } from '../common/ThemeToggleButton';
 import InvitationModal from '../Modals/invitationModal';
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
 
 // Types
 interface Tab {
@@ -116,63 +118,13 @@ export const dummyAdmins: UserData[] = [
     },
 ];
 
-export const dummyInvites: UserData[] = [
-    {
-        id: "1",
-        firstName: "John",
-        lastName: "Doe",
-        email: "john.doe@example.com",
-        vendor: "ABC Vendor",
-        department: "US Purchase Trailers",
-        status: "accepted",
-        invited: "2023-08-15",
-    },
-    {
-        id: "2",
-        firstName: "Jane",
-        lastName: "Smith",
-        email: "jane.smith@example.com",
-        vendor: "ABC Vendor",
-        department: "US Purchase Trailers",
-        status: "accepted",
-        invited: "2023-08-15",
-    },
-    {
-        id: "3",
-        firstName: "Michael",
-        lastName: "Anderson",
-        email: "michael.anderson@example.com",
-        vendor: "ABC Vendor",
-        department: "Canada Trailers",
-        status: "expired",
-        invited: "2023-08-15",
-    },
-    {
-        id: "4",
-        firstName: "Emily",
-        lastName: "Stone",
-        email: "emily.stone@example.com",
-        vendor: "ABC Vendor",
-        department: "US Purchase Trailers",
-        status: "accepted",
-        invited: "2023-08-15",
-    },
-    {
-        id: "5",
-        firstName: "David",
-        lastName: "Brown",
-        email: "david.brown@example.com",
-        vendor: "ABC Vendor",
-        department: "Canada Trailers",
-        status: "expired",
-        invited: "2023-08-15",
-    },
-];
 
 // Main Reports Component
 const Users: React.FC = () => {
     const [activeTab, setActiveTab] = useState('users');
     const [loading, setLoading] = useState(false)
+    const [invites, setInvites] = useState<any[]>([])
+    const [users, setUsers] = useState<any[]>([])
     const { user } = useContext(UserContext);
     const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
     const tabs: Tab[] = [
@@ -180,6 +132,57 @@ const Users: React.FC = () => {
         ...(user?.role === 'admin' ? [{ id: 'admins', label: 'Admin Users', color: 'gray' as const }] : []),
         { id: 'invites', label: 'Invitations', color: 'gray' },
     ];
+    const [vendorId, setVendorId] = useState(() => {
+        return sessionStorage.getItem('selectedVendorId') || '';
+    });
+
+
+    useEffect(() => {
+        setVendorId(sessionStorage.getItem('selectedVendorId') || '');
+        console.log('vendorId', vendorId)
+    }, []);
+
+    const getInvites = async () => {
+        setLoading(true);
+        try {
+            const res = await apiRequest(`/api/invite/list?vendorId=${vendorId}`);
+            const json = await res.json();
+            if (!res.ok) {
+                throw new Error(json.message || 'Failed to fetch invitations')
+            }
+            console.log('json.invitations', json.invitations || [])
+            setInvites(json.invitations || []);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Failed to fetch invitations';
+            toast.error(errorMessage);
+            setInvites([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getUsers = async () => {
+        setLoading(true);
+        try {
+            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}`);
+            const json = await res.json();
+            if (!res.ok) {
+                throw new Error(json.message || 'Failed to fetch users')
+            }
+            setUsers(json.users || []);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Failed to fetch users';
+            toast.error(errorMessage);
+            setUsers([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        getInvites();
+        getUsers();
+    }, []);
 
 
     const userColumns: Column<UserData>[] = [
@@ -199,7 +202,7 @@ const Users: React.FC = () => {
             cell: (row) => <div className="opacity-60">{row.email}</div>,
         },
         {
-            header: "Vendor",
+            header: "Department",
             accessor: "vendor",
             cell: (row) =>
                 <div className='text-xs'>
@@ -247,11 +250,11 @@ const Users: React.FC = () => {
         },
     ];
 
-    const inviteColumns: Column<UserData>[] = [
+    const inviteColumns: Column<any>[] = [
         {
             header: "Name",
-            accessor: "firstName",
-            cell: (row) => <div className="opacity-60">{row.firstName}+{row.lastName}</div>,
+            accessor: "name",
+            cell: (row) => <div className="opacity-60">{row.name}</div>,
         },
         {
             header: "Email",
@@ -260,37 +263,35 @@ const Users: React.FC = () => {
         },
         {
             header: "Role",
-            accessor: "department",
+            accessor: "role",
             cell: (row) => <div className="inline-block px-3 py-1 bg-[#8556B3] text-white rounded-full">
-                Admin
+                {row.role?.charAt(0).toUpperCase() + row.role?.slice(1)}
             </div>,
         },
         {
             header: "Company",
-            accessor: "department",
-            cell: (row) => <div className="opacity-60">{row.department}</div>,
+            accessor: "vendorName",
+            cell: (row) => <div className="opacity-60">{row.vendorName || 'N/A'}</div>,
         },
         {
             header: <div className='text-center'>Status</div>,
             accessor: "status",
             cell: (row) => <div
                 className={`px-2 py-1 rounded-full text-center
-                    ${row.status === "accepted" ? "bg-[#F2EAFF]" : ""}
+                    ${row.status === "accepted" ? "bg-[#10B981] text-white" : ""}
                     ${row.status === "expired" ? "bg-[#EF6468] text-white" : ""}
+                    ${row.status === "pending" ? "bg-[#F2EAFF]" : ""}
                     `}
             >
-                {row.status
-                    ? row.status.charAt(0).toUpperCase() + row.status.slice(1)
-                    : ""}
+                {row.status ? row.status.charAt(0).toUpperCase() + row.status.slice(1) : ""}
             </div>
             ,
         },
         {
             header: "Invited On",
             accessor: "invited",
-            cell: (row) => <div className="opacity-60">{row.invited}</div>,
+            cell: (row) => <div className="opacity-60">{row.invited ? new Date(row.invited).toLocaleDateString() : ''}</div>,
         },
-
     ];
 
 
@@ -318,6 +319,7 @@ const Users: React.FC = () => {
 
                     <button
                         onClick={() => setIsInvitationModalOpen(true)}
+                        disabled={user?.role==="admin"}
                         className="bg-purple-600 text-white rounded-xl  px-2 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         <Plus size={16} />
@@ -331,7 +333,7 @@ const Users: React.FC = () => {
                     {activeTab === 'users' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={dummyUsers} tabs={["2"]} columns={userColumns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                                <GenericDataTable title="" data={users} tabs={["2"]} columns={userColumns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />
@@ -353,7 +355,7 @@ const Users: React.FC = () => {
                     {activeTab === 'invites' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={dummyInvites} tabs={["2"]} columns={inviteColumns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                                <GenericDataTable title="" data={invites} tabs={["2"]} columns={inviteColumns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />
@@ -368,11 +370,10 @@ const Users: React.FC = () => {
                 isOpen={isInvitationModalOpen}
                 onClose={() => setIsInvitationModalOpen(false)}
                 onUpdated={() => {
-                    // Refresh your data here if needed
-                    setLoading(true);
-                    // Add your data refresh logic
+                    getInvites();
                 }}
-                role={user?.role || "admin"}
+                role={user?.role === "user" ? "vendor" : "admin"}
+                vendorId={vendorId}
             />
         </div>
     );

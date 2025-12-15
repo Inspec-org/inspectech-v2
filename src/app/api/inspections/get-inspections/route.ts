@@ -91,8 +91,9 @@ export async function POST(req: NextRequest) {
       ];
     }
     if (department) query.departmentId = department;
+    
 
-    if (vendorId) query.userId = vendorId;
+    // if (vendorId) query.vendorId = vendorId;
 
 
 
@@ -108,12 +109,12 @@ export async function POST(req: NextRequest) {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate({ path: 'userId', select: 'username' })
+      .populate({ path: 'vendorId', select: 'name' })
       .lean();
 
     const inspections = result.map(item => ({
       ...item,
-      vendor: item.userId?.username || null
+      vendor: item.vendorId?.name || null
     }));
 
 

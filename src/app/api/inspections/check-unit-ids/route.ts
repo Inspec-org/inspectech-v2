@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const docs = await Inspection.find({ unitId: { $in: unitIds }, userId:user?._id, departmentId })
+    const docs = await Inspection.find({ unitId: { $in: unitIds }, vendorId: user?._id, departmentId })
       .select("unitId")
       .lean();
 
