@@ -111,12 +111,12 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
   const currentData = tabFilteredData;
   return (
     <div className="h-full">
-      <div
+      {/* <div
         className={`flex items-center justify-between flex-wrap gap-4 ${custom_tabs?.length ? "mb-4" : "mb-6"
           }`}
-      >
+      > */}
         {/* Title*/}
-        <div className={`flex ${tabs?.length ? "flex-col gap-2" : "items-center gap-4"}`}>
+        {/* <div className={`flex ${tabs?.length ? "flex-col gap-2" : "items-center gap-4"}`}>
           {title && (
             <h1 className={`${title_font_size ? title_font_size : 'text-2xl font-weight-600'}  text-gray-800  font-raleway`}>
               {title}
@@ -138,7 +138,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
               ))}
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Search bar */}
         {/* <div className="relative w-72">
@@ -154,7 +154,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
           />
           <FaSearch className="absolute left-3 top-2.5 text-gray-400" />
         </div> */}
-      </div>
+      {/* </div> */}
 
       {loading ? (
         <div className="flex justify-center items-center h-[200px]">
@@ -178,7 +178,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
               <thead>
                 <tr className={`text-left font-raleway ${title !== "Recent Inspection Orders" ? "bg-[#F2EBFF] text-[#3730A3]" : ""} `}>
                   {columns.map((col, i) => (
-                    <th key={i} className="py-2 px-4 font-medium text-center">
+                    <th key={i} className="py-2 px-4 font-medium">
                       {col.header}
                     </th>
                   ))}
@@ -188,7 +188,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                 {currentData.map((row) => (
                   <tr key={row.id} className={`border-b hover:bg-gray-50  ${onRowClick ? "cursor-pointer" : ""}`} onClick={() => onRowClick?.(row)}>
                     {columns.map((col, i) => (
-                      <td key={i} className="py-3 px-4 font-raleway text-center">
+                      <td key={i} className="py-3 px-4 font-raleway">
                         {col.cell ? col.cell(row) : (row as any)[col.accessor]}
                       </td>
                     ))}

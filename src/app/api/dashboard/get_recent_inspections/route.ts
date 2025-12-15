@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     // ---------- RECENT INSPECTIONS (BASED ON USER + DEPT) ----------
     const recentDocs = await Inspection.find({
-      userId: vendorId,
+      vendorId: vendorId,
       departmentId,
     })
       .sort({ createdAt: -1 })

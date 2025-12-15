@@ -12,6 +12,7 @@ import { UserContext } from '@/context/authContext';
 import { ClipLoader } from 'react-spinners';
 import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
 import { useModal } from '@/hooks/useModal';
+import Cookies from 'js-cookie';
 
 export interface FormData {
   unitId: string;
@@ -21,6 +22,7 @@ export interface FormData {
   type: string;
   inspector: string;
   vendor: string;
+  vendorId: string;
   location: string;
   delivered: string;
   durationMin: string;
@@ -52,6 +54,7 @@ export interface FormData {
   brakeType: string;
   suspensionType: string;
   tireModel: string;
+  tireBrand: string;
   amenikis: string;
   doorBranding: string;
   doorColor: string;
@@ -104,7 +107,8 @@ export default function Edit({ type }: { type: string }) {
     reviewReason: '',
     type: '53 Foot Trailer',
     inspector: '',
-    vendor: 'ABC Vendor',
+    vendor: '',
+    vendorId: '',
     location: 'East Plant',
     delivered: '',
     durationMin: '5',
@@ -136,6 +140,7 @@ export default function Edit({ type }: { type: string }) {
     brakeType: '',
     suspensionType: '',
     tireModel: '',
+    tireBrand: '',
     amenikis: '',
     doorBranding: '',
     doorColor: '',
@@ -167,8 +172,8 @@ export default function Edit({ type }: { type: string }) {
 
   const params = useParams<{ inspection_id: string }>();
   useEffect(() => {
-    const deptName = sessionStorage.getItem('selectedDepartment');
-    const deptId = sessionStorage.getItem('selectedDepartmentId');
+    const deptName = Cookies.get('selectedDepartment') || '';
+    const deptId = Cookies.get('selectedDepartmentId') || '';
     setDepartment(deptId || '');
     (async () => {
       try {
@@ -178,6 +183,25 @@ export default function Edit({ type }: { type: string }) {
           const dept = (json.departments || []).find((d: any) => d.name === deptName);
           if (dept?._id) {
             setFormData(prev => ({ ...prev, departmentId: dept._id }));
+          }
+        }
+      } catch (e: any) { }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const vendorName = Cookies.get('selectedVendor') || '';
+    const vendorId = Cookies.get('selectedVendorId') || '';
+    (async () => {
+      try {
+        const res = await apiRequest('/api/vendors/get-vendors');
+        const json = await res.json();
+        if (res.ok) {
+          const vendor = (json.vendors || []).find((v: any) => v.name === vendorName);
+          if (vendor?.name) {
+            setFormData(prev => ({ ...prev, vendor: vendor.name, vendorId: vendor._id }));
+          } else if (vendorName) {
+            setFormData(prev => ({ ...prev, vendor: vendorName, vendorId: vendorId || '' }));
           }
         }
       } catch (e: any) { }

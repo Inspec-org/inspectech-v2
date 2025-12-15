@@ -1,8 +1,9 @@
 import mongoose from 'mongoose'
 
 const InspectionSchema = new mongoose.Schema({
-  unitId: { type: String, required: true, unique: true, trim: true },
-  userId: {type:mongoose.Schema.Types.ObjectId, ref:'User', required: true},
+  unitId: { type: String, required: true, trim: true },
+  // userId: {type:mongoose.Schema.Types.ObjectId, ref:'User', required: true},
+  vendorId: {type:mongoose.Schema.Types.ObjectId, ref:'Vendor', required: true},
   departmentId: {type:mongoose.Schema.Types.ObjectId, ref:'Department', required: true},
   inspectionStatus: { type: String, default: 'incomplete' },
   reviewReason: { type: String, default: null },
@@ -75,5 +76,11 @@ const InspectionSchema = new mongoose.Schema({
 }, {
   timestamps: true,
 })
+
+InspectionSchema.index(
+  { unitId: 1, departmentId: 1, vendorId: 1 },
+  { unique: true }
+);
+
 
 export default mongoose.models.Inspection || mongoose.model('Inspection', InspectionSchema)

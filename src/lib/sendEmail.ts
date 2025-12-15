@@ -1,6 +1,11 @@
 import nodemailer from 'nodemailer';
 
-export const sendEmail = async (to: string, subject: string, html: string) => {
+export const sendEmail = async (
+  to: string | string[],
+  subject: string,
+  html: string,
+  attachments?: { filename: string; content: string | Buffer; contentType?: string }[]
+) => {
   let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -11,8 +16,9 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
 
   await transporter.sendMail({
     from: `"InspecTech" <${process.env.EMAIL_USER}>`,
-    to,
+    to: Array.isArray(to) ? to.join(',') : to,
     subject,
     html,
+    attachments,
   });
 };

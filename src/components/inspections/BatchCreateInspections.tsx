@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Upload, ArrowLeft, FolderPlus, AlertCircle, X, Download, FileUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,7 @@ import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import Cookies from 'js-cookie';
 
 interface InspectionData {
     [key: string]: string | number;
@@ -92,6 +93,7 @@ export default function BatchCreateInspections() {
         };
     } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [department, setDepartment] = useState('');
     const [formData, setFormData] = useState({
         status: 'Leave unchanged',
         type: '',
@@ -102,6 +104,11 @@ export default function BatchCreateInspections() {
         duration: '',
         notes: ''
     });
+
+    useEffect(() => {
+        const deptId = Cookies.get('selectedDepartmentId') || '';
+        setDepartment(deptId || '');
+    }, []);
 
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -329,7 +336,7 @@ export default function BatchCreateInspections() {
                 const res = await apiRequest('/api/inspections/check-unit-ids', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ unitIds: unitIdsToCheck }),
+                    body: JSON.stringify({ unitIds: unitIdsToCheck, departmentId: department }),
                 });
                 const dup = await res.json();
                 if (res.ok && dup.success && Array.isArray(dup.existing) && dup.existing.length) {
@@ -400,7 +407,6 @@ export default function BatchCreateInspections() {
         }
     };
 
-
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
@@ -433,11 +439,7 @@ export default function BatchCreateInspections() {
             toast.error('No import data to create');
             return;
         }
-        const departmentId = sessionStorage.getItem('selectedDepartmentId') || '';
-        if (!departmentId) {
-            toast.error('No department selected');
-            return;
-        }
+        
         setIsSaving(true);
         try {
             const normalize = (h: string) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -477,7 +479,7 @@ export default function BatchCreateInspections() {
                 licensePlateCountry: ['licenseplatecountry', 'platecountry', 'country'],
                 licensePlateExpiration: ['licenseplateexpiration', 'licenseplateexp', 'plateexpiration', 'plateexp'],
                 licensePlateState: ['licenseplatestate', 'platestate', 'state', 'province', 'licenseprovince'],
-                possessionOrigin: ['possessionorigin', 'origin', 'possession','possessionoriginlocationpickuplocation','possessionoriginlocation', 'pickuplocation'],
+                possessionOrigin: ['possessionorigin', 'origin', 'possession', 'possessionoriginlocationpickuplocation', 'possessionoriginlocation', 'pickuplocation'],
                 manufacturer: ['manufacturer', 'make', 'mfg', 'mfr'],
                 modelYear: ['modelyear', 'year', 'model'],
                 absSensor: ['abssensor', 'abs'],
@@ -513,7 +515,7 @@ export default function BatchCreateInspections() {
                 inspectionStatus: ['inspectionstatus', 'status'],
                 inspector: ['inspector', 'inspectedby', 'technician'],
                 location: ['location', 'loc', 'site'],
-                type:['type']
+                type: ['type']
             };
 
             // Fuzzy matching function with scoring
@@ -566,7 +568,7 @@ export default function BatchCreateInspections() {
 
             let success = 0, fail = 0;
             for (const row of previewData.rows) {
-                const payload: any = { unitId: String(row['Unit ID'] || '').trim(), departmentId };
+                const payload: any = { unitId: String(row['Unit ID'] || '').trim(), departmentId: department };
 
                 previewData.headers
                     .filter(h => !['Sr No', 'Unit ID'].includes(h))

@@ -1,4 +1,3 @@
-// /Users/mlb/Desktop/InspecTech/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_PATHS = new Set([
@@ -6,11 +5,12 @@ const PUBLIC_PATHS = new Set([
   "/signup",
   "/forget-password",
   "/reset-password",
+  "/accept-invitation",
 ]);
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
-  console.log("pathname", pathname);
+
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
@@ -70,9 +70,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(to);
   }
 
-  if (sessionId) {
-    return NextResponse.next();
-  }
+  if (sessionId) return NextResponse.next();
 
   if (!hasRefresh) {
     const url = req.nextUrl.clone();
@@ -88,10 +86,7 @@ export async function middleware(req: NextRequest) {
     const data = await refreshRes.json();
     if (data?.success && data?.accessToken) {
       const res = NextResponse.next();
-      res.cookies.set("session_id", data.accessToken, {
-        path: "/",
-        sameSite: "lax",
-      });
+      res.cookies.set("session_id", data.accessToken, { path: "/", sameSite: "lax" });
       return res;
     }
   }
@@ -101,6 +96,4 @@ export async function middleware(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-export const config = {
-  matcher: ["/(.*)"],
-};
+export const config = { matcher: ["/(.*)"] };

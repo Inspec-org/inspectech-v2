@@ -106,7 +106,7 @@ const ReassignDepartmentModal: React.FC<Props> = ({
         </p>
 
         <div className="flex flex-col justify-between gap-2 mb-5">
-          <label className="block text-sm font-medium text-gray-700">Department {department}</label>
+          <label className="block text-sm font-medium text-gray-700">Department</label>
           <CustomDropdown
             options={options}
             width="w-full"

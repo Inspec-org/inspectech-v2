@@ -19,11 +19,14 @@ import {
 } from "../icons/index";
 import { BarChart, BarChart2, BarChart4, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
 import { UserContext } from "@/context/authContext";
+import RequestAdminReviewModal from "@/components/Modals/RequestAdminReviewModal";
+import Cookies from 'js-cookie';
 
 type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
+  onClick?: () => void;
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
@@ -33,6 +36,7 @@ const AppSidebar: React.FC = () => {
   const pathname = usePathname();
   const { logout, user, session_id, setUser } = useContext(UserContext);
   const [dept, setDept] = useState("");
+  const [isRequestAdminReviewModalOpen, setIsRequestAdminReviewModalOpen] = useState(false);
 
   const navItems: NavItem[] = [
     {
@@ -55,11 +59,11 @@ const AppSidebar: React.FC = () => {
       name: "Users",
       path: `/${user?.role}/users`
     },
-    user?.role === "vendor"
+    user?.role === "vendor" || user?.role === "user"
       ? {
         icon: <Mail />,
         name: "Request Admin Review",
-        path: `/${user?.role}/request-admin-review`,
+        onClick: () => setIsRequestAdminReviewModalOpen(true),
       }
       : {
         icon: <CircleQuestionMark />,
@@ -108,7 +112,7 @@ const AppSidebar: React.FC = () => {
               )}
             </button>
           ) : (
-            nav.path && (
+            nav.path ? (
               <Link
                 href={nav.path}
                 className={`menu-item-dark group ${isActive(nav.path)
@@ -126,7 +130,19 @@ const AppSidebar: React.FC = () => {
                   <span className="menu-item-text-dark">{nav.name}</span>
                 )}
               </Link>
-            )
+            ) : nav.onClick ? (
+              <button
+                onClick={nav.onClick}
+                className="menu-item-dark group menu-item-dark-inactive w-full"
+              >
+                <span className="text-gray-400 group-hover:text-white">
+                  {nav.icon}
+                </span>
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <span className="menu-item-text-dark">{nav.name}</span>
+                )}
+              </button>
+            ) : null
           )}
           {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
             <div
@@ -236,7 +252,7 @@ const AppSidebar: React.FC = () => {
 
   useEffect(() => {
     const read = () => {
-      const v = sessionStorage.getItem("selectedDepartment") || "";
+      const v = Cookies.get("selectedDepartment") || "";
       setDept(v);
     };
 
@@ -460,6 +476,10 @@ const AppSidebar: React.FC = () => {
           </div>
         </div>
       </aside>
+      <RequestAdminReviewModal
+        isOpen={isRequestAdminReviewModalOpen}
+        onClose={() => setIsRequestAdminReviewModalOpen(false)}
+      />
     </>
   );
 };

@@ -19,14 +19,15 @@ export async function POST(req: NextRequest) {
     if (!body?.departmentId) {
       return NextResponse.json({ success: false, message: "departmentId is required" }, { status: 400 });
     }
+    if (!body?.vendorId) {
+      return NextResponse.json({ success: false, message: "vendorId is required" }, { status: 400 });
+    }
 
     await connectDB();
 
+    await Inspection.syncIndexes();
+
     const cleaned: any = { ...body };
-    // console.log("cleaned", cleaned);
-    console.log("body", body);
-    cleaned.userId = user._id;
-    console.log("cleaned", cleaned);
     ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
       if (cleaned[key] === "" || cleaned[key] === undefined || cleaned[key] === null) {
         delete cleaned[key];
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
       cleaned["delivered"] = cleaned["delivered_status"];
       delete cleaned["delivered_status"];
     }
+    console.log("cleaned", cleaned);
 
     const inspection = await Inspection.create(cleaned);
     return NextResponse.json({ success: true, inspection }, { status: 201 });

@@ -5,6 +5,7 @@ import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { UserContext } from '@/context/authContext';
 import { FaSuitcase } from 'react-icons/fa';
+import Cookies from 'js-cookie';
 
 import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -115,10 +116,10 @@ function Inspections() {
     const [vendor, setVendor] = useState<string | null>(null);
 
     useEffect(() => {
-        const storedDept = sessionStorage.getItem("selectedDepartmentId");
+        const storedDept = Cookies.get("selectedDepartmentId") || '';
         setDept(storedDept);
         setDepartment(storedDept || '');
-        const storedVendor = sessionStorage.getItem("selectedVendorId");
+        const storedVendor = Cookies.get("selectedVendorId") || '';
         setVendor(storedVendor);
     }, []);
 
@@ -435,7 +436,7 @@ function Inspections() {
                             <Edit className='w-4 h-4' />
                             Batch Edit ({selectedRows.length})
                         </button>
-                        {user?.role === "vendor" && (
+                        {user?.role === "user" && (
                             <>
                                 <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push(`/${user?.role}/inspections/new-inspection`)} >
                                     <Plus className='w-4 h-4' />
@@ -488,7 +489,7 @@ function Inspections() {
                     </div>
                 )}
                 {/* table */}
-                <div className="h-full">
+                <div className="h-full mt-4">
                     <GenericDataTable title="" data={inspections} totalCount={totalInspections} tabs={pageTabs} columns={columns} pageSize={limit} setPageSize={setLimit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onRowClick={(row) => { router.push(`/${user?.role}/inspections/Edit/${row.id}`) }} emptyStateImages={{
                         "All Users": "/images/No Users.svg"
                     }}

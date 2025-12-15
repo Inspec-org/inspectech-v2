@@ -31,7 +31,7 @@
     "lucide-react": "^0.553.0",
     "mongodb": "^7.0.0",
     "mongoose": "^8.19.3",
-    "next": "15.2.3",
+    "next": "^16.0.10",
     "nodemailer": "^7.0.10",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",

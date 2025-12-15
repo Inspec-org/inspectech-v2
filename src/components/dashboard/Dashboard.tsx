@@ -12,10 +12,11 @@ import { Department } from '../departments/DepartmentCard';
 import { useSearchParams } from 'next/navigation';
 import { set } from 'mongoose';
 import { UserContext } from '@/context/authContext';
+import Cookies from 'js-cookie';
 
 export interface Vendor {
     _id: string;
-    username: string;
+    name: string;
 }
 
 export interface stats {
@@ -74,7 +75,7 @@ function Dashboard() {
     const { user } = useContext(UserContext);
 
     useEffect(() => {
-        const department = sessionStorage.getItem("selectedDepartment");
+        const department = Cookies.get("selectedDepartment");
         if (departments.length > 0) {
             console.log(department)
             const dept = departments.find(d => d.name === department) ?? null;
@@ -120,13 +121,15 @@ function Dashboard() {
     }, []);
     useEffect(() => {
         setSelectedVendor(vendors[0]);
-        sessionStorage.setItem('selectedVendor', vendors[0]?.username);
-        sessionStorage.setItem('selectedVendorId', vendors[0]?._id || '');
+        if (vendors[0]) {
+            Cookies.set('selectedVendor', vendors[0].name || '');
+            Cookies.set('selectedVendorId', vendors[0]._id || '');
+        }
     }, [vendors])
 
     const getRecent = async () => {
-        const vendorId = sessionStorage.getItem('selectedVendorId')
-        const departmentId = sessionStorage.getItem('selectedDepartmentId')
+        const vendorId = Cookies.get('selectedVendorId') || ''
+        const departmentId = Cookies.get('selectedDepartmentId') || ''
         try {
             setRecentLoading(true)
             const res = await apiRequest(("/api/dashboard/get_recent_inspections"), {
@@ -153,8 +156,9 @@ function Dashboard() {
 
     useEffect(() => {
         const getStats = async () => {
-            const vendorId = sessionStorage.getItem('selectedVendorId')
-            const departmentId = sessionStorage.getItem('selectedDepartmentId')
+            const vendorId = Cookies.get('selectedVendorId') || ''
+            const departmentId = Cookies.get('selectedDepartmentId') || ''
+            console.log("stats api")
             try {
                 const res = await apiRequest(("/api/dashboard/allData"), {
                     method: "POST",
@@ -177,7 +181,7 @@ function Dashboard() {
                 setLoading(false)
             }
         }
-
+        console.log(selectedDepartment, selectedVendor)
         if (selectedDepartment && selectedVendor) {
             getStats();
             getRecent();
@@ -188,7 +192,7 @@ function Dashboard() {
         <Suspense fallback={<div>Loading...</div>}>
             <h1 className='font-bold text-2xl px-2 py-3'>Dashboard</h1>
             <div className='w-full bg-white space-y-4 p-4 shadow-2xl rounded-2xl'>
-                <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)} vendors={vendors} setSelectedVendor={setSelectedVendor} selectedVendor={vendors.find(v => v.username === selectedVendor?.username)}
+                <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)} vendors={vendors} setSelectedVendor={setSelectedVendor} selectedVendor={vendors.find(v => v.name === selectedVendor?.name)}
                 />
                 <StatsGrid data={dashboardData?.stats || null} loading={loading} />
                 <div className="grid grid-cols-12 gap-4 items-stretch">
@@ -209,12 +213,12 @@ function Dashboard() {
                         </div>
                     </div>
                 </div>
-                <div className="grid grid-cols-12 gap-4 items-stretch">
-                    <div className="xl:col-span-8 col-span-12 h-full">
+                <div className=" items-stretch">
+                    {/* <div className="xl:col-span-8 col-span-12 h-full">
                         <div className="">
                             <Inspections recentInspections={recentData?.recent || []} loading={recentloading} onRefresh={getRecent} />
                         </div>
-                    </div>
+                    </div> */}
                     <div className="xl:col-span-4 col-span-12 h-full">
                         <div className="h-full">
                             <QuickActions role={user?.role || ''}/>

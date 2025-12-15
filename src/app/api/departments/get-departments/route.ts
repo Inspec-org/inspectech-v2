@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     if (user.role === "admin") {
       departments = await Department.find();
-    } else if (user.role === "vendor") {
+    } else if (user.role === "user") {
       departments = await Department.find({
         name: { $regex: "trailers", $options: "i" }
       });
