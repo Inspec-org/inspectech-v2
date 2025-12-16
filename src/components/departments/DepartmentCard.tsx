@@ -1,4 +1,5 @@
 // components/DepartmentCard.tsx
+import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import React from 'react';
 
@@ -40,21 +41,37 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
     green: 'border-emerald-500',
   };
 
+
+
   return (
     <div
       onClick={() => onClick?.(department)}
-      className={`relative  border ${borderClasses[department.color]} rounded-xl p-6 bg-white hover:shadow-lg transition-shadow cursor-pointer`}
+      className={`group relative border ${borderClasses[department.color]} rounded-xl p-6 transition-shadow transform hover:-translate-y-2 hover:shadow-lg cursor-pointer`}
+      style={{
+        background: `linear-gradient(137deg, white 0%, #FAF5FF 100%)`,
+      }}
     >
-      {department.isActive || true && (
-        <span className="absolute top-4 right-4 px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+      {department.isActive && (
+        <span
+          className="absolute top-4 right-4 px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full"
+        >
           ACTIVE
         </span>
       )}
 
-      <div className={`${colorClasses[department.color]} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
-        <Image width={24} height={24} src="/images/departments/van.svg" alt="Icon" />
+      {/* Icon */}
+      <div
+        className={`${colorClasses[department.color]} w-12 h-12 rounded-lg flex items-center justify-center mb-4 transition-transform duration-2000 group-hover:scale-110`}
+      >
+        <Image
+          width={24}
+          height={24}
+          src="/images/departments/van.svg"
+          alt="Icon"
+        />
       </div>
 
+      {/* Title */}
       <h3 className="text-lg font-semibold mb-2 flex flex-col">
         <span className={`${textClasses[department.color]}`}>
           {department.name}
@@ -62,28 +79,20 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         <span
           className={`h-[3px] rounded-full ${colorClasses[department.color]}`}
           style={{ width: "25%" }}
-        ></span>
+        />
       </h3>
 
-
+      {/* Bottom row */}
       <div className="flex items-center justify-between text-sm">
         <span className={`${textClasses[department.color]} font-medium uppercase tracking-wide`}>
           ACCESS DASHBOARD
         </span>
-        <svg
-          className="w-4 h-4 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
+
+        <ArrowRight
+          className="w-6 h-6 bg-white rounded-full p-1 border shadow-sm transition-transform duration-2000 group-hover:scale-110 group-hover:-translate-x-1 group-hover:bg-purple-500 group-hover:text-white"
+        />
       </div>
     </div>
+
   );
 };

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
         await connectDB();
 
-        const invitation = await Invitation.findOne({ token });
+        const invitation = await Invitation.findOne({ token }).populate('vendorId');
 
         if (!invitation) {
             return NextResponse.json(
@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
                 name: invitation.name,
                 email: invitation.email,
                 role: invitation.role,
-                vendorName: invitation.vendorName,
-                vendorId: invitation.vendorId
+                vendorName: invitation.vendorId.name,
+                vendorId: invitation.vendorId._id
             }
         });
 

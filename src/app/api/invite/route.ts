@@ -33,9 +33,7 @@ export async function POST(req: NextRequest) {
         // Check if invitation already exists
         let invitation = await Invitation.findOne({ email });
         const token = crypto.randomBytes(32).toString("hex");
-        console.log("invitation", invitation)
-
-        if (invitation) {
+        if (invitation.status === "expired") {
             // Update existing invitation
             invitation.token = token;
             invitation.name = name;
@@ -43,8 +41,16 @@ export async function POST(req: NextRequest) {
             invitation.vendorId = vendorId || undefined;
             invitation.vendorName = vendorName || undefined;
             invitation.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+            invitation.status = "pending";
             await invitation.save();
-        } else {
+        } 
+        else if (invitation.status === "pending") {
+            return NextResponse.json(
+                { success: false, message: "Invitation already Sent." },
+                { status: 400 }
+            );
+        }
+        else {
             // Create new invitation
             invitation = await Invitation.create({
                 email,

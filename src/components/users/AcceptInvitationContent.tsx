@@ -29,6 +29,7 @@ function AcceptInvitationContent() {
             try {
                 const res = await fetch(`/api/invite/details?token=${token}`);
                 const data = await res.json();
+                console.log(data);
                 if (data.success) {
                     setInvitation(data.invitation);
                 } else {
@@ -104,14 +105,14 @@ function AcceptInvitationContent() {
                 <p className="text-gray-600">Advanced Inventory Monitoring & Analytics Suite</p>
             </div>
 
-            <div className="w-full max-w-[500px] bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] overflow-hidden border border-gray-100">
+            <div className="w-full max-w-[600px] bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] overflow-hidden border border-gray-100">
                 {/* Card Header */}
                 <div className="px-8 pt-8 pb-4">
                     <div className="flex justify-between items-start mb-6">
                         <h2 className="text-xl font-bold text-gray-900">Complete Your Registration</h2>
                         {invitation?.vendorId && (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                                Vendor ID: 5
+                                Vendor ID: {invitation?.vendorId}
                             </span>
                         )}
                     </div>
