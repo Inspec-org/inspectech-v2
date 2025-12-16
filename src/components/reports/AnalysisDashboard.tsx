@@ -492,6 +492,7 @@ const AnalysisDashboard: React.FC = () => {
                 body: JSON.stringify({ vendorId: vendor, departmentId: dept, timeRange: time })
             });
             const json = await res.json();
+            console.log(json);
             if (!res.ok || !json?.success) throw new Error(json?.message || 'Failed to load analytics');
             const a = json.analytics;
             setTotals({ total: a.status.total, pass: a.status.pass, fail: a.status.fail });

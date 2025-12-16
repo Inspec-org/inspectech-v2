@@ -54,11 +54,11 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                     </label>
                     <CustomDropdown
                         options={[
-                            { value: "pass", label: `PASS${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
-                            { value: "fail", label: `FAIL${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
-                            { value: "needs review", label: `NEEDS REVIEW${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
-                            { value: "out of cycle (delivered)", label: `OUT OF CYCLE (DELIVERED)${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
-                            { value: "no inspection (delivered)", label: `NO INSPECTION (DELIVERED)${user?.role === 'vendor' ? ' (Admin Only)' : ''}`, disabled: user?.role === 'vendor' },
+                            { value: "pass", label: `PASS${(user?.role === 'vendor' || user?.role === 'user') ? ' (Admin Only)' : ''}`, disabled: (user?.role === 'vendor' || user?.role === 'user') },
+                            { value: "fail", label: `FAIL${(user?.role === 'vendor' || user?.role === 'user') ? ' (Admin Only)' : ''}`, disabled: (user?.role === 'vendor' || user?.role === 'user') },
+                            { value: "needs review", label: `NEEDS REVIEW${(user?.role === 'vendor' || user?.role === 'user') ? ' (Admin Only)' : ''}`, disabled: (user?.role === 'vendor' || user?.role === 'user') },
+                            { value: "out of cycle (delivered)", label: `OUT OF CYCLE (DELIVERED)${(user?.role === 'vendor' || user?.role === 'user') ? ' (Admin Only)' : ''}`, disabled: (user?.role === 'vendor' || user?.role === 'user') },
+                            { value: "no inspection (delivered)", label: `NO INSPECTION (DELIVERED)${(user?.role === 'vendor' || user?.role === 'user') ? ' (Admin Only)' : ''}`, disabled: (user?.role === 'vendor' || user?.role === 'user') },
                             { value: "incomplete", label: "INCOMPLETE" },
                             { value: "complete", label: "COMPLETE" },
                         ]}

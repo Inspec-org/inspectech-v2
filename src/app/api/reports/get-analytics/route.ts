@@ -68,10 +68,9 @@ export async function POST(req: NextRequest) {
       body;
 
     await connectDB();
-
     const query: any = {};
     if (departmentId) query.departmentId = departmentId;
-    if (vendorId) query.userId = vendorId;
+    if (vendorId) query.vendorId = vendorId;
 
     const inspections = await Inspection.find(query);
 

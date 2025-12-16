@@ -66,12 +66,10 @@ export async function POST(req: NextRequest) {
 
     const query: any = {};
     if (departmentId) query.departmentId = departmentId;
-    if (vendorId) query.userId = vendorId;
+    if (vendorId) query.vendorId = vendorId;
 
     const inspections = await Inspection.find(query);
-    console.log(timeRange)
     const rangeStart = getRangeStart(timeRange);
-    console.log(rangeStart)
     const filtered = rangeStart
       ? inspections.filter((i: any) => {
         const day = parseInt(i.dateDay || "1");
