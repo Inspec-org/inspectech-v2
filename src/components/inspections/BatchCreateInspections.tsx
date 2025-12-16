@@ -94,6 +94,7 @@ export default function BatchCreateInspections() {
     } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [department, setDepartment] = useState('');
+    const [vendorId, setVendorId] = useState('');
     const [formData, setFormData] = useState({
         status: 'Leave unchanged',
         type: '',
@@ -108,6 +109,8 @@ export default function BatchCreateInspections() {
     useEffect(() => {
         const deptId = Cookies.get('selectedDepartmentId') || '';
         setDepartment(deptId || '');
+        const vendId = Cookies.get('selectedVendorId') || '';
+        setVendorId(vendId || '');
     }, []);
 
     const handleChange = (field: string, value: string) => {
@@ -568,7 +571,7 @@ export default function BatchCreateInspections() {
 
             let success = 0, fail = 0;
             for (const row of previewData.rows) {
-                const payload: any = { unitId: String(row['Unit ID'] || '').trim(), departmentId: department };
+                const payload: any = { unitId: String(row['Unit ID'] || '').trim(), departmentId: department, vendorId };
 
                 previewData.headers
                     .filter(h => !['Sr No', 'Unit ID'].includes(h))
