@@ -2,7 +2,7 @@ import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Avatar from "@/components/ui/avatar/Avatar";
 import { Metadata } from "next";
-import React from "react";
+import React, { Suspense } from "react";
 
 
 export const metadata: Metadata = {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function AvatarPage() {
   return (
-    <div>
+    <Suspense fallback={<div>Loading...</div>}>
       <PageBreadcrumb pageTitle="Avatar" />
       <div className="space-y-5 sm:space-y-6">
         <ComponentCard title="Default Avatar">
@@ -122,6 +122,6 @@ export default function AvatarPage() {
           </div>
         </ComponentCard>
       </div>
-    </div>
+    </Suspense>
   );
 }

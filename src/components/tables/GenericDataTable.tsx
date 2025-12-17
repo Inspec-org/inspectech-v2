@@ -16,7 +16,7 @@ export interface Column<T> {
 interface GenericDataTableProps<T> {
   title?: string;
   title_font_size?: string
-  tabs: string[];
+  tabs: number[];
   custom_tabs?: string[];
   activeTab?: string;
   onTabChange?: (tab: string) => void;
@@ -79,7 +79,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
         setLoading(true);
       }
       const params = new URLSearchParams(searchParams);
-      // setCurrentPage(page)
+      setCurrentPage && setCurrentPage(page)
       params.set(querykey, String(page)); // update dynamic key
       router.push(`?${params.toString()}`);
     }
@@ -185,8 +185,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                 </tr>
               </thead>
               <tbody>
-                {currentData.map((row) => (
-                  <tr key={row.id} className={`border-b hover:bg-gray-50  ${onRowClick ? "cursor-pointer" : ""}`} onClick={() => onRowClick?.(row)}>
+                {currentData.map((row,index) => (
+                  <tr key={index} className={`border-b hover:bg-gray-50  ${onRowClick ? "cursor-pointer" : ""}`} onClick={() => onRowClick?.(row)}>
                     {columns.map((col, i) => (
                       <td key={i} className="py-3 px-4 font-raleway">
                         {col.cell ? col.cell(row) : (row as any)[col.accessor]}
@@ -254,9 +254,9 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                   >
                     <ChevronLeft className="w-4 h-4" color="#7522BB" />
                   </button>
-                  {tabs.map((tab) => (
+                  {tabs.map((tab,index) => (
                     <button
-                      key={tab}
+                      key={index}
                       onClick={() => goToPage(Number(tab))}
                       className={`w-6 h-6 rounded text-xs font-medium ${currentPage === Number(tab)
                         ? "bg-purple-600 text-white"

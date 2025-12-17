@@ -4,11 +4,12 @@ import Invitation from "@/lib/models/Invitation";
 import User from "@/lib/models/User";
 import { sendEmail } from "@/lib/sendEmail";
 import crypto from "crypto";
+import Vendor from "@/lib/models/Vendor";
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { email, name, role, vendorId, vendorName } = body;
+        const { email, name, role, vendorId } = body;
 
         if (!email || !name || !role) {
             return NextResponse.json(
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
                 { status: 400 }
             );
         }
-        console.log(email, name, role, vendorId, vendorName)
+        console.log(email, name, role, vendorId)
 
         await connectDB();
 
@@ -30,21 +31,44 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const vendor=await Vendor.findById(vendorId);
+        if(!vendor){
+            return NextResponse.json(
+                { success: false, message: "Vendor not found" },
+                { status: 400 }
+            );
+        }
+        const vendorName=vendor.name;
+
         // Check if invitation already exists
         let invitation = await Invitation.findOne({ email });
         const token = crypto.randomBytes(32).toString("hex");
-        console.log("invitation", invitation)
-
         if (invitation) {
-            // Update existing invitation
-            invitation.token = token;
-            invitation.name = name;
-            invitation.role = role;
-            invitation.vendorId = vendorId || undefined;
-            invitation.vendorName = vendorName || undefined;
-            invitation.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
-            await invitation.save();
-        } else {
+            if (invitation.status === "expired") {
+                // Update existing invitation
+                invitation.token = token;
+                invitation.name = name;
+                invitation.role = role;
+                invitation.vendorId = vendorId || undefined;
+                invitation.vendorName = vendorName || undefined;
+                invitation.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+                invitation.status = "pending";
+                await invitation.save();
+            }
+            else if (invitation.status === "pending") {
+                return NextResponse.json(
+                    { success: false, message: "Invitation already Sent." },
+                    { status: 400 }
+                );
+            }
+            else if (invitation.status === "accepted") {
+                return NextResponse.json(
+                    { success: false, message: "Invitation already Accepted." },
+                    { status: 400 }
+                );
+            }
+        }
+        else {
             // Create new invitation
             invitation = await Invitation.create({
                 email,
@@ -58,7 +82,7 @@ export async function POST(req: NextRequest) {
 
         // Send Email
         const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/accept-invitation?token=${token}`;
-        
+
         const emailHtml = `
             <!DOCTYPE html>
             <html>
@@ -79,7 +103,7 @@ export async function POST(req: NextRequest) {
                     .detail-value a { color: #6f42c1; text-decoration: none; }
                     .message-box { background-color: #e8f0fe; color: #1967d2; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-size: 14px; border: 1px solid #d2e3fc; }
                     .btn-container { text-align: center; margin: 30px 0; }
-                    .btn { display: inline-block; background-color: #8a5cf6; color: white; padding: 14px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; }
+                    .btn { display: inline-block; background-color: #8a5cf6; color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; }
                     .link-box { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 6px; word-break: break-all; font-size: 13px; color: white; border-left: 4px solid #8a5cf6; }
                     .link-box a { color: #6f42c1; }
                     .note-box { background-color: #e8f0fe; color: #1967d2; padding: 15px; border-radius: 6px; margin-top: 25px; font-size: 14px; border-left: 4px solid #1967d2; }
@@ -107,7 +131,19 @@ export async function POST(req: NextRequest) {
                         </div>
 
                         <div class="btn-container">
-                            <a href="${inviteLink}" class="btn">➔ Accept Invitation</a>
+                            <a
+  href="${inviteLink}"
+  style="
+    display:inline-block;
+    background-color:#8a5cf6;
+    color:#ffffff !important;
+    padding:14px 30px;
+    text-decoration:none !important;
+    border-radius:50px;
+    font-weight:bold;
+    font-size:16px;
+    -webkit-text-fill-color:#ffffff;
+  ">➔ Accept Invitation</a>
                         </div>
 
                         <p>Or copy and paste this URL into your browser:</p>

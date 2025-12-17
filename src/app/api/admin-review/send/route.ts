@@ -20,26 +20,28 @@ export async function POST(req: NextRequest) {
       <!DOCTYPE html><html><head><meta charSet="utf-8" />
       <style>
         body { font-family: Arial, sans-serif; background:#f6f7fb; margin:0; padding:0; color:#1f2937; }
-        .container { max-width: 640px; margin: 24px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.08); }
-        .header { background:#10b981; color:#fff; padding:28px 32px; }
+        .container { max-width: 640px; margin: 24px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.08); border:1px solid #e5e7eb;}
+        .header { background:#10b981; color:#fff; padding:28px 32px; text-align:center; }
         .title { font-size:22px; font-weight:700; margin:0 0 6px; }
         .subtitle { font-size:13px; opacity:0.95; margin:0; }
         .section { padding:24px 32px; }
-        .box { background:#f0fdf4; border:1px solid #dcfce7; border-radius:10px; padding:18px; margin-top:10px; }
+        .box { background:#ecfdf5; border:1px solid #34d399; border-radius:10px; padding:12px; margin-top:10px; }
         .muted { font-size:12px; color:#6b7280; }
-        .label { font-weight:600; }
-        .footer { padding:16px 32px; background:#f9fafb; font-size:12px; color:#6b7280; text-align:center; }
+        .footer { padding:32px 32px; background:#f9fafb; font-size:12px; color:#6b7280; text-align:center; }
         .pill { display:inline-block; background:#ecfeff; color:#0ea5e9; border:1px solid #bae6fd; padding:8px 12px; border-radius:10px; font-size:13px; }
-        .list { background:#ecfdf5; border:1px dashed #a7f3d0; border-radius:8px; padding:14px; }
+        .list { background:#ffffff; border:1px dashed #a7f3d0; border-radius:8px; padding:14px; font-size:14px;}
         .bullet { margin: 0; padding-left: 18px; }
+        .heading { font-weight: 600; color: #047857; font-size: 18px; margin: 0 0 24px 0;}
+        .label { font-size: 14px; font-weight: 600;}
+        .detail-row { margin-bottom: 16px;}
       </style>
       </head><body><div class="container">
         <div class="header"><h1 class="title">Admin Review Request</h1><p class="subtitle">InspecTech Inspection Management System</p></div>
         <div class="section">
-          <div class="box"><div><span class="label">Vendor:</span> ${safeVendor}</div><div><span class="label">Date:</span> ${dateStr}</div></div>
+         <div class="box"><p class="heading">Request Details</p><div class="detail-row"><span class="label">Vendor:</span> ABC vendor</div> <div class="detail-row"><span class="label">Date:</span> 12/15/2025</div></div>
           <div style="height:12px"></div>
           <div class="box">
-            <div><span class="label">Unit IDs for Review</span> <span class="pill">${count} item${count > 1 ? "s" : ""}</span></div>
+            <div><span class="heading">Unit IDs for Review (${count} item${count > 1 ? "s" : ""})</span></div>
             <div style="height:8px"></div>
             <div class="list">Please see attached CSV file:<ul class="bullet"><li>Unit ID list</li></ul></div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, Check, Image, ImageIcon, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload } from 'lucide-react';
 import { FormData } from './Edit';
+import { toast } from 'react-toastify';
 interface UploadCardProps {
     title: string;
     description: string;
@@ -14,6 +15,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -21,19 +23,37 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
             setSelectedFile(file);
             const url = URL.createObjectURL(file);
             setPreviewUrl(url);
+            setIsUploaded(false);
+            setUploadProgress(0);
+            handleUpload(file);
         } else {
             setPreviewUrl(null);
         }
     };
 
-    const handleUpload = async () => {
-        if (selectedFile) {
+    const handleUpload = async (file?: File) => {
+        const toUpload = file ?? selectedFile;
+        if (toUpload) {
             setIsUploading(true);
+            setUploadProgress(0);
+            let interval: number | undefined;
             try {
-                await onUploadToCloudinary(selectedFile);
+                interval = window.setInterval(() => {
+                    setUploadProgress((p) => (p < 95 ? p + 5 : p));
+                }, 300);
+                await onUploadToCloudinary(toUpload);
                 setIsUploaded(true);
-            } finally {
+                setUploadProgress(100);
+                toast.success("Image Uploaded Successfully")
+            }
+            catch(e){
+                toast.error("Image Upload Failed")
+            }
+            finally {
                 setIsUploading(false);
+                if (interval) {
+                    clearInterval(interval);
+                }
             }
         }
     };
@@ -55,7 +75,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                         <div className="w-16 h-16 mb-3 flex items-center justify-center">
                             <LucideImage className='opacity-40' size={56} />
                         </div>
-                        <p className="text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
+                        <p className="text-sm text-gray-600 mb-1 text-center">Click to upload or drag and drop</p>
                         <p className="text-xs text-gray-500">Supported formats: JPG, PNG</p>
                         <p className="text-xs text-gray-500">Maximum file size: 5MB</p>
                     </>
@@ -75,16 +95,16 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                 </div>
             </label>
 
-            <button
-                onClick={handleUpload}
-                disabled={!selectedFile || isUploading}
-                className="w-full bg-purple-600 text-white rounded-lg py-2 px-4 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-                <CloudUpload size={16} />
-                {isUploading ? 'Uploading...' : 'Upload to Database'}
-            </button>
+            {isUploading && (
+                <div className="w-full mt-1">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2 text-center">{uploadProgress}%</p>
+                </div>
+            )}
 
-            {isUploaded && (
+            {/* {isUploaded && (
                 <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-2">
                     <div className="flex-shrink-0 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
                         <Check size={14} className="text-white" />
@@ -94,7 +114,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                         <p className="text-sm text-green-700">Inside Trailer image successfully saved to the database</p>
                     </div>
                 </div>
-            )}
+            )} */}
         </div>
     );
 };
@@ -423,7 +443,7 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                         </button>
                 </div>
                 {showAdditional && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-4">
                         <UploadCard
                             title="Additional Attachment 1"
                             description="Upload an image showing the additionalform1 of the trailer"

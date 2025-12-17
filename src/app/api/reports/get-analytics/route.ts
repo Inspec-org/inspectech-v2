@@ -13,25 +13,64 @@ type TimeRange =
 
 function getRangeStart(timeRange?: TimeRange) {
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
   switch (timeRange) {
     case "Last Month": {
       const d = new Date(now);
       d.setMonth(d.getMonth() - 1);
+      d.setDate(1); // Start of last month
       return d;
     }
     case "Last 3 Months": {
       const d = new Date(now);
       d.setMonth(d.getMonth() - 3);
+      d.setDate(1); // Start of 3 months ago
       return d;
     }
     case "Last 6 Months": {
       const d = new Date(now);
       d.setMonth(d.getMonth() - 6);
+      d.setDate(1); // Start of 6 months ago
       return d;
     }
     case "Last Year": {
       const d = new Date(now);
       d.setFullYear(d.getFullYear() - 1);
+      d.setMonth(0);
+      d.setDate(1); // Start of last year
+      return d;
+    }
+    default:
+      return null;
+  }
+}
+
+function getRangeEnd(timeRange?: TimeRange) {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  switch (timeRange) {
+    case "Last Month": {
+      const d = new Date(now);
+      d.setDate(0); // Last day of previous month
+      return d;
+    }
+    case "Last 3 Months": {
+      const d = new Date(now);
+      d.setDate(0); // Last day of previous month
+      return d;
+    }
+    case "Last 6 Months": {
+      const d = new Date(now);
+      d.setDate(0); // Last day of previous month
+      return d;
+    }
+    case "Last Year": {
+      const d = new Date(now);
+      d.setFullYear(d.getFullYear() - 1);
+      d.setMonth(11);
+      d.setDate(31); // Last day of last year
       return d;
     }
     default:
@@ -43,6 +82,7 @@ function buildDate(i: any) {
   const day = parseInt(i.dateDay || "1");
   const month = parseInt(i.dateMonth || "1") - 1;
   const year = parseInt(i.dateYear || "1970");
+  // console.log(year, month, day);
   return new Date(year, month, day);
 }
 
@@ -72,14 +112,22 @@ export async function POST(req: NextRequest) {
     if (departmentId) query.departmentId = departmentId;
     if (vendorId) query.vendorId = vendorId;
 
-    const inspections = await Inspection.find(query);
+    const inspections = await Inspection.find(query).select("inspectionStatus dateDay dateMonth dateYear");
+    // console.log(timeRange);
 
     const rangeStart = getRangeStart(timeRange);
-    const filtered = rangeStart
-      ? inspections.filter((i: any) => buildDate(i) >= rangeStart)
-      : inspections;
+    const rangeEnd = getRangeEnd(timeRange);
+    const nowDate = new Date();
+    nowDate.setHours(0, 0, 0, 0);
+    const filtered = inspections.filter((i: any) => {
+      const t = buildDate(i).getTime();
+      const startOk = rangeStart ? t >= rangeStart.getTime() : true;
+      const endOk = rangeEnd ? t <= rangeEnd.getTime() : true;
+      return startOk && endOk;
+    });
 
-
+    // *** KEY CHANGE: Use filtered data for all calculations ***
+    const dataToUse = filtered;
 
     const total = filtered.length;
     const pass = filtered.filter((i: any) => i.inspectionStatus === "pass")
@@ -142,14 +190,14 @@ export async function POST(req: NextRequest) {
       total: 0,
     }));
 
-    inspections.forEach((i: any) => {
+    dataToUse.forEach((i: any) => {
       const d = buildDate(i);
-      if (d.getFullYear() === year) {
-        const m = d.getMonth();
-        monthlyCounts[m].total++;
-        if (i.inspectionStatus === "pass") monthlyCounts[m].pass++;
-        else if (i.inspectionStatus === "fail") monthlyCounts[m].fail++;
-      }
+      // if (d.getFullYear() === year) {
+      const m = d.getMonth();
+      monthlyCounts[m].total++;
+      if (i.inspectionStatus === "pass") monthlyCounts[m].pass++;
+      else if (i.inspectionStatus === "fail") monthlyCounts[m].fail++;
+      // }
     });
 
 
@@ -175,14 +223,14 @@ export async function POST(req: NextRequest) {
       total: 0,
     }));
 
-    inspections.forEach((i: any) => {
+    dataToUse.forEach((i: any) => {
       const d = buildDate(i);
-      if (d.getFullYear() === year) {
-        const q = Math.floor(d.getMonth() / 3);
-        quarterlyCounts[q].total++;
-        if (i.inspectionStatus === "pass") quarterlyCounts[q].pass++;
-        else if (i.inspectionStatus === "fail") quarterlyCounts[q].fail++;
-      }
+      // if (d.getFullYear() === year) {
+      const q = Math.floor(d.getMonth() / 3);
+      quarterlyCounts[q].total++;
+      if (i.inspectionStatus === "pass") quarterlyCounts[q].pass++;
+      else if (i.inspectionStatus === "fail") quarterlyCounts[q].fail++;
+      // }
     });
 
 
@@ -210,10 +258,10 @@ export async function POST(req: NextRequest) {
       total: 0,
     }));
 
-    inspections.forEach((i: any) => {
+    dataToUse.forEach((i: any) => {
       const d = buildDate(i);
-      if (d.getFullYear() >= startYear && d.getFullYear() <= year) {
-        const yi = d.getFullYear() - startYear;
+      const yi = d.getFullYear() - startYear;
+      if (yi >= 0 && yi < 4) { // Add this bounds check
         yearlyCounts[yi].total++;
         if (i.inspectionStatus === "pass") yearlyCounts[yi].pass++;
         else if (i.inspectionStatus === "fail") yearlyCounts[yi].fail++;
@@ -239,9 +287,9 @@ export async function POST(req: NextRequest) {
       success: true,
       analytics: {
         // Final payload sections with comments added above:
-        status,       
-        breakdown,   
-        trends: {     
+        status,
+        breakdown,
+        trends: {
           monthly,
           quarterly,
           yearly,
@@ -249,6 +297,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
+    console.error("Error fetching analytics:", error);
     return NextResponse.json(
       { success: false, message: error?.message || "Internal Server Error" },
       { status: 500 }

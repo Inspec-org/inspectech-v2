@@ -148,10 +148,12 @@ const StatCard: React.FC<StatCardProps> = ({ icon, title, value, subtitle, color
 );
 
 const InspectionStatusOverview: React.FC<{ total: number; pass: number; fail: number; statusData: { name: string; value: number; percentage: number; color: string }[] }> = ({ total, pass, fail, statusData }) => {
+    const hasData = statusData && statusData.length > 0 && statusData.some(d => d.value > 0);
+
     return (
-        <div className="bg-white rounded-lg mt-4">
+        <div className="bg-white rounded-lg mt-4 p-6">
             <div className="flex items-start gap-2 mb-4">
-                <div className=''>
+                <div>
                     <Activity size={18} className="text-[#7522BB] mt-1" />
                 </div>
                 <div>
@@ -159,7 +161,7 @@ const InspectionStatusOverview: React.FC<{ total: number; pass: number; fail: nu
                     <p className="text-sm text-gray-600">Distribution of pass/fail inspections</p>
                 </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div className="space-y-4">
                     <StatCard
                         icon={<CheckSquare size={20} className="text-[#9333EA]" />}
@@ -183,41 +185,52 @@ const InspectionStatusOverview: React.FC<{ total: number; pass: number; fail: nu
                         color="#EF4545"
                     />
                 </div>
-                <div className="flex flex-col items-center justify-center" style={{ width: 400, height: 400 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={statusData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={0}
-                                outerRadius={150}
-                                dataKey="value"
-
-                            >
-                                {statusData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            <span className="text-gray-600">Passed ({pass}) - {statusData.find(d => d.name === 'Passed')?.percentage ?? 0}%</span>
+                <div className="flex flex-col items-center justify-center" style={{ minHeight: 400 }}>
+                    {hasData ? (
+                        <>
+                            <ResponsiveContainer width="100%" height={400}>
+                                <PieChart>
+                                    <Pie
+                                        data={statusData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={0}
+                                        outerRadius={150}
+                                        dataKey="value"
+                                    >
+                                        {statusData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                    <span className="text-gray-600">Passed ({pass}) - {statusData.find(d => d.name === 'Passed')?.percentage ?? 0}%</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <span className="text-gray-600">Failed ({fail}) - {statusData.find(d => d.name === 'Failed')?.percentage ?? 0}%</span>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                            <div className="bg-gray-100 rounded-full p-6 mb-4">
+                                <BarChart3 size={48} className="text-gray-400" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-700 mb-2">No Inspection Data</h3>
+                            <p className="text-sm text-gray-500 max-w-xs">
+                                There are no Pass or Fail Inspections recorded yet.
+                            </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                            <span className="text-gray-600">Failed ({fail}) - {statusData.find(d => d.name === 'Failed')?.percentage ?? 0}%</span>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
-
         </div>
-    )
-
+    );
 };
 
 const InspectionStatusBreakdown: React.FC<{ data: { period: string; total: number; pass: number; fail: number }[] }> = ({ data }) => (
@@ -412,7 +425,35 @@ const InspectionDurationAnalysis: React.FC<{ durationData: { range: string; coun
             <div className="flex justify-end items-center gap-4 mb-6">
                 <div className="flex items-center gap-2">
                     <label className="text-sm text-gray-600">Bin Size (minutes):</label>
-                    <input type="text" value={binSize} onChange={(e) => setBinSize(e.target.value)} className="w-[100px] px-3 py-1 border border-gray-300 rounded-md bg-[#FAF7FF]" />
+                    <input
+                        type="text"
+                        value={binSize}
+                        onChange={(e) => {
+                            const value = e.target.value.toLowerCase();
+
+                            // allow empty
+                            if (value === "") {
+                                setBinSize("");
+                                return;
+                            }
+
+                            // allow typing 'auto' gradually
+                            if ("auto".startsWith(value)) {
+                                setBinSize(value);
+                                return;
+                            }
+
+                            // allow only digits <= 60
+                            if (/^\d+$/.test(value)) {
+                                const num = Number(value);
+                                setBinSize(num > 60 ? "60" : value);
+                                return;
+                            }
+
+                            // anything else is blocked
+                        }}
+                        className="w-[100px] px-3 py-1 border border-gray-300 rounded-md bg-[#FAF7FF]"
+                    />
                 </div>
                 <button className="px-4 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors" onClick={onApply}>Apply</button>
                 <span className="text-xs text-gray-500">(Enter "auto" or a number)</span>
@@ -515,13 +556,15 @@ const AnalysisDashboard: React.FC = () => {
 
     // 🔹 Handle Apply button click
     const handleApply = () => {
-        const sanitized = sanitizeBinSize(binSize);
-        // If user input was invalid, reset input to 'auto'
-        if (binSize.trim().toLowerCase() !== "auto" && isNaN(Number(binSize)) && !binSize.match(/^\d+/)) {
+        // If empty or invalid, default to "auto"
+        if (!binSize || binSize.trim() === "" ||
+            (binSize.trim().toLowerCase() !== "auto" && !/^\d+$/.test(binSize))) {
             setBinSize("auto");
         }
+
         fetchDuration();
     };
+
     return (
         <div className="">
             {loading && (
@@ -530,7 +573,7 @@ const AnalysisDashboard: React.FC = () => {
                 </div>
             )}
             <DashboardHeader time={time} setTime={setTime} />
-            <div className="">
+            <div className="space-y-10">
                 <InspectionStatusOverview total={totals.total} pass={totals.pass} fail={totals.fail} statusData={statusData} />
                 <InspectionStatusBreakdown data={breakdownData} />
                 <InspectionTrends trends={trends} />

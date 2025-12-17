@@ -33,7 +33,7 @@ const InvitationModal: React.FC<Props> = ({
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [vendor, setVendor] = useState('');
-  
+
 
 
   const handleSendInvitation = async () => {
@@ -72,12 +72,14 @@ const InvitationModal: React.FC<Props> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-[450px]">
-      <div className="p-6">
+      <div className="p-6 bg-[#F9F6FE] rounded-lg">
         {/* Header */}
         <div className="mb-3">
           <div className="flex items-start gap-3">
-            <Image src="/images/users/house.svg" alt='' width="26" height="26" />
-            <h2 className="text-lg font-semibold text-gray-900">{role?.charAt(0).toUpperCase() + role?.slice(1)} User Invitation</h2>
+            <div className='bg-[#7E22CE] p-2 rounded-full'>
+              <Image src="/images/users/house.svg" alt='' width="12" height="26" />
+            </div>
+            <h2 className="text-lg font-medium text-gray-900">{role?.charAt(0).toUpperCase() + role?.slice(1)} User Invitation</h2>
           </div>
           <div className="flex-1">
 
@@ -89,10 +91,10 @@ const InvitationModal: React.FC<Props> = ({
 
         {/* Vendor ID Badge */}
         <div className="mb-6">
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-purple-50 text-purple-700 text-sm font-medium">
-            <span className="text-xs">{role?.charAt(0).toUpperCase() + role?.slice(1)} ID: {vendorId}</span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-purple-600 text-white text-xs">
-              <Briefcase className="w-3 h-3" />
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md  text-purple-700 text-sm font-medium">
+            <span className="text-xs bg-[#ECE4F5] p-2 rounded-full text-[#7844AB]">{role?.charAt(0).toUpperCase() + role?.slice(1)} ID: {vendorId}</span>
+            <span className="flex items-center gap-1 px-2 py-1 rounded bg-purple-600 text-white text-xs">
+              <Image src="/images/users/house.svg" alt='' width="12" height="12" />
               {role?.charAt(0).toUpperCase() + role?.slice(1)} User
             </span>
           </span>
@@ -170,8 +172,8 @@ const InvitationModal: React.FC<Props> = ({
             </label>
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
               <div className="flex items-start gap-3">
-                <div className="w">
-                  <Image src="/images/users/house.svg" alt='' width="33" height="33" />
+                <div className="bg-[#7E22CE] p-2 rounded-full">
+                  <Image src="/images/users/house.svg" alt='' width="20" height="33" />
                 </div>
                 <div>
                   <div className="font-medium text-gray-900 text-sm">{role?.charAt(0).toUpperCase() + role?.slice(1)} User</div>

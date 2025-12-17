@@ -371,10 +371,10 @@ function Inspections() {
                 />
                 <div className="px-4">
                     <div className="h-full">
-                        <GenericDataTable title="" data={dummyReports} tabs={["2"]} columns={columns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                        {/* <GenericDataTable title="" data={dummyReports} tabs={["2"]} columns={columns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
                             "All Users": "/images/No Users.svg"
                         }}
-                        />
+                        /> */}
                     </div>
                 </div>
                 {openGeneratedReport && <GeneratedReport close={() => setOpenGeneratedReport(false)} />}

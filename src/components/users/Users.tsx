@@ -1,5 +1,5 @@
 'use client';
-import React, { Suspense, useContext, useEffect, useState } from 'react';
+import React, { Suspense, useContext, useEffect, useRef, useState } from 'react';
 import { Filter, FileDown, Edit, Send, Trash2, X, FileText, Edit3, Mail, Plus, Divide } from 'lucide-react';
 import GenericDataTable, { Column } from '../tables/GenericDataTable';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -11,6 +11,7 @@ import InvitationModal from '../Modals/invitationModal';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
+import { useSearchParams } from 'next/navigation';
 
 // Types
 interface Tab {
@@ -122,10 +123,41 @@ export const dummyAdmins: UserData[] = [
 
 // Main Reports Component
 const Users: React.FC = () => {
+    const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = useState('users');
-    const [loading, setLoading] = useState(false)
+    const [userLoading, setUserLoading] = useState(false)
+    const [invitationLoading, setInvitationLoading] = useState(false)
     const [invites, setInvites] = useState<any[]>([])
     const [users, setUsers] = useState<any[]>([])
+    const [totalUsers, setTotalUsers] = useState<number>(0)
+    const [totalUsersPages, setTotalUsersPages] = useState<number[]>([])
+    const userCurrentPage = parseInt(searchParams.get("user_page") || "1", 10);
+    const [userlimit, setUserLimit] = useState<number>(10)
+    const [totalInvitations, setTotalInvitations] = useState<number>(0)
+    const [totalInvitationsPages, setTotalInvitationsPages] = useState<number[]>([])
+    const invitationCurrentPage = parseInt(searchParams.get("invitation_page") || "1", 10);
+    const [Invitationslimit, setInvitationsLimit] = useState<number>(10)
+    const isResettingUserPage = useRef(false);
+    const isResettingInvitationPage = useRef(false);
+
+    useEffect(() => {
+        if (userCurrentPage !== 1) {
+            isResettingUserPage.current = true;
+            const params = new URLSearchParams(searchParams);
+            params.set('user_page', "1");
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+        }
+    }, [userlimit])
+
+    useEffect(() => {
+        if (invitationCurrentPage !== 1) {
+            isResettingInvitationPage.current = true;
+            const params = new URLSearchParams(searchParams);
+            params.set('invitation_page', "1");
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+        }
+    }, [Invitationslimit])
+
     const { user } = useContext(UserContext);
     const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
     const tabs: Tab[] = [
@@ -144,47 +176,65 @@ const Users: React.FC = () => {
     }, []);
 
     const getInvites = async () => {
-        setLoading(true);
+        if (isResettingInvitationPage.current) {
+            isResettingInvitationPage.current = false;
+            return;
+        }
+        setInvitationLoading(true);
         try {
-            const res = await apiRequest(`/api/invite/list?vendorId=${vendorId}`);
+            const res = await apiRequest(`/api/invite/list?vendorId=${vendorId}&page=${invitationCurrentPage}&limit=${Invitationslimit}`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch invitations')
             }
-            console.log('json.invitations', json.invitations || [])
             setInvites(json.invitations || []);
+            setTotalInvitations(json.total || 0);
+            const pagesArray = Array.from({ length: json.totalPages || 0 }, (_, i) => i + 1);
+            setTotalInvitationsPages(pagesArray);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Failed to fetch invitations';
             toast.error(errorMessage);
             setInvites([]);
         } finally {
-            setLoading(false);
+            setInvitationLoading(false);
         }
     };
 
     const getUsers = async () => {
-        setLoading(true);
+        if (isResettingUserPage.current) {
+            isResettingUserPage.current = false;
+            return;
+        }
+        setUserLoading(true);
         try {
-            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}`);
+            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}&page=${userCurrentPage}&limit=${userlimit}`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch users')
             }
+            console.log('json.users', json.users || [])
             setUsers(json.users || []);
+            setTotalUsers(json.total || 0);
+            const pagesArray = Array.from({ length: json.totalPages || 0 }, (_, i) => i + 1);
+            setTotalUsersPages(pagesArray);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Failed to fetch users';
             toast.error(errorMessage);
             setUsers([]);
         } finally {
-            setLoading(false);
+            setUserLoading(false);
         }
     };
 
     useEffect(() => {
+        setTimeout(() => {
+            getUsers();
+        }, 2000);
+    }, [userCurrentPage, userlimit]);
+    useEffect(() => {
         getInvites();
-        getUsers();
-    }, []);
-
+    }, [invitationCurrentPage, Invitationslimit]);
+    // getInvites();
 
     const userColumns: Column<UserData>[] = [
         {
@@ -203,7 +253,7 @@ const Users: React.FC = () => {
             cell: (row) => <div className="opacity-60">{row.email}</div>,
         },
         {
-            header: "Department",
+            header: "Vendor",
             accessor: "vendor",
             cell: (row) =>
                 <div className='text-xs'>
@@ -301,40 +351,41 @@ const Users: React.FC = () => {
             <div className="relative">
                 {/* Page Title */}
                 <h1 className="font-bold text-2xl px-2 py-3">Users</h1>
-                <div className="flex justify-between mb-5">
-                    {/* Tabs */}
-                    <div className="inline-block bg-purple-100 p-2 rounded-lg ">
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTab === tab.id
-                                    ? 'bg-purple-600 text-white'
-                                    : 'text-gray-700'
-                                    }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
+
+
+
+                <div className='bg-white p-6'>
+                    <div className="flex justify-between mb-5">
+                        {/* Tabs */}
+                        <div className="inline-block bg-purple-100 p-2 rounded-lg ">
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTab === tab.id
+                                        ? 'bg-[#7522BB] text-white'
+                                        : 'text-gray-700'
+                                        }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => setIsInvitationModalOpen(true)}
+                            disabled={user?.role === "admin"}
+                            className="bg-[#7522BB] text-white rounded-xl  px-2 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            <Plus size={16} />
+                            Send Invitation
+                        </button>
                     </div>
-
-                    <button
-                        onClick={() => setIsInvitationModalOpen(true)}
-                        disabled={user?.role==="admin"}
-                        className="bg-purple-600 text-white rounded-xl  px-2 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        <Plus size={16} />
-                        Send Invitation
-                    </button>
-                </div>
-
-
-                <div className='bg-white p-3'>
 
                     {activeTab === 'users' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={users} tabs={["2"]} columns={userColumns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                                <GenericDataTable title="" data={users} tabs={totalUsersPages} columns={userColumns} pageSize={userlimit} currentPage={userCurrentPage} setPageSize={setUserLimit} loading={userLoading} setLoading={setInvitationLoading} querykey="user_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />
@@ -345,7 +396,7 @@ const Users: React.FC = () => {
                     {activeTab === 'admins' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={dummyAdmins} tabs={["2"]} columns={adminColumns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                                <GenericDataTable title="" data={dummyAdmins} tabs={totalUsersPages} columns={adminColumns} pageSize={5} currentPage={1} loading={invitationLoading} setLoading={setInvitationLoading} querykey="user_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />
@@ -356,7 +407,7 @@ const Users: React.FC = () => {
                     {activeTab === 'invites' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={invites} tabs={["2"]} columns={inviteColumns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                                <GenericDataTable title="" data={invites} tabs={totalInvitationsPages} columns={inviteColumns} pageSize={Invitationslimit} currentPage={invitationCurrentPage} setPageSize={setInvitationsLimit} loading={invitationLoading} setLoading={setInvitationLoading} querykey="invitation_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />

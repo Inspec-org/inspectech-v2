@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         const newUser = await User.create({
             email: invitation.email,
             password,
-            role: invitation.role,
+            role: invitation.role==="vendor"?"user":"admin",
             vendorId: invitation.vendorId,
             firstName,
             lastName,
