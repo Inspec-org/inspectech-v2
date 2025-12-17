@@ -6,6 +6,8 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const vendorId = url.searchParams.get("vendorId"); // ✅
+    const page = parseInt(url.searchParams.get("page") || "1", 10); // default page 1
+    const limit = parseInt(url.searchParams.get("limit") || "10", 10); // default 10 items per page
 
     if (!vendorId) {
       return NextResponse.json(
@@ -16,17 +18,31 @@ export async function GET(req: Request) {
 
     await connectDB();
 
+    // Count total documents for pagination info
+    const totalUsers = await User.countDocuments({ vendorId });
+
     const records = await User.find({ vendorId })
       .sort({ createdAt: -1 })
-      .populate("vendorId"); // populate vendorId reference
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate("vendorId");
 
     const users = records.map((user: any) => ({
-      ...user.toObject(),         // convert mongoose doc to plain object
-      vendor: user.vendorId?.name || null, // get vendor name
-      vendorId: undefined,        // remove original vendorId field
+      ...user.toObject(),
+      vendor: user.vendorId?.name || null,
+      vendorId: undefined,
     }));
 
-    return NextResponse.json({ success: true, users });
+    
+
+    return NextResponse.json({
+      success: true,
+      users,
+      total: totalUsers,
+      page,
+      limit,
+      totalPages: Math.ceil(totalUsers / limit),
+    });
   } catch (error: any) {
     console.error("USER LIST ERROR:", error);
     return NextResponse.json(

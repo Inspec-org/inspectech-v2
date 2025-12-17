@@ -1,5 +1,6 @@
 import { Outfit } from 'next/font/google';
 import './globals.css';
+import React, { Suspense } from 'react';
 
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -43,7 +44,9 @@ export default function RootLayout({
               pauseOnHover
               theme="colored" 
             />
-            <SidebarProvider>{children}</SidebarProvider>
+            <Suspense fallback={<div>Loading...</div>}>
+              <SidebarProvider>{children}</SidebarProvider>
+            </Suspense>
           </ThemeProvider>
         </UserProvider>
       </body>

@@ -6,7 +6,8 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const vendorId = url.searchParams.get("vendorId"); // ✅
-
+    const page = parseInt(url.searchParams.get("page") || "1", 10); // default page 1
+    const limit = parseInt(url.searchParams.get("limit") || "10", 10); // default 10 items per page
     if (!vendorId) {
       return NextResponse.json(
         { success: false, message: "vendorId is required" },
@@ -15,8 +16,14 @@ export async function GET(req: Request) {
     }
 
     await connectDB();
+    const totalInvitations = await Invitation.countDocuments({ vendorId });
 
-    const records = await Invitation.find({ vendorId }).sort({ createdAt: -1 }).populate("vendorId");
+    const records = await Invitation.find({ vendorId })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate("vendorId");
+
 
     const invitations = records.map((inv: any) => ({
       _id: inv._id.toString(),
@@ -28,7 +35,14 @@ export async function GET(req: Request) {
       status: inv.status || "expired",
     }));
 
-    return NextResponse.json({ success: true, invitations });
+    return NextResponse.json({ 
+      success: true, 
+      invitations,
+      total: totalInvitations,
+      page,
+      limit,
+      totalPages: Math.ceil(totalInvitations / limit),
+    });
   } catch (error: any) {
     console.error("INVITE LIST ERROR:", error);
     return NextResponse.json(

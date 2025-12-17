@@ -80,7 +80,6 @@ export async function POST(req: NextRequest) {
         query.durationSec = m[2];
       }
     }
-
     if (search) {
       query.$or = [
         { unitId: new RegExp(search, "i") },

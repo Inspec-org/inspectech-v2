@@ -1,6 +1,6 @@
 'use client'
 import { ArrowRight, Briefcase, Cross, Download, Edit, Edit3, Filter, Plus, X } from 'lucide-react'
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { UserContext } from '@/context/authContext';
@@ -36,15 +36,16 @@ function Inspections() {
     const [inspections, setInspections] = useState<InspectionData[]>([]);
     const [filters, setFilters] = useState<InspectionData[]>([]);
     const [totalInspections, setTotalInspections] = useState(0);
-    const currentPage = parseInt(searchParams.get("user_page") || "1", 10);
+    const currentPage = parseInt(searchParams.get("inspection_page") || "1", 10);
     const [loading, setLoading] = useState(true)
     const { user } = useContext(UserContext);
     const [department, setDepartment] = useState("");
     const [search, setSearch] = useState("");
     const [limit, setLimit] = useState(10);
+    const isResettingInspectionPage = useRef(false);
     const pageTabs = useMemo(() => {
         const totalPages = Math.ceil(totalInspections / limit);
-        return Array.from({ length: totalPages }, (_, i) => (i + 1).toString());
+        return Array.from({ length: totalPages }, (_, i) => (i + 1));
     }, [totalInspections, limit]);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [selectAll, setSelectAll] = useState(false);
@@ -116,6 +117,15 @@ function Inspections() {
     const [vendor, setVendor] = useState<string | null>(null);
 
     useEffect(() => {
+        if (currentPage !== 1) {
+            isResettingInspectionPage.current = true;
+            const params = new URLSearchParams(searchParams);
+            params.set('inspection_page', "1");
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+        }
+    }, [limit])
+
+    useEffect(() => {
         const storedDept = Cookies.get("selectedDepartmentId") || '';
         setDept(storedDept);
         setDepartment(storedDept || '');
@@ -175,6 +185,10 @@ function Inspections() {
         getInspections();
     };
     const getInspections = async () => {
+        if (isResettingInspectionPage.current) {
+            isResettingInspectionPage.current = false;
+            return;
+        }
         try {
             console.log("api running")
             setLoading(true);
@@ -490,7 +504,7 @@ function Inspections() {
                 )}
                 {/* table */}
                 <div className="h-full mt-4">
-                    <GenericDataTable title="" data={inspections} totalCount={totalInspections} tabs={pageTabs} columns={columns} pageSize={limit} setPageSize={setLimit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="user_page" search={search} setSearch={setSearch} onRowClick={(row) => { router.push(`/${user?.role}/inspections/Edit/${row.id}`) }} emptyStateImages={{
+                    <GenericDataTable title="" data={inspections} totalCount={totalInspections} tabs={pageTabs} columns={columns} pageSize={limit} setPageSize={setLimit} currentPage={currentPage} loading={loading} setLoading={setLoading} querykey="inspection_page" search={search} setSearch={setSearch} onRowClick={(row) => { router.push(`/${user?.role}/inspections/Edit/${row.id}`) }} emptyStateImages={{
                         "All Users": "/images/No Users.svg"
                     }}
                     />

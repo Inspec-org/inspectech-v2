@@ -1,11 +1,11 @@
 import BatchCreateInspections from '@/components/inspections/BatchCreateInspections'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 function page() {
   return (
-    <div>
+    <Suspense fallback={<div>Loading...</div>}>
       <BatchCreateInspections />
-    </div>
+    </Suspense>
   )
 }
 

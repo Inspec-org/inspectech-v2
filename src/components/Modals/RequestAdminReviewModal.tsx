@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Briefcase, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Home } from 'lucide-react';
 import { Modal } from '../ui/modal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -6,6 +6,7 @@ import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
+import { useSearchParams } from 'next/navigation';
 
 type Props = {
     isOpen: boolean;
@@ -23,7 +24,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
     onClose,
     onUpdated,
 }) => {
-
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
     const [selectedInspections, setSelectedInspections] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -32,13 +33,19 @@ const RequestAdminReviewModal: React.FC<Props> = ({
     const [inspections, setInspections] = useState<{ unitId: string; inspectionStatus: string }[]>([]);
     const [totalInspections, setTotalInspections] = useState(0);
     const [recipientsInput, setRecipientsInput] = useState('');
+    const [err, setErr] = useState('');
 
     const totalPages = Math.ceil(totalInspections / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = Math.min(startIndex + rowsPerPage, totalInspections);
 
+    const pageTabs = useMemo(() => {
+        const totalPages = Math.ceil(totalInspections / rowsPerPage);
+        return Array.from({ length: totalPages }, (_, i) => (i + 1));
+    }, [totalInspections, rowsPerPage]);
+
     const fetchInspections = async () => {
-        setLoading(true);
+        // setLoading(true);
         try {
             const vendorId = Cookies.get('selectedVendorId') || '';
             const departmentId = Cookies.get('selectedDepartmentId') || '';
@@ -50,7 +57,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                     limit: rowsPerPage,
                     department: departmentId,
                     vendorId,
-                    filter: { inspectionStatuses: ['complete','completed'], search: searchQuery }
+                    filter: { inspectionStatuses: ['complete', 'completed'], search: searchQuery }
                 })
             });
             const json = await res.json();
@@ -58,6 +65,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
             const list = (json.inspections || []).map((i: any) => ({ unitId: i.unitId, inspectionStatus: i.inspectionStatus || 'complete' }));
             setInspections(list);
             setTotalInspections(json.total || list.length);
+
         } catch (e: any) {
             toast.error(e?.message || 'Error fetching inspections');
             setInspections([]);
@@ -84,7 +92,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
         }
         const recipients = recipientsInput.split(',').map(s => s.trim()).filter(Boolean);
         if (!recipients.length) {
-            toast.error('Please enter at least one email recipient');
+            setErr('Please enter at least one email recipient');
             return;
         }
         setLoading(true);
@@ -103,12 +111,22 @@ const RequestAdminReviewModal: React.FC<Props> = ({
             if (onUpdated) onUpdated();
             onClose();
         } catch (e: any) {
-            toast.error(e?.message || 'Error sending email');
+            setErr(e?.message || 'Error sending email');
         } finally {
             setLoading(false);
+            setErr('');
         }
     };
-
+    const goToPage = (page: number) => {
+        // if (querykey) {
+        if (setLoading) {
+            setLoading(true);
+        }
+        const params = new URLSearchParams(searchParams);
+        setCurrentPage && setCurrentPage(page)
+        
+        // }
+    };
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-[1100px]">
             <div className="p-6 bg-[#F9F6FE]">
@@ -172,8 +190,8 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                     {/* Left side: Showing results */}
                     <div className="flex sm:flex-row flex-col sm:items-center sm:gap-4">
                         <div className="text-sm text-gray-600">
-                                Showing {startIndex + 1} to {endIndex} of {totalInspections} results
-                            </div>
+                            Showing {startIndex + 1} to {endIndex} of {totalInspections} results
+                        </div>
                         <div className="h-5 w-0.5 bg-black sm:block hidden" />
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                             <span>Row per page:</span>
@@ -209,7 +227,18 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                         >
                             <ChevronLeft className="w-4 h-4" color="#7522BB" />
                         </button>
-                        <span className="mx-2 text-sm text-gray-700">Page {currentPage} of {totalPages}</span>
+                        {pageTabs.map((tab, index) => (
+                            <button
+                                key={index}
+                                onClick={() => goToPage(Number(tab))}
+                                className={`w-6 h-6 rounded text-xs font-medium ${currentPage === Number(tab)
+                                    ? "bg-purple-600 text-white"
+                                    : "text-gray-700 hover:bg-gray-100"
+                                    }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
                         <button
                             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={currentPage >= totalPages}
@@ -228,14 +257,17 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                 </div>
 
                 {/* Process Button */}
-                <button
-                    onClick={handleProcessRequest}
-                    disabled={loading}
-                    className="w-full bg-green-400 hover:bg-green-500 text-white font-medium py-3.5 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                    <span className="text-lg">🚀</span>
-                    Process & Send Request ({selectedInspections.length})
-                </button>
+                <div>
+                    {err && <div className="text-red-500 text-sm mb-2">{err}</div>}
+                    <button
+                        onClick={handleProcessRequest}
+                        disabled={loading || selectedInspections.length === 0}
+                        className={`w-full bg-green-400 hover:bg-green-500 text-white font-medium py-3.5 rounded-lg transition-colors flex items-center justify-center gap-2 ${selectedInspections.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <span className="text-lg">🚀</span>
+                        {loading ? 'Processing...' : `Process & Send Request (${selectedInspections.length})`}
+                    </button>
+                </div>
             </div>
         </Modal>
     );

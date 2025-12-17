@@ -49,7 +49,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
         <div className="">
             <div className="">
 
-                <div className={`flex  ${prop === "single" ? "md:flex-row flex-col mb-5" : "flex-col px-4"} justify-between items-start gap-2 `}>
+                <div className={`flex  ${prop === "single" ? `md:flex-row flex-col ${expandedSections.identification || expandedSections.sensors ? "mb-5" : ""}` : "flex-col px-4"} justify-between items-start gap-2 `}>
                     {/* Identification & Registration */}
                     <div className={`rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full"}`}>
                         <button
