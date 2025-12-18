@@ -98,7 +98,6 @@ export async function POST(req: NextRequest) {
       const allUnitIds = all.map((d: any) => d.unitId);
       return NextResponse.json({ success: true, allUnitIds, total });
     }
-    console.log(query);
 
     const result = await Inspection.find(query)
       .sort({ createdAt: -1 })

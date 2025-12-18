@@ -5,14 +5,12 @@ import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("in all data api")
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
     const user = await getUserFromToken(token);
     if (!user) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
-    console.log(user)
 
     const body = await req.json();
     const { departmentId, vendorId } = body;
@@ -20,14 +18,12 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const inspections = await Inspection.find({ departmentId });
-    console.log(inspections)
 
     // ---------- STATS ----------
     const total = inspections.length;
     const pass = inspections.filter((i) => i.inspectionStatus === "pass").length;
     const fail = inspections.filter((i) => i.inspectionStatus === "fail").length;
     const needReview = inspections.filter((i) => i.inspectionStatus === "needs review").length;
-    console.log(pass)
     const stats = {
       total,
       passPercentage: total ? ((pass / total) * 100).toFixed(2) : "0",
@@ -97,7 +93,6 @@ export async function POST(req: NextRequest) {
       failCount: fail,
       passRate: total ? ((pass / total) * 100).toFixed(2) : "0",
     };
-    console.log(monthly)
 
     return NextResponse.json({
       success: true,

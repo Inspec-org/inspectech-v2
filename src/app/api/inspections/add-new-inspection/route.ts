@@ -37,7 +37,6 @@ export async function POST(req: NextRequest) {
       cleaned["delivered"] = cleaned["delivered_status"];
       delete cleaned["delivered_status"];
     }
-    console.log("cleaned", cleaned);
 
     const inspection = await Inspection.create(cleaned);
     return NextResponse.json({ success: true, inspection }, { status: 201 });
