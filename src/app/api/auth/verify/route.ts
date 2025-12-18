@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
                 { status: 400 }
             );
         }
-        console.log(email, otp)
 
         await connectDB();   // <-- CONNECT SAFELY (prevents errors)
 
@@ -25,8 +24,6 @@ export async function POST(req: NextRequest) {
                 { status: 401 }
             );
         }
-
-        console.log(user)
 
         if (user.resetPasswordExpires < Date.now()) {
             return NextResponse.json(

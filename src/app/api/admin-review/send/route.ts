@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/sendEmail";
+import { connectDB } from "@/lib/db/db";
+import Inspection from "@/lib/models/Inspections";
+import Review from "@/lib/models/Reviews";
 
 export async function POST(req: NextRequest) {
   try {
-    const { recipients, unitIds, vendorName } = await req.json();
+    const { recipients, unitIds, vendorName, vendorId, departmentId } = await req.json();
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return NextResponse.json({ success: false, message: "recipients must be a non-empty array" }, { status: 400 });
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
       </head><body><div class="container">
         <div class="header"><h1 class="title">Admin Review Request</h1><p class="subtitle">InspecTech Inspection Management System</p></div>
         <div class="section">
-         <div class="box"><p class="heading">Request Details</p><div class="detail-row"><span class="label">Vendor:</span> ABC vendor</div> <div class="detail-row"><span class="label">Date:</span> 12/15/2025</div></div>
+         <div class="box"><p class="heading">Request Details</p><div class="detail-row"><span class="label">Vendor:</span> ${safeVendor}</div> <div class="detail-row"><span class="label">Date:</span> ${dateStr}</div></div>
           <div style="height:12px"></div>
           <div class="box">
             <div><span class="heading">Unit IDs for Review (${count} item${count > 1 ? "s" : ""})</span></div>
@@ -55,6 +58,28 @@ export async function POST(req: NextRequest) {
 
     const csv = "unitId\n" + unitIds.join("\n");
     const attachments = [{ filename: "unit_ids.csv", content: csv, contentType: "text/csv" }];
+
+    if (!vendorId || !departmentId) {
+      return NextResponse.json({ success: false, message: "vendorId and departmentId required" }, { status: 400 });
+    }
+    await connectDB();
+    for (const unitId of unitIds) {
+      const insp = await Inspection.findOne({ unitId, vendorId, departmentId }).select('_id').lean() as { _id: any } | null;
+
+      await Review.findOneAndUpdate(
+        { unitId, vendorId, departmentId },
+        {
+          $setOnInsert: {
+            inspectionId: insp?._id || null, // Explicitly handle null case
+            reviewRequestedAt: new Date(),
+            missingData: "none",
+            reviewCompletedAt: null,
+            emailNotification: "yes"
+          }
+        },
+        { upsert: true }
+      );
+    }
 
     await sendEmail(recipients, "Admin Review Request", emailHtml, attachments);
     return NextResponse.json({ success: true, message: "Email sent" });

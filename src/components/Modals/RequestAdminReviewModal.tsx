@@ -98,10 +98,12 @@ const RequestAdminReviewModal: React.FC<Props> = ({
         setLoading(true);
         try {
             const vendorName = Cookies.get('selectedVendor') || '';
+            const vendorId = Cookies.get('selectedVendorId') || '';
+            const departmentId = Cookies.get('selectedDepartmentId') || '';
             const res = await apiRequest('/api/admin-review/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ recipients, unitIds: selectedInspections, vendorName })
+                body: JSON.stringify({ recipients, unitIds: selectedInspections, vendorName, vendorId, departmentId })
             });
             const json = await res.json();
             if (!res.ok || !json.success) throw new Error(json.message || 'Failed to send email');

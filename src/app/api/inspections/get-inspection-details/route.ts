@@ -19,7 +19,6 @@ export async function GET(req: NextRequest) {
     }
 
     await connectDB();
-    console.log("unitId", unitId);
     let id=unitId;
     if (unitId.includes("%20")) {
       id = unitId.replaceAll("%20", " ");

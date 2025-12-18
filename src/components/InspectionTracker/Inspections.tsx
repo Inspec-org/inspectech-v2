@@ -1,22 +1,28 @@
 'use client'
-import { Edit3, FileText, Filter, Mail, Trash2, X } from 'lucide-react';
-import React, { Suspense, useState } from 'react'
+import { Edit3, FileText, Filter, Mail, Trash2, X, Check } from 'lucide-react';
+import React, { Suspense, useEffect, useState } from 'react'
 import GenericDataTable, { Column } from '../tables/GenericDataTable';
 import { ReportDropdown } from '../ui/dropdown/reportsDropdown';
+import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import GeneratedReport from '../reports/GeneratedReport';
 import AdminNotificationModal from '../Modals/AdminNotificationModal';
-interface ActionButton {
-    icon: React.ReactNode;
-    label: string;
-    variant: 'primary' | 'secondary' | 'success' | 'danger';
-    onClick: () => void;
-}
+import { apiRequest } from '@/utils/apiWrapper';
+import Cookies from 'js-cookie';
+import { toast } from 'react-toastify';
+import FilterInspectionsModal from '../Modals/FilterInspectionsModal';
+import { useModal } from '@/hooks/useModal';
+import { InspectionData } from '../inspections/Inspections';
+import FilterTrackingModal from '../Modals/FilterTrackingModal';
+import { Header } from './components';
+
 
 type ReportData = {
     id: string;
     status: string;
     vendor: string;
+    vendorId?: string;
     department: string;
+    departmentId?: string;
     date_created: string;
     review_requested: string;
     missing_data: string;
@@ -24,185 +30,270 @@ type ReportData = {
     email_notifcation: string;
 };
 
-export const dummyReports: ReportData[] = [
-    {
-        id: "RPT-001",
-        status: "Completed",
-        vendor: "Cappadocia Travel Co.",
-        department: "Safety",
-        date_created: "2025-10-25",
-        review_requested: "2025-10-26",
-        missing_data: "None",
-        review_completed: "2025-10-27",
-        email_notifcation: "Yes",
-    },
-    {
-        id: "RPT-002",
-        status: "Pending",
-        vendor: "Skyline Tours",
-        department: "Quality",
-        date_created: "2025-10-28",
-        review_requested: "—",
-        missing_data: "Incomplete Image File",
-        review_completed: "—",
-        email_notifcation: "No",
-    },
-    {
-        id: "RPT-003",
-        status: "In Progress",
-        vendor: "Blue Horizon Travels",
-        department: "Maintenance",
-        date_created: "2025-10-29",
-        review_requested: "2025-10-30",
-        missing_data: "Incomplete Checklist",
-        review_completed: "—",
-        email_notifcation: "Yes",
-    },
-    {
-        id: "RPT-004",
-        status: "Completed",
-        vendor: "Anatolia Adventures",
-        department: "Health & Safety",
-        date_created: "2025-10-15",
-        review_requested: "2025-10-16",
-        missing_data: "None",
-        review_completed: "Pending",
-        email_notifcation: "Yes",
-    },
-    {
-        id: "RPT-005",
-        status: "Pending",
-        vendor: "Historic Gateways",
-        department: "Logistics",
-        date_created: "2025-11-01",
-        review_requested: "—",
-        missing_data: "Incomplete DOT Form",
-        review_completed: "Pending",
-        email_notifcation: "No",
-    },
-];
 
-export const Header: React.FC<{
-    title: string;
-    description: string;
-    onFilterClick: () => void;
-    onGenerateReport: () => void;
-    onBatchEdit: () => void;
-    onSendNotification: () => void;
-    onRemoveFromHistory: () => void;
-    selectedCount: number;
-    onClearSelection: () => void;
-}> = ({
-    title,
-    description,
-    onFilterClick,
-    onGenerateReport,
-    onBatchEdit,
-    onSendNotification,
-    onRemoveFromHistory,
-    selectedCount,
-    onClearSelection,
-}) => {
-        return (
-            <div className="rounded-lg p-4">
-                {/* Title and Description */}
-                <div className="mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-1">{title}</h2>
-                    <p className="text-sm text-gray-600">{description}</p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <ActionButton
-                        icon={<Filter className="w-4 h-4" />}
-                        label="Filter"
-                        variant="primary"
-                        onClick={onFilterClick}
-                    />
-                    <ActionButton
-                        icon={<FileText className="w-4 h-4" />}
-                        label="Generate Report"
-                        variant="secondary"
-                        onClick={onGenerateReport}
-                    />
-                    <ActionButton
-                        icon={<Edit3 className="w-4 h-4" />}
-                        label="Batch Edit"
-                        variant="secondary"
-                        onClick={onBatchEdit}
-                    />
-                    <ActionButton
-                        icon={<Mail className="w-4 h-4" />}
-                        label="Send Admin Notification"
-                        variant="success"
-                        onClick={onSendNotification}
-                    />
-                    <ActionButton
-                        icon={<Trash2 className="w-4 h-4" />}
-                        label="Remove from Status History"
-                        variant="danger"
-                        onClick={onRemoveFromHistory}
-                    />
-
-                    {selectedCount > 0 && (
-                        <SelectionBadge count={selectedCount} onClear={onClearSelection} />
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-const ActionButton: React.FC<{
-    icon: React.ReactNode;
-    label: string;
-    variant: 'primary' | 'secondary' | 'success' | 'danger';
-    onClick: () => void;
-}> = ({ icon, label, variant, onClick }) => {
-    const variantClasses = {
-        primary: 'bg-blue-600 text-white hover:bg-blue-700',
-        secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300',
-        success: 'bg-green-500 text-white hover:bg-green-600',
-        danger: 'bg-red-500 text-white hover:bg-red-600',
-    };
-
-    return (
-        <button
-            onClick={onClick}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${variantClasses[variant]}`}
-        >
-            {icon}
-            {label}
-        </button>
-    );
-};
-
-// Selection Badge Component
-const SelectionBadge: React.FC<{
-    count: number;
-    onClear: () => void;
-}> = ({ count, onClear }) => {
-    return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md">
-            <span className="text-sm text-gray-700">Vendor + {count} selected</span>
-            <button
-                onClick={onClear}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-            >
-                <X className="w-4 h-4" />
-            </button>
-        </div>
-    );
-};
-function Inspections() {
+function TrackingInspections() {
     const [openGeneratedReport, setOpenGeneratedReport] = useState(false);
-    const [selectedCount, setSelectedCount] = useState(2);
+    const [selectedCount, setSelectedCount] = useState(0);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [selectAll, setSelectAll] = useState(false);
     const [loading, setLoading] = useState(false)
     const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+    useEffect(() => { setSelectedCount(selectedRows.length); }, [selectedRows]);
+    const [reports, setReports] = useState<ReportData[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
+    const { isOpen: isFilterOpen, openModal: openFilterModal, closeModal: closeEFilterModal } = useModal();
+    const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: string[] }>({});
+    const [vendors, setVendors] = useState<any[]>([]);
+    const [departments, setDepartments] = useState<any[]>([]);
+    const [editingField, setEditingField] = useState<{ rowId: string; field: string } | null>(null);
+    const [editingValues, setEditingValues] = useState<any>(null);
+    const [inspectionData, setInspectionData] = useState<any[]>([]);
+
+
+    const toLabel = (s: string) => (s === 'none' ? 'None' : s === 'incomplete image file' ? 'Incomplete Image File' : s === 'incomplete checklist' ? 'Incomplete Checklist' : s === 'incomplete dot form' ? 'Incomplete DOT Form' : s);
+    const toEmailLabel = (s: string) => (s === 'yes' ? 'Yes' : s === 'no' ? 'No' : s === 'manually sent' ? 'Manually Sent' : s);
+    const fromLabel = (s: string) => (s || '').toLowerCase();
+
+    // fetch vendor & department lists for inline editing
+    useEffect(() => {
+        (async () => {
+            try {
+                const vRes = await apiRequest('/api/vendors/get-vendors');
+                if (vRes.ok) {
+                    const j = await vRes.json();
+                    setVendors(j.vendors || []);
+                }
+                const dRes = await apiRequest('/api/departments/get-departments');
+                if (dRes.ok) {
+                    const jd = await dRes.json();
+                    setDepartments(jd.departments || []);
+                }
+            } catch (e) {
+                // ignore
+            }
+        })();
+    }, []);
+    useEffect(() => {
+        const vendorId = Cookies.get('selectedVendorId') || '';
+        const departmentId = Cookies.get('selectedDepartmentId') || '';
+        (async () => {
+            try {
+                setLoading(true);
+                const res = await apiRequest('/api/reviews/get',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: 1, limit: 5, department: departmentId, vendorId })
+                    });
+                const json = await res.json();
+                if (res.ok && json.success) {
+                    console.log(json.reviews);
+                    const mapped: ReportData[] = (json.reviews || [])
+                        .map((doc: any) => ({
+                            id: doc.unitId,
+                            status: doc.inspectionId.inspectionStatus,
+                            vendor: doc.vendorName || '',
+                            vendorId: String(doc.vendorId || ''),
+                            department: doc.departmentName || '',
+                            departmentId: String(doc.departmentId || ''),
+                            date_created: doc.inspectionId.dateDay ? `${doc.inspectionId.dateYear}-${doc.inspectionId.dateMonth}-${doc.inspectionId.dateDay}` : '',
+                            review_requested: doc.reviewRequestedAt ? new Date(doc.reviewRequestedAt).toISOString().slice(0, 10) : '—',
+                            missing_data: toLabel(doc.missingData),
+                            review_completed: doc.reviewCompletedAt ? new Date(doc.reviewCompletedAt).toISOString().slice(0, 10) : 'Pending',
+                            email_notifcation: toEmailLabel(doc.emailNotification)
+                        }));
+                    setReports(mapped);
+                    setTotalCount(json.total || mapped.length);
+
+                    // Set inspectionData for filters
+                    setInspectionData(mapped.map(r => ({
+                        id: r.id,
+                        status: r.status,
+                        vendor: r.vendor,
+                        department: r.department,
+                        date_created: r.date_created,
+                        review_requested: r.review_requested,
+                        missing_data: r.missing_data,
+                        review_completed: r.review_completed,
+                        email_notifcation: r.email_notifcation
+                    })));
+                }
+                else {
+                    toast.error(json.message || 'Failed to fetch reviews');
+                    setReports([]);
+                    setTotalCount(0);
+                    setInspectionData([]);
+                }
+            } catch (e: any) {
+                toast.error(e.message || 'Server error');
+                setReports([]);
+                setTotalCount(0);
+                setInspectionData([]);
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, []);
+    useEffect(() => {
+        const storedFilters = sessionStorage.getItem('trackingFilters');
+        if (storedFilters) {
+            try {
+                const parsedFilters = JSON.parse(storedFilters);
+                setSelectedFilters(parsedFilters);
+            } catch (e) {
+                console.error('Failed to parse filters from sessionStorage', e);
+            }
+        }
+    }, []);
+    const onMissingChange = async (unitId: string, label: string) => {
+        const vendorId = Cookies.get('selectedVendorId') || '';
+        const departmentId = Cookies.get('selectedDepartmentId') || '';
+
+        try {
+            const res = await apiRequest('/api/reviews/update', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    unitId,
+                    vendorId,
+                    departmentId,
+                    missingData: fromLabel(label),
+                }),
+            });
+
+            const json = await res.json();
+
+            if (res.ok && json.success) {
+                setReports(prev =>
+                    prev.map(r =>
+                        r.id === unitId
+                            ? { ...r, missing_data: label }
+                            : r
+                    )
+                );
+                toast.success('Inspection updated.');
+            } else {
+                toast.error(json.message || 'Failed to update');
+            }
+        } catch (e: any) {
+            toast.error(e.message || 'Server error');
+        }
+    };
+
+    const onEmailChange = async (unitId: string, label: string) => {
+        const vendorId = Cookies.get('selectedVendorId') || '';
+        const departmentId = Cookies.get('selectedDepartmentId') || '';
+
+        try {
+            const res = await apiRequest('/api/reviews/update', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    unitId,
+                    vendorId,
+                    departmentId,
+                    emailNotification: fromLabel(label),
+                }),
+            });
+
+            const json = await res.json();
+
+            if (res.ok && json.success) {
+                setReports(prev =>
+                    prev.map(r =>
+                        r.id === unitId
+                            ? { ...r, email_notifcation: label }
+                            : r
+                    )
+                );
+                toast.success('Inspection updated.');
+            } else {
+                toast.error(json.message || 'Failed to update');
+            }
+        } catch (e: any) {
+            toast.error(e.message || 'Server error');
+        }
+    };
+
+    const startEditing = (row: ReportData, field: string) => {
+        setEditingField({ rowId: row.id, field });
+        setEditingValues({
+            vendorId: row.vendorId || '',
+            departmentId: row.departmentId || '',
+            reviewRequested: row.review_requested === '—' ? '' : row.review_requested,
+            reviewCompleted: row.review_completed === 'Pending' ? '' : row.review_completed,
+        });
+    };
+
+    const cancelEditing = () => {
+        setEditingField(null);
+        setEditingValues(null);
+    };
+
+    const saveEditing = async () => {
+        if (!editingField || !editingValues) return;
+        const original = reports.find(r => r.id === editingField.rowId);
+
+        // Check if department is being changed
+        const isDepartmentChanged = editingField.field === 'department' &&
+            editingValues.departmentId &&
+            editingValues.departmentId !== original?.departmentId;
+
+        setLoading(true);
+        try {
+            const payload: any = {
+                unitId: editingField.rowId,
+                vendorId: original?.vendorId || '',
+                departmentId: original?.departmentId || ''
+            };
+            if (editingValues.vendorId) payload.newVendorId = editingValues.vendorId;
+            if (editingValues.departmentId) payload.newDepartmentId = editingValues.departmentId;
+            if (editingValues.reviewRequested !== undefined) payload.reviewRequestedAt = editingValues.reviewRequested || null;
+            if (editingValues.reviewCompleted !== undefined) payload.reviewCompletedAt = editingValues.reviewCompleted || null;
+
+            const res = await apiRequest('/api/reviews/update', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+
+            if (res.ok && json.success) {
+                if (isDepartmentChanged) {
+                    // Remove the inspection from frontend if department changed
+                    setReports(prev => prev.filter(r => r.id !== editingField.rowId));
+                    setTotalCount(prev => prev - 1);
+                    toast.success('Inspection moved to the new department.');
+                } else {
+                    // Update the inspection normally
+                    setReports(prev => prev.map(r => r.id === editingField.rowId ? {
+                        ...r,
+                        vendor: vendors.find(v => v._id === editingValues.vendorId)?.name || r.vendor,
+                        vendorId: editingValues.vendorId || r.vendorId,
+                        department: departments.find(d => d._id === editingValues.departmentId)?.name || r.department,
+                        departmentId: editingValues.departmentId || r.departmentId,
+                        review_requested: editingValues.reviewRequested || '—',
+                        review_completed: editingValues.reviewCompleted || 'Pending'
+                    } : r));
+                    toast.success('Inspection updated.');
+                }
+                cancelEditing();
+            } else {
+                toast.error(json.message || 'Failed to save');
+            }
+        } catch (e: any) {
+            toast.error(e?.message || 'Server error');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleFilterClick = () => {
-        console.log('Filter clicked');
+        openFilterModal();
     };
 
     const handleGenerateReport = () => {
@@ -221,6 +312,7 @@ function Inspections() {
         console.log('Remove from history clicked');
     };
     const handleClearSelection = () => {
+        setSelectedRows([]);
         setSelectedCount(0);
     };
 
@@ -228,7 +320,7 @@ function Inspections() {
         if (selectAll) {
             setSelectedRows([]);
         } else {
-            setSelectedRows(dummyReports.map((row) => row.id));
+            setSelectedRows(reports.map((row) => row.id));
         }
         setSelectAll(!selectAll);
     };
@@ -239,6 +331,28 @@ function Inspections() {
         } else {
             setSelectedRows([...selectedRows, id]);
         }
+    };
+
+    const handleApplyFilters = (filters: { [key: string]: string[] }) => {
+        setSelectedFilters(filters);
+        sessionStorage.setItem('trackingFilters', JSON.stringify(filters));
+        closeEFilterModal();
+    };
+
+    const handleRemoveFilter = (filterKey: string, valueId: string) => {
+        setSelectedFilters(prev => {
+            const updated = { ...prev };
+            updated[filterKey] = updated[filterKey].filter(id => id !== valueId);
+            if (updated[filterKey].length === 0) {
+                delete updated[filterKey];
+            }
+            sessionStorage.setItem('trackingFilters', JSON.stringify(updated));
+            return updated;
+        });
+    };
+    const handleClearAllFilters = () => {
+        setSelectedFilters({});
+        sessionStorage.removeItem('trackingFilters');
     };
 
     const columns: Column<ReportData>[] = [
@@ -264,21 +378,26 @@ function Inspections() {
         },
 
         {
-            header: "REPORT ID",
+            header: "UNIT ID",
             accessor: "id",
             cell: (row) => <div className="font-medium text-[var(--secondary)]">{row.id}</div>,
         },
         {
-            header: "STATUS",
+            header: "INSPECTION STATUS",
             accessor: "status",
             cell: (row) => (
                 <span
-                    className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap
-                    ${row.status === "Completed"
-                            ? "bg-green-100 text-green-700"
-                            : row.status === "Pending"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-blue-100 text-blue-700"
+                    className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${row.status === "complete"
+                        ? "bg-[#7522BB1A] text-[#7522BB]"
+                        : row.status === "incomplete"
+                            ? "bg-blue-100 text-blue-700"
+                            : row.status === "needs review"
+                                ? "bg-[#FB923C1A] text-[#FB923C]"
+                                : row.status === "pass"
+                                    ? "bg-[#16A34A1A] text-[#16A34A]"
+                                    : row.status === "fail"
+                                        ? "bg-red-100 text-red-700"
+                                        : ""
                         }`}
                 >
                     {row.status.toUpperCase()}
@@ -288,22 +407,89 @@ function Inspections() {
         {
             header: "VENDOR",
             accessor: "vendor",
-            cell: (row) => <div className="opacity-70">{row.vendor}</div>,
+            cell: (row) => (
+                <div className="relative">
+                    {editingField?.rowId === row.id && editingField?.field === 'vendor' ? (
+                        <div className="flex items-center gap-2">
+                            <ReportDropdown
+                                options={vendors.map(v => ({ value: v._id, label: v.name }))}
+                                width="200px"
+                                value={editingValues?.vendorId || row.vendorId || ''}
+                                onChange={(val) => setEditingValues((p: any) => ({ ...(p || {}), vendorId: val }))}
+                            />
+                            <button onClick={(e) => { e.stopPropagation(); saveEditing(); }} className="p-1"><Check className="w-4 h-4 text-green-600" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); cancelEditing(); }} className="p-1"><X className="w-4 h-4 text-red-500" /></button>
+                        </div>
+                    ) : (
+                        <div className="group relative pr-6">
+                            <div className="opacity-70">{row.vendor}</div>
+                            <button onClick={(e) => { e.stopPropagation(); startEditing(row, 'vendor'); }} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Edit3 className="w-4 h-4 text-gray-400" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            ),
         },
         {
             header: "DEPARTMENT",
             accessor: "department",
-            cell: (row) => <div className="opacity-70">{row.department}</div>,
+            cell: (row) => (
+                <div>
+                    {editingField?.rowId === row.id && editingField?.field === 'department' ? (
+                        <div className="flex items-center gap-2">
+                            <ReportDropdown
+                                options={departments.map(d => ({ value: d._id, label: d.name }))}
+                                width="200px"
+                                value={editingValues?.departmentId || row.departmentId || ''}
+                                onChange={(val) => setEditingValues((p: any) => ({ ...(p || {}), departmentId: val }))}
+                            />
+                            <button onClick={(e) => { e.stopPropagation(); saveEditing(); }} className="p-1"><Check className="w-4 h-4 text-green-600" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); cancelEditing(); }} className="p-1"><X className="w-4 h-4 text-red-500" /></button>
+                        </div>
+                    ) : (
+                        <div className="group relative pr-6">
+                            <div className="opacity-70">{row.department}</div>
+                            <button onClick={(e) => { e.stopPropagation(); startEditing(row, 'department'); }} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Edit3 className="w-4 h-4 text-gray-400" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            ),
         },
         {
             header: "DATE CREATED",
             accessor: "date_created",
-            cell: (row) => <div className="opacity-70">{row.date_created}</div>,
+            cell: (row) => <div className="opacity-70 whitespace-nowrap">{row.date_created}</div>,
         },
         {
             header: "REVIEW REQUESTED",
             accessor: "review_requested",
-            cell: (row) => <div className="opacity-70">{row.review_requested}</div>,
+            cell: (row) => (
+                <div className="relative">
+                    {editingField?.rowId === row.id && editingField?.field === 'reviewRequested' ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={editingValues?.reviewRequested || (row.review_requested === '—' ? '' : row.review_requested) || ''}
+                                onChange={(e) => setEditingValues((p: any) => ({ ...(p || {}), reviewRequested: e.target.value }))}
+                                className="px-2 py-1 border rounded"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                            <button onClick={(e) => { e.stopPropagation(); saveEditing(); }} className="p-1"><Check className="w-4 h-4 text-green-600" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); cancelEditing(); }} className="p-1"><X className="w-4 h-4 text-red-500" /></button>
+                        </div>
+                    ) : (
+                        <div className="group relative pr-6">
+                            <div className="opacity-70">{row.review_requested}</div>
+                            <button onClick={(e) => { e.stopPropagation(); startEditing(row, 'reviewRequested'); }} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Edit3 className="w-4 h-4 text-gray-400" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            ),
         },
         {
             header: "MISSING DATA",
@@ -319,24 +505,35 @@ function Inspections() {
                     ]}
                     width='200px'
                     value={row.missing_data}
-                // onChange={(val) => setDepartment(val)}
+                    onChange={(val) => onMissingChange(row.id, val)}
                 />,
         },
         {
             header: "REVIEW COMPLETED",
             accessor: "review_completed",
             cell: (row) => (
-                <span
-                    className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap
-                    ${/^\d{4}-\d{2}-\d{2}$/.test(row.review_completed)     // checks if date format YYYY-MM-DD
-                            ? "bg-green-100 text-green-700"                  // date styling
-                            : row.review_completed === "Pending"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-blue-100 text-blue-700"
-                        }`}
-                >
-                    {row.review_completed.toUpperCase()}
-                </span>
+                <div className="relative">
+                    {editingField?.rowId === row.id && editingField?.field === 'reviewCompleted' ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={editingValues?.reviewCompleted || (row.review_completed === 'Pending' ? '' : row.review_completed) || ''}
+                                onChange={(e) => setEditingValues((p: any) => ({ ...(p || {}), reviewCompleted: e.target.value }))}
+                                className="px-2 py-1 border rounded"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                            <button onClick={(e) => { e.stopPropagation(); saveEditing(); }} className="p-1"><Check className="w-4 h-4 text-green-600" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); cancelEditing(); }} className="p-1"><X className="w-4 h-4 text-red-500" /></button>
+                        </div>
+                    ) : (
+                        <div className="group relative pr-6">
+                            <div className="opacity-70">{row.review_completed}</div>
+                            <button onClick={(e) => { e.stopPropagation(); startEditing(row, 'reviewCompleted'); }} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Edit3 className="w-4 h-4 text-gray-400" />
+                            </button>
+                        </div>
+                    )}
+                </div>
             ),
         },
         {
@@ -351,10 +548,11 @@ function Inspections() {
                     ]}
                     width='150px'
                     value={row.email_notifcation}
-                // onChange={(val) => setDepartment(val)}
+                    onChange={(val) => onEmailChange(row.id, val)}
                 />,
         },
     ];
+    const filterCount = Object.values(selectedFilters).reduce((acc, arr) => acc + arr.length, 0);
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <div className='bg-white pb-5 max-w-[1080px]'>
@@ -368,13 +566,74 @@ function Inspections() {
                     onRemoveFromHistory={handleRemoveFromHistory}
                     selectedCount={selectedCount}
                     onClearSelection={handleClearSelection}
+                    hasActiveFilters={Object.values(selectedFilters).some(arr => arr.length > 0)}
+                    filterCount={filterCount}
                 />
+                {filterCount > 0 && (
+                    <div className='flex items-center gap-2 px-4 flex-wrap mb-4'>
+                        {Object.entries(selectedFilters).map(([filterKey, valueIds]) =>
+                            valueIds.map(valueId => {
+                                // You'll need to import or define your filter options for tracking
+                                const filterOptionsMap: any = {
+                                    status: [
+                                        { id: 'complete', label: 'Complete' },
+                                        { id: 'incomplete', label: 'Incomplete' },
+                                        { id: 'needs review', label: 'Needs Review' },
+                                        { id: 'pass', label: 'Pass' },
+                                        { id: 'fail', label: 'Fail' }
+                                    ],
+                                    vendor: inspectionData.map(item => ({ id: item.vendor, label: item.vendor })).filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
+                                    department: inspectionData.map(item => ({ id: item.department, label: item.department })).filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
+                                    missing_data: [
+                                        { id: 'None', label: 'None' },
+                                        { id: 'Incomplete Image File', label: 'Incomplete Image File' },
+                                        { id: 'Incomplete DOT Form', label: 'Incomplete DOT Form' },
+                                        { id: 'Incomplete Checklist', label: 'Incomplete Checklist' }
+                                    ],
+                                    email_notifcation: [
+                                        { id: 'Yes', label: 'Yes' },
+                                        { id: 'No', label: 'No' },
+                                        { id: 'Manually Sent', label: 'Manually Sent' }
+                                    ]
+                                };
+
+                                const filterLabels: any = {
+                                    status: 'Status',
+                                    vendor: 'Vendor',
+                                    department: 'Department',
+                                    missing_data: 'Missing Data',
+                                    email_notifcation: 'Email Notification',
+                                    date_created: 'Date Created',
+                                    review_requested: 'Review Requested',
+                                    review_completed: 'Review Completed'
+                                };
+
+                                const filterLabel = filterLabels[filterKey] || filterKey;
+                                const valueLabel = filterOptionsMap[filterKey]?.find((opt: any) => opt.id === valueId)?.label || valueId;
+
+                                return (
+                                    <div key={`${filterKey}-${valueId}`} className='flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg'>
+                                        <span className='text-sm'>
+                                            <span className='font-medium'>{filterLabel}</span> = "{valueLabel}"
+                                        </span>
+                                        <button onClick={() => handleRemoveFilter(filterKey, valueId)} className='hover:bg-blue-100 rounded p-0.5'>
+                                            <X className='w-4 h-4 text-gray-600' />
+                                        </button>
+                                    </div>
+                                );
+                            })
+                        )}
+                        <button onClick={handleClearAllFilters} className='text-blue-600 hover:text-blue-700 text-sm font-medium'>
+                            Clear all
+                        </button>
+                    </div>
+                )}
                 <div className="px-4">
                     <div className="h-full">
-                        {/* <GenericDataTable title="" data={dummyReports} tabs={["2"]} columns={columns} pageSize={5} currentPage={1} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                        <GenericDataTable title="" data={reports} tabs={[1]} columns={columns} pageSize={5} currentPage={1} totalCount={totalCount} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
                             "All Users": "/images/No Users.svg"
                         }}
-                        /> */}
+                        />
                     </div>
                 </div>
                 {openGeneratedReport && <GeneratedReport close={() => setOpenGeneratedReport(false)} />}
@@ -383,8 +642,15 @@ function Inspections() {
                     onClose={() => setIsNotificationModalOpen(false)}
                 />
             </div>
+            <FilterTrackingModal
+                isOpen={isFilterOpen}
+                onClose={closeEFilterModal}
+                onApply={handleApplyFilters}
+                initialFilters={selectedFilters}
+                trackingData={inspectionData}
+            />
         </Suspense>
     )
 }
 
-export default Inspections
+export default TrackingInspections
