@@ -7,7 +7,7 @@ import GeneratedReport from './GeneratedReport';
 import AnalysisDashboard from './AnalysisDashboard';
 import User from '@/lib/models/User';
 import { UserContext } from '@/context/authContext';
-import Inspections, { Header } from '../InspectionTracker/Inspections';
+import Inspections from '../InspectionTracker/Inspections';
 
 // Types
 interface Tab {
