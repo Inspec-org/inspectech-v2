@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
                 formData.append("image", image);
             }
         }
-        console.log(restData)
         // Forward the FormData to your actual backend
         const backendRes = await fetch(
             process.env.NEXT_PUBLIC_LIVE_URL + "/admin/update_admin_details",
@@ -43,7 +42,6 @@ export async function POST(req: NextRequest) {
         );
 
         const data = await backendRes.json();
-        console.log(data);
 
         if (!backendRes.ok || data.status === false) {
             return NextResponse.json({ error: data.message }, { status: 400 });

@@ -17,13 +17,11 @@ export async function POST(req: NextRequest) {
                 { status: 400 }
             );
         }
-        console.log(email, name, role, vendorId)
 
         await connectDB();
 
         // Check if user already exists
         const existingUser = await User.findOne({ email });
-        console.log("existingUser", existingUser)
         if (existingUser) {
             return NextResponse.json(
                 { success: false, message: "User already exists" },

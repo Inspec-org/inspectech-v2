@@ -11,7 +11,6 @@ export async function POST(req: NextRequest) {
         if (!enabled) {
             return NextResponse.json({ data: [], message: "Notifications disabled" },{ status: 200 });
         }
-        console.log("Notifications enabled", enabled);
         const sessionId = req.headers.get("session");
         if (!sessionId) {
             throw new Error("No session ID provided");

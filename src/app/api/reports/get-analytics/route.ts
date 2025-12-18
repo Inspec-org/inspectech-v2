@@ -82,7 +82,6 @@ function buildDate(i: any) {
   const day = parseInt(i.dateDay || "1");
   const month = parseInt(i.dateMonth || "1") - 1;
   const year = parseInt(i.dateYear || "1970");
-  // console.log(year, month, day);
   return new Date(year, month, day);
 }
 
@@ -113,7 +112,6 @@ export async function POST(req: NextRequest) {
     if (vendorId) query.vendorId = vendorId;
 
     const inspections = await Inspection.find(query).select("inspectionStatus dateDay dateMonth dateYear");
-    // console.log(timeRange);
 
     const rangeStart = getRangeStart(timeRange);
     const rangeEnd = getRangeEnd(timeRange);

@@ -17,7 +17,7 @@ import ExportInspectionsModal from '../Modals/ExportInspectionsModal';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 
-type InspectionData = {
+export type InspectionData = {
     id: string;
     status: string;
     type: string;
