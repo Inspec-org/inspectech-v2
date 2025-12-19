@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const inspections = await Inspection.find({ departmentId });
+    const inspections = await Inspection.find({ departmentId, vendorId });
+
 
     // ---------- STATS ----------
     const total = inspections.length;

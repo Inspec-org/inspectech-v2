@@ -14,6 +14,7 @@ import { useModal } from '@/hooks/useModal';
 import { InspectionData } from '../inspections/Inspections';
 import FilterTrackingModal from '../Modals/FilterTrackingModal';
 import { Header } from './components';
+import BatchEditReviewModal from '../Modals/BatchEditReviewModal';
 
 
 type ReportData = {
@@ -36,7 +37,7 @@ function TrackingInspections() {
     const [selectedCount, setSelectedCount] = useState(0);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [selectAll, setSelectAll] = useState(false);
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
     const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
     useEffect(() => { setSelectedCount(selectedRows.length); }, [selectedRows]);
     const [reports, setReports] = useState<ReportData[]>([]);
@@ -48,11 +49,105 @@ function TrackingInspections() {
     const [editingField, setEditingField] = useState<{ rowId: string; field: string } | null>(null);
     const [editingValues, setEditingValues] = useState<any>(null);
     const [inspectionData, setInspectionData] = useState<any[]>([]);
+    const [filtersReady, setFiltersReady] = useState(false);
+    const { isOpen: isEditModalOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
+    const [formData, setFormData] = useState<{
+        reviewCompletedAt?: string;
+        missingData?: string;
+    }>({});
+
+    const handleChange = (field: string, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+    const handleDropdownChange = (name: string, value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
 
 
     const toLabel = (s: string) => (s === 'none' ? 'None' : s === 'incomplete image file' ? 'Incomplete Image File' : s === 'incomplete checklist' ? 'Incomplete Checklist' : s === 'incomplete dot form' ? 'Incomplete DOT Form' : s);
     const toEmailLabel = (s: string) => (s === 'yes' ? 'Yes' : s === 'no' ? 'No' : s === 'manually sent' ? 'Manually Sent' : s);
     const fromLabel = (s: string) => (s || '').toLowerCase();
+    const getReviews = React.useCallback(async () => {
+        const vendorId = Cookies.get('selectedVendorId') || '';
+        const departmentId = Cookies.get('selectedDepartmentId') || '';
+
+        try {
+            setLoading(true);
+
+            const payload = {
+                page: 1,
+                limit: 5,
+                department: departmentId,
+                vendorId,
+                filters: selectedFilters,
+            };
+
+            console.log('📤 REQUEST PAYLOAD:', payload);
+
+            const res = await apiRequest('/api/reviews/get', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json();
+
+            if (res.ok && json.success) {
+                const mapped: ReportData[] = (json.reviews || []).map((doc: any) => ({
+                    id: doc.unitId,
+                    status: doc.inspectionId.inspectionStatus,
+                    vendor: doc.vendorName || '',
+                    vendorId: String(doc.vendorId || ''),
+                    department: doc.departmentName || '',
+                    departmentId: String(doc.departmentId || ''),
+                    date_created: doc.inspectionId.dateDay
+                        ? `${doc.inspectionId.dateYear}-${doc.inspectionId.dateMonth}-${doc.inspectionId.dateDay}`
+                        : '',
+                    review_requested: doc.reviewRequestedAt
+                        ? new Date(doc.reviewRequestedAt).toISOString().slice(0, 10)
+                        : '—',
+                    missing_data: toLabel(doc.missingData),
+                    review_completed: doc.reviewCompletedAt
+                        ? new Date(doc.reviewCompletedAt).toISOString().slice(0, 10)
+                        : 'Pending',
+                    email_notifcation: toEmailLabel(doc.emailNotification),
+                }));
+
+                setReports(mapped);
+                setTotalCount(json.total || mapped.length);
+
+                setInspectionData(
+                    mapped.map(r => ({
+                        id: r.id,
+                        status: r.status,
+                        vendor: r.vendor,
+                        department: r.department,
+                        date_created: r.date_created,
+                        review_requested: r.review_requested,
+                        missing_data: r.missing_data,
+                        review_completed: r.review_completed,
+                        email_notifcation: r.email_notifcation,
+                    }))
+                );
+            } else {
+                toast.error(json.message || 'Failed to fetch reviews');
+                setReports([]);
+                setTotalCount(0);
+                setInspectionData([]);
+            }
+        } catch (e: any) {
+            toast.error(e.message || 'Server error');
+            setReports([]);
+            setTotalCount(0);
+            setInspectionData([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedFilters]);
 
     // fetch vendor & department lists for inline editing
     useEffect(() => {
@@ -74,80 +169,23 @@ function TrackingInspections() {
         })();
     }, []);
     useEffect(() => {
-        const vendorId = Cookies.get('selectedVendorId') || '';
-        const departmentId = Cookies.get('selectedDepartmentId') || '';
-        (async () => {
-            try {
-                setLoading(true);
-                const res = await apiRequest('/api/reviews/get',
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ page: 1, limit: 5, department: departmentId, vendorId })
-                    });
-                const json = await res.json();
-                if (res.ok && json.success) {
-                    console.log(json.reviews);
-                    const mapped: ReportData[] = (json.reviews || [])
-                        .map((doc: any) => ({
-                            id: doc.unitId,
-                            status: doc.inspectionId.inspectionStatus,
-                            vendor: doc.vendorName || '',
-                            vendorId: String(doc.vendorId || ''),
-                            department: doc.departmentName || '',
-                            departmentId: String(doc.departmentId || ''),
-                            date_created: doc.inspectionId.dateDay ? `${doc.inspectionId.dateYear}-${doc.inspectionId.dateMonth}-${doc.inspectionId.dateDay}` : '',
-                            review_requested: doc.reviewRequestedAt ? new Date(doc.reviewRequestedAt).toISOString().slice(0, 10) : '—',
-                            missing_data: toLabel(doc.missingData),
-                            review_completed: doc.reviewCompletedAt ? new Date(doc.reviewCompletedAt).toISOString().slice(0, 10) : 'Pending',
-                            email_notifcation: toEmailLabel(doc.emailNotification)
-                        }));
-                    setReports(mapped);
-                    setTotalCount(json.total || mapped.length);
+        if (!filtersReady) return;
+        getReviews();
 
-                    // Set inspectionData for filters
-                    setInspectionData(mapped.map(r => ({
-                        id: r.id,
-                        status: r.status,
-                        vendor: r.vendor,
-                        department: r.department,
-                        date_created: r.date_created,
-                        review_requested: r.review_requested,
-                        missing_data: r.missing_data,
-                        review_completed: r.review_completed,
-                        email_notifcation: r.email_notifcation
-                    })));
-                }
-                else {
-                    toast.error(json.message || 'Failed to fetch reviews');
-                    setReports([]);
-                    setTotalCount(0);
-                    setInspectionData([]);
-                }
-            } catch (e: any) {
-                toast.error(e.message || 'Server error');
-                setReports([]);
-                setTotalCount(0);
-                setInspectionData([]);
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
+    }, [selectedFilters, filtersReady]);
     useEffect(() => {
         const storedFilters = sessionStorage.getItem('trackingFilters');
         if (storedFilters) {
             try {
-                const parsedFilters = JSON.parse(storedFilters);
-                setSelectedFilters(parsedFilters);
+                setSelectedFilters(JSON.parse(storedFilters));
             } catch (e) {
-                console.error('Failed to parse filters from sessionStorage', e);
+                console.error('Invalid stored filters', e);
             }
         }
+        setFiltersReady(true);
     }, []);
-    const onMissingChange = async (unitId: string, label: string) => {
-        const vendorId = Cookies.get('selectedVendorId') || '';
-        const departmentId = Cookies.get('selectedDepartmentId') || '';
+
+    const onMissingChange = async (unitId: string, label: string, vendorId: string, departmentId: string) => {
 
         try {
             const res = await apiRequest('/api/reviews/update', {
@@ -182,9 +220,7 @@ function TrackingInspections() {
         }
     };
 
-    const onEmailChange = async (unitId: string, label: string) => {
-        const vendorId = Cookies.get('selectedVendorId') || '';
-        const departmentId = Cookies.get('selectedDepartmentId') || '';
+    const onEmailChange = async (unitId: string, label: string, vendorId: string, departmentId: string) => {
 
         try {
             const res = await apiRequest('/api/reviews/update', {
@@ -301,7 +337,7 @@ function TrackingInspections() {
     };
 
     const handleBatchEdit = () => {
-        console.log('Batch edit clicked');
+        openEditModal()
     };
 
     const handleSendNotification = () => {
@@ -353,6 +389,12 @@ function TrackingInspections() {
     const handleClearAllFilters = () => {
         setSelectedFilters({});
         sessionStorage.removeItem('trackingFilters');
+    };
+
+    const handleRefreshAfterUpdate = () => {
+        setSelectedRows([]);
+        setSelectAll(false);
+        getReviews();
     };
 
     const columns: Column<ReportData>[] = [
@@ -505,7 +547,7 @@ function TrackingInspections() {
                     ]}
                     width='200px'
                     value={row.missing_data}
-                    onChange={(val) => onMissingChange(row.id, val)}
+                    onChange={(val) => onMissingChange(row.id, val, row.vendorId || "", row.departmentId || "")}
                 />,
         },
         {
@@ -548,7 +590,7 @@ function TrackingInspections() {
                     ]}
                     width='150px'
                     value={row.email_notifcation}
-                    onChange={(val) => onEmailChange(row.id, val)}
+                    onChange={(val) => onEmailChange(row.id, val, row.vendorId || "", row.departmentId || "")}
                 />,
         },
     ];
@@ -649,6 +691,18 @@ function TrackingInspections() {
                 initialFilters={selectedFilters}
                 trackingData={inspectionData}
             />
+            <BatchEditReviewModal
+                isOpen={isEditModalOpen}
+                onClose={closeEditModal}
+                formData={formData}
+                setFormData={setFormData}
+                onChange={handleChange}
+                onDropdownChange={handleDropdownChange}
+                selectedUnitIds={selectedRows}
+                selectedUnitsData={reports.filter(r => selectedRows.includes(r.id))} // Pass full data
+                onUpdated={handleRefreshAfterUpdate}
+            />
+
         </Suspense>
     )
 }

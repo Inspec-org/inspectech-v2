@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    console.log("🟥 USER:", user);
 
     let vendors: any[] = [];
     if (user.role === "admin") {
@@ -25,8 +26,9 @@ export async function GET(req: NextRequest) {
       }
     }
     else if (user.role === "vendor" || user.role === "user") {
-      vendors = await Vendor.find().select("_id name");
+      vendors = await Vendor.find({_id: user.vendorId}).select("_id name");
     }
+    console.log("🟥 VENDORS:", vendors);
 
     return NextResponse.json(
       { status: "success", vendors },

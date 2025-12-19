@@ -67,7 +67,7 @@ function Dashboard() {
     const [departments, setDepartments] = React.useState<Department[]>([]);
     const [vendors, setVendors] = React.useState<Vendor[]>([]);
     const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
-    const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(vendors[0]);
+    const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(null);
     const [dashboardData, setDashboardData] = React.useState<dashboadrData>();
     const [recentData, setRecentData] = React.useState<recentData>();
     const [loading, setLoading] = React.useState(true);
@@ -120,11 +120,24 @@ function Dashboard() {
         getDepartments();
     }, []);
     useEffect(() => {
-        setSelectedVendor(vendors[0]);
-        if (vendors[0]) {
-            Cookies.set('selectedVendor', vendors[0].name || '');
-            Cookies.set('selectedVendorId', vendors[0]._id || '');
-        }
+        if (!vendors.length) return;
+
+        const cookieVendorId = Cookies.get('selectedVendorId');
+        const cookieVendorName = Cookies.get('selectedVendor');
+
+        const byId = cookieVendorId
+            ? vendors.find(v => String(v._id) === String(cookieVendorId))
+            : undefined;
+
+        const byName = !byId && cookieVendorName
+            ? vendors.find(v => v.name === cookieVendorName)
+            : undefined;
+
+        const nextSelected = byId || byName || vendors[0];
+
+        setSelectedVendor(nextSelected);
+        Cookies.set('selectedVendor', nextSelected?.name || '');
+        Cookies.set('selectedVendorId', nextSelected?._id || '');
     }, [vendors])
 
     const getRecent = async () => {

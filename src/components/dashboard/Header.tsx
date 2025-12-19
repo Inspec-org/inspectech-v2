@@ -101,6 +101,7 @@ function Header({
                       console.log('Selected vendor:', vendor);
                       setSelectedVendor(vendor);
                       setVendorOpen(false);
+                      console.log('Vendor ID:', vendor._id);
                       Cookies.set('selectedVendor', vendor.name || '');
                       Cookies.set('selectedVendorId', vendor._id || '');
                     }}

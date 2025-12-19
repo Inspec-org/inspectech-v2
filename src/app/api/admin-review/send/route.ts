@@ -7,6 +7,11 @@ import Review from "@/lib/models/Reviews";
 export async function POST(req: NextRequest) {
   try {
     const { recipients, unitIds, vendorName, vendorId, departmentId } = await req.json();
+    console.log("🟥 RECIPIENTS:", recipients);
+    console.log("🟥 UNIT IDs:", unitIds);
+    console.log("🟥 VENDOR NAME:", vendorName);
+    console.log("🟥 VENDOR ID:", vendorId);
+    console.log("🟥 DEPARTMENT ID:", departmentId);
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return NextResponse.json({ success: false, message: "recipients must be a non-empty array" }, { status: 400 });
@@ -62,6 +67,8 @@ export async function POST(req: NextRequest) {
     if (!vendorId || !departmentId) {
       return NextResponse.json({ success: false, message: "vendorId and departmentId required" }, { status: 400 });
     }
+    console.log("🟥 VENDOR ID:", vendorId);
+    console.log("🟥 DEPARTMENT ID:", departmentId);
     await connectDB();
     for (const unitId of unitIds) {
       const insp = await Inspection.findOne({ unitId, vendorId, departmentId }).select('_id').lean() as { _id: any } | null;
