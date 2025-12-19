@@ -1,6 +1,7 @@
 'use client'
 import { ArrowRight, Briefcase, Cross, Download, Edit, Edit3, Filter, Plus, X } from 'lucide-react'
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import * as XLSX from 'xlsx';
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { UserContext } from '@/context/authContext';
@@ -183,6 +184,87 @@ function Inspections() {
         setSelectedRows([]);
         setSelectAll(false);
         getInspections();
+    };
+    const handleExportInspections = async (format: string) => {
+        try {
+            if (!dept || !vendor) {
+                toast.error('Please select department and vendor first');
+                return;
+            }
+            const payload: any = {
+                all: true,
+                page: 1,
+                limit: totalInspections || 1000,
+                department: dept,
+                vendorId: vendor,
+                filter: selectedRows.length > 0 ? { unitIds: selectedRows } : selectedFilters,
+            };
+            const res = await apiRequest(`/api/inspections/get-inspections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.message || 'Failed to fetch export data');
+            }
+            const items: any[] = json.inspections || [];
+            const normalize = (val: unknown): string => {
+                if (val instanceof Date) return new Date(val).toISOString();
+                if (val === null || val === undefined) return '';
+                if (Array.isArray(val)) return JSON.stringify(val);
+                if (typeof val === 'object') return JSON.stringify(val);
+                return String(val);
+            };
+            const flatten = (obj: any, prefix = ''): Record<string, string> => {
+                const out: Record<string, string> = {};
+                Object.entries(obj).forEach(([key, value]) => {
+                    const k = prefix ? `${prefix}.${key}` : key;
+                    if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+                        Object.assign(out, flatten(value, k));
+                    } else {
+                        out[k] = normalize(value);
+                    }
+                });
+                return out;
+            };
+            const flatRows: Record<string, string>[] = items.map((doc: any) => flatten(doc));
+            const headers: string[] = Array.from(new Set(flatRows.flatMap((r) => Object.keys(r))));
+            const triggerDownload = (blob: Blob, filename: string) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            };
+            const escapeCSV = (v: unknown): string => {
+                const s = String(v ?? '');
+                return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+            };
+            const filename = `inspections_${new Date().toISOString().slice(0, 10)}.${format === 'excel' ? 'xlsx' : format}`;
+            if (format === 'json') {
+                const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+                triggerDownload(blob, filename);
+            } else if (format === 'csv') {
+                const csvRows = flatRows.map((row) => headers.map((h) => escapeCSV(row[h])).join(','));
+                const csv = [headers.join(','), ...csvRows].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                triggerDownload(blob, filename);
+            } else if (format === 'excel') {
+                const aoa: string[][] = [headers, ...flatRows.map((row) => headers.map((h) => row[h] ?? ''))];
+                const ws = XLSX.utils.aoa_to_sheet(aoa);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Inspections');
+                const wbout: ArrayBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                triggerDownload(blob, filename);
+            }
+        } catch (e: any) {
+            toast.error(e.message || 'Failed to export');
+        }
     };
     const getInspections = async () => {
         if (isResettingInspectionPage.current) {
@@ -422,7 +504,7 @@ function Inspections() {
                                 </span>
                             )}
                         </button>
-                        <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl' onClick={openExportModal}>
+                        <button disabled={selectedRows.length === 0} className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl' onClick={openExportModal}>
                             <Download className='w-4 h-4' />
                             Export
                         </button>
@@ -514,7 +596,7 @@ function Inspections() {
 
             <BatchEditInspectionsModal isOpen={isEditModalOpen} onClose={closeEditModal} formData={formData} setFormData={setFormData} onChange={handleChange} onDropdownChange={handleDropdownChange} selectedUnitIds={selectedRows} onUpdated={handleRefreshAfterUpdate} />
 
-            <ExportInspectionsModal isOpen={isExportOpen} onClose={closeExportModal} selectedExportType={selectedExportType} onSelectedExportTypeChange={setSelectedExportType} />
+            <ExportInspectionsModal isOpen={isExportOpen} onClose={closeExportModal} selectedExportType={selectedExportType} onSelectedExportTypeChange={setSelectedExportType} onExport={handleExportInspections} />
 
             <FilterInspectionsModal
                 isOpen={isFilterOpen}

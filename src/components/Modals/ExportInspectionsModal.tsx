@@ -1,5 +1,5 @@
 // /Users/mlb/Desktop/InspecTech/src/components/Modals/ExportInspectionsModal.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, Download } from 'lucide-react';
 import { Modal } from '../ui/modal';
 
@@ -8,9 +8,20 @@ type Props = {
   onClose: () => void;
   selectedExportType: string;
   onSelectedExportTypeChange: (val: string) => void;
+  onExport: (format: string) => Promise<void> | void;
 };
 
-const ExportInspectionsModal: React.FC<Props> = ({ isOpen, onClose, selectedExportType, onSelectedExportTypeChange }) => {
+const ExportInspectionsModal: React.FC<Props> = ({ isOpen, onClose, selectedExportType, onSelectedExportTypeChange, onExport }) => {
+  const [isExporting, setIsExporting] = useState(false);
+  const handleExportClick = async () => {
+    setIsExporting(true);
+    try {
+      await onExport(selectedExportType);
+      onClose();
+    } finally {
+      setIsExporting(false);
+    }
+  };
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-[500px] p-4 ">
       <div>
@@ -59,12 +70,12 @@ const ExportInspectionsModal: React.FC<Props> = ({ isOpen, onClose, selectedExpo
         </div>
 
         <div className="flex justify-end gap-4">
-          <button onClick={onClose} className="border border-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
+          <button onClick={onClose} disabled={isExporting} className="border border-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
             Cancel
           </button>
-          <button onClick={onClose} className="bg-[#7844AB] text-white px-4 py-2 rounded-lg hover:bg-gray-400 transition flex gap-2 items-center">
+          <button onClick={handleExportClick} disabled={isExporting} className="bg-[#7844AB] text-white px-4 py-2 rounded-lg hover:bg-gray-400 transition flex gap-2 items-center">
             <ArrowRight className="w-4 h-4" />
-            Export As {selectedExportType.toUpperCase()}
+            {isExporting ? 'Exporting...' : `Export As ${selectedExportType.toUpperCase()}`}
           </button>
         </div>
       </div>
