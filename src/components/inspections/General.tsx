@@ -180,7 +180,7 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
                             onChange={(e) => {
                                 const raw = Number(e.target.value);
                                 const value = Math.min(60, Math.max(0, raw));
-                                handleChange("durationMin", value.toString())
+                                handleChange("durationSec", value.toString())
                             }}
                             className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
                         />
