@@ -30,13 +30,11 @@ export async function PATCH(req: NextRequest) {
     } = body;
 
     if (!unitId || !vendorId || !departmentId) {
-      console.log('unitId, vendorId, departmentId', unitId, vendorId, departmentId);
       return NextResponse.json(
         { success: false, message: "unitId, vendorId, departmentId required" },
         { status: 400 }
       );
     }
-    console.log('body', body);
 
     await connectDB();
 
@@ -69,13 +67,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (!Object.keys(update).length) {
-      console.log('no fields to update');
       return NextResponse.json(
         { success: false, message: "No fields to update" },
         { status: 400 }
       );
     }
-    console.log("vendorId:", vendorId, "departmentId:", departmentId);
 
     /** 1️⃣ Update Review */
     const doc = await Review.findOneAndUpdate(

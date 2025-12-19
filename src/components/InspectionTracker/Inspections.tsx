@@ -679,11 +679,13 @@ function TrackingInspections() {
                     </div>
                 </div>
                 {openGeneratedReport && <GeneratedReport close={() => setOpenGeneratedReport(false)} />}
-                <AdminNotificationModal
-                    isOpen={isNotificationModalOpen}
-                    onClose={() => setIsNotificationModalOpen(false)}
-                />
             </div>
+            <AdminNotificationModal
+                isOpen={isNotificationModalOpen}
+                onClose={() => setIsNotificationModalOpen(false)}
+                selectedUnitIds={selectedRows}
+                allInspections={reports}
+            />
             <FilterTrackingModal
                 isOpen={isFilterOpen}
                 onClose={closeEFilterModal}

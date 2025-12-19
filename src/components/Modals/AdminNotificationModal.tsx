@@ -10,12 +10,16 @@ type Props = {
     isOpen: boolean;
     onClose: () => void;
     onUpdated?: () => void;
+    selectedUnitIds?: string[]; // Add this
+    allInspections?: any[]; // Add this to receive full inspection data
 };
 
 const AdminNotificationModal: React.FC<Props> = ({
     isOpen,
     onClose,
     onUpdated,
+    selectedUnitIds = [], // Add default
+    allInspections = [],
 }) => {
 
     const [activeTab, setActiveTab] = useState<'send' | 'auto'>('send');
@@ -57,10 +61,8 @@ const AdminNotificationModal: React.FC<Props> = ({
         { id: 'HY2603827', status: 'COMPLETE', vendor: 'Hyundai', reviewCompleted: 'Pending' },
     ];
 
-    const totalResults = 2303;
     const startResult = (currentPage - 1) * rowsPerPage + 1;
-    const endResult = Math.min(currentPage * rowsPerPage, totalResults);
-    const totalPages = Math.ceil(totalResults / rowsPerPage);
+
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
@@ -75,7 +77,13 @@ const AdminNotificationModal: React.FC<Props> = ({
             prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]
         );
     };
+    const filteredInspections = selectedUnitIds.length > 0
+        ? allInspections.filter(insp => selectedUnitIds.includes(insp.id))
+        : inspections;
 
+    const totalResults = filteredInspections.length;
+    const endResult = Math.min(currentPage * rowsPerPage, totalResults);
+    const totalPages = Math.ceil(totalResults / rowsPerPage);
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-[600px]">
             <div className="flex flex-col max-h-[85vh] 2xl:max-h-full p-4">
@@ -171,7 +179,7 @@ const AdminNotificationModal: React.FC<Props> = ({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
-                                        {inspections.map((inspection, index) => (
+                                        {filteredInspections.map((inspection, index) => (
                                             <tr key={index} className="hover:bg-gray-50">
                                                 <td className="px-4 py-3">
                                                     <input
