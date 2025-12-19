@@ -8,9 +8,10 @@ import "@/lib/models/Vendor";
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
-    const vendorId = url.searchParams.get("vendorId"); // ✅
-    const page = parseInt(url.searchParams.get("page") || "1", 10); // default page 1
-    const limit = parseInt(url.searchParams.get("limit") || "10", 10); // default 10 items per page
+    const vendorId = url.searchParams.get("vendorId");
+    const role = url.searchParams.get("role");
+    const page = parseInt(url.searchParams.get("page") || "1", 10);
+    const limit = parseInt(url.searchParams.get("limit") || "10", 10);
 
     if (!vendorId) {
       return NextResponse.json(
@@ -21,18 +22,22 @@ export async function GET(req: Request) {
 
     await connectDB();
 
-    // Count total documents for pagination info
-    const totalUsers = await User.countDocuments({ vendorId });
+    const filter: any = role === 'admin'
+      ? { role: 'admin', $or: [{ vendorId }, { vendorAccess: vendorId }] }
+      : { vendorId, ...(role ? { role } : {}) };
 
-    const records = await User.find({ vendorId })
+    const totalUsers = await User.countDocuments(filter);
+
+    const records = await User.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate("vendorId");
+      .populate("vendorId")
+      .populate("vendorAccess");
 
-    const users = records.map((user: any) => ({
-      ...user.toObject(),
-      vendor: user.vendorId?.name || null,
+    const users = records.map((u: any) => ({
+      ...u.toObject(),
+      vendor: u.vendorId?.name || (Array.isArray(u.vendorAccess) && u.vendorAccess[0]?.name) || null,
       vendorId: undefined,
     }));
 

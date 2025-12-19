@@ -125,8 +125,8 @@ export const dummyAdmins: UserData[] = [
 const Users: React.FC = () => {
     const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = useState('users');
-    const [userLoading, setUserLoading] = useState(false)
-    const [invitationLoading, setInvitationLoading] = useState(false)
+    const [userLoading, setUserLoading] = useState(true)
+    const [invitationLoading, setInvitationLoading] = useState(true)
     const [invites, setInvites] = useState<any[]>([])
     const [users, setUsers] = useState<any[]>([])
     const [totalUsers, setTotalUsers] = useState<number>(0)
@@ -137,8 +137,15 @@ const Users: React.FC = () => {
     const [totalInvitationsPages, setTotalInvitationsPages] = useState<number[]>([])
     const invitationCurrentPage = parseInt(searchParams.get("invitation_page") || "1", 10);
     const [Invitationslimit, setInvitationsLimit] = useState<number>(10)
+    const [admins, setAdmins] = useState<any[]>([])
+    const [totalAdmins, setTotalAdmins] = useState<number>(0)
+    const [totalAdminsPages, setTotalAdminsPages] = useState<number[]>([])
+    const adminCurrentPage = parseInt(searchParams.get("admin_page") || "1", 10);
+    const [adminLimit, setAdminLimit] = useState<number>(10)
+    const [adminLoading, setAdminLoading] = useState(true)
     const isResettingUserPage = useRef(false);
     const isResettingInvitationPage = useRef(false);
+    const isResettingAdminPage = useRef(false);
 
     useEffect(() => {
         if (userCurrentPage !== 1) {
@@ -157,6 +164,15 @@ const Users: React.FC = () => {
             window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
         }
     }, [Invitationslimit])
+
+    useEffect(() => {
+        if (adminCurrentPage !== 1) {
+            isResettingAdminPage.current = true;
+            const params = new URLSearchParams(searchParams);
+            params.set('admin_page', "1");
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+        }
+    }, [adminLimit])
 
     const { user } = useContext(UserContext);
     const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
@@ -226,6 +242,36 @@ const Users: React.FC = () => {
         }
     };
 
+    const getAdmins = async () => {
+        if (isResettingAdminPage.current) {
+            isResettingAdminPage.current = false;
+            return;
+        }
+        if (!vendorId) {
+            setAdmins([]);
+            setAdminLoading(false);
+            return;
+        }
+        setAdminLoading(true);
+        try {
+            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}&page=${adminCurrentPage}&limit=${adminLimit}&role=admin`);
+            const json = await res.json();
+            if (!res.ok) {
+                throw new Error(json.message || 'Failed to fetch admin users')
+            }
+            setAdmins(json.users || []);
+            setTotalAdmins(json.total || 0);
+            const pagesArray = Array.from({ length: json.totalPages || 0 }, (_, i) => i + 1);
+            setTotalAdminsPages(pagesArray);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Failed to fetch admin users';
+            toast.error(errorMessage);
+            setAdmins([]);
+        } finally {
+            setAdminLoading(false);
+        }
+    };
+
     useEffect(() => {
         setTimeout(() => {
             getUsers();
@@ -234,7 +280,15 @@ const Users: React.FC = () => {
     useEffect(() => {
         getInvites();
     }, [invitationCurrentPage, Invitationslimit]);
-    // getInvites();
+
+    useEffect(() => {
+        if (activeTab === 'admins' && user?.role === 'admin' && vendorId) {
+            getAdmins();
+        } else if (activeTab === 'admins' && !vendorId) {
+            setAdminLoading(false);
+            setAdmins([]);
+        }
+    }, [activeTab, adminCurrentPage, adminLimit, vendorId, user]);
 
     const userColumns: Column<UserData>[] = [
         {
@@ -385,7 +439,7 @@ const Users: React.FC = () => {
                     {activeTab === 'users' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={users} tabs={totalUsersPages} columns={userColumns} pageSize={userlimit} currentPage={userCurrentPage} setPageSize={setUserLimit} loading={userLoading} setLoading={setInvitationLoading} querykey="user_page" emptyStateImages={{
+                                <GenericDataTable title="" data={users} tabs={totalUsersPages} columns={userColumns} pageSize={userlimit} currentPage={userCurrentPage} setPageSize={setUserLimit} loading={userLoading} setLoading={setUserLoading} querykey="user_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />
@@ -396,7 +450,7 @@ const Users: React.FC = () => {
                     {activeTab === 'admins' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={dummyAdmins} tabs={totalUsersPages} columns={adminColumns} pageSize={5} currentPage={1} loading={invitationLoading} setLoading={setInvitationLoading} querykey="user_page" emptyStateImages={{
+                                <GenericDataTable title="" data={admins} tabs={totalAdminsPages} columns={adminColumns} pageSize={adminLimit} currentPage={adminCurrentPage} totalCount={totalAdmins} loading={adminLoading} setLoading={setAdminLoading} querykey="admin_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />
