@@ -79,6 +79,7 @@ export interface FormData {
   doorDetailsImageUrl: string;
   dotFormImageUrl: string;
   dotFormPdfUrl: string;
+  dotFormPdfFileName?: string;
   additionalAttachment1: string;
   additionalAttachment2: string;
   additionalAttachment3: string;
@@ -306,22 +307,32 @@ export default function Edit({ type }: { type: string }) {
       body.append('folder', 'inspections');
       body.append('unitId', formData.unitId || (params?.inspection_id as string) || '');
       body.append('field', field);
+      body.append('originalFileName', file.name); // Add this line
+
       const res = await apiRequest('/api/uploads', { method: 'POST', body });
       const json = await res.json();
+
+      console.log('Upload response:', json);
+
       if (!res.ok || !json.secure_url) {
         throw new Error(json.message || 'Upload failed');
       }
       const url: string = json.secure_url;
+
+      console.log(`Setting ${field} to:`, url);
+
       setFormData(prev => {
-        // if (field === 'additionalAttachments') {
-        //   const arr = Array.isArray(prev.additionalAttachments) ? prev.additionalAttachments : [];
-        //   return { ...prev, additionalAttachments: [...arr, url] };
-        // }
-        return { ...prev, [field]: url };
+        const updates: any = { [field]: url };
+        // Store filename for PDFs
+        if (field === 'dotFormPdfUrl' && json.originalFileName) {
+          updates['dotFormPdfFileName'] = json.originalFileName;
+        }
+        return { ...prev, ...updates };
       });
-      // toast.success('Uploaded to Cloudinary');
     } catch (e: any) {
+      console.error('Upload error:', e);
       toast.error(e.message || 'Cloudinary upload failed');
+      throw e; // Re-throw to handle in PDFUpload component
     }
   };
 

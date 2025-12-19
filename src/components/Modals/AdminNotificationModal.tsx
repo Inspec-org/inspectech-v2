@@ -77,11 +77,33 @@ const AdminNotificationModal: React.FC<Props> = ({
             prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]
         );
     };
-    const filteredInspections = selectedUnitIds.length > 0
-        ? allInspections.filter(insp => selectedUnitIds.includes(insp.id))
-        : inspections;
+    const filteredInspections = React.useMemo(() => {
+        let filtered = selectedUnitIds.length > 0
+            ? allInspections.filter(insp => selectedUnitIds.includes(insp.id))
+            : inspections;
 
-    console.log(filteredInspections);
+        // Apply search filter
+        if (searchQuery.trim()) {
+            filtered = filtered.filter(insp =>
+                insp.id.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+
+        return filtered;
+    }, [selectedUnitIds, allInspections, searchQuery]);
+
+    const paginatedInspections = React.useMemo(() => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        return filteredInspections.slice(startIndex, endIndex);
+    }, [filteredInspections, currentPage, rowsPerPage]);
+
+    useEffect(() => {
+        if (isOpen && selectedUnitIds.length > 0) {
+            setSelectedUnits(selectedUnitIds);
+            setCurrentPage(1); // Reset to first page
+        }
+    }, [isOpen, selectedUnitIds]);
 
     const totalResults = filteredInspections.length;
     const endResult = Math.min(currentPage * rowsPerPage, totalResults);

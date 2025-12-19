@@ -72,6 +72,7 @@ export const Header: React.FC<{
                         label="Remove from Status History"
                         variant="danger"
                         onClick={onRemoveFromHistory}
+                        disabled
                     />
 
                     {selectedCount > 0 && (

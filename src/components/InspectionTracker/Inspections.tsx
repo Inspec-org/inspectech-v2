@@ -601,7 +601,7 @@ function TrackingInspections() {
     const filterCount = Object.values(selectedFilters).reduce((acc, arr) => acc + arr.length, 0);
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <div className='bg-white pb-5 max-w-[1080px]'>
+            <div className='bg-white pb-5 max-w-[1080px] mx-auto'>
                 <Header
                     title="Inspection Log & Vendor Performance Tracker"
                     description="Track inspection requests, turnaround times, and vendor performance"

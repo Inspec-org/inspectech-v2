@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Upload, Check, Image, ImageIcon, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload } from 'lucide-react';
 import { FormData } from './Edit';
 import { toast } from 'react-toastify';
@@ -46,7 +46,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                 setUploadProgress(100);
                 toast.success("Image Uploaded Successfully")
             }
-            catch(e){
+            catch (e) {
                 toast.error("Image Upload Failed")
             }
             finally {
@@ -119,20 +119,80 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
     );
 };
 
-const PDFUpload: React.FC<{ onUploadToCloudinary: (file: File) => void }> = ({ onUploadToCloudinary }) => {
+const PDFUpload: React.FC<{
+    onUploadToCloudinary: (file: File) => Promise<void>;
+    currentUrl?: string | null;
+    currentFileName?: string | null; // Add this
+}> = ({ onUploadToCloudinary, currentUrl, currentFileName }) => {
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [originalFileName, setOriginalFileName] = useState<string | null>(null);
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file && file.type === 'application/pdf') {
-            setUploadedFile(file);
-        } else {
-            alert('Please select a PDF file');
+    // Set preview URL and filename from props on mount
+    useEffect(() => {
+        if (currentUrl) {
+            setPreviewUrl(currentUrl);
+        }
+        if (currentFileName) {
+            setOriginalFileName(currentFileName);
+        }
+    }, [currentUrl, currentFileName]);
+
+    const handleUpload = async (file: File) => {
+        setIsUploading(true);
+        setUploadProgress(0);
+        let interval: number | undefined;
+
+        try {
+            interval = window.setInterval(() => {
+                setUploadProgress((p) => (p < 95 ? p + 5 : p));
+            }, 300);
+
+            await onUploadToCloudinary(file);
+            setUploadProgress(100);
+
+            toast.success("PDF Uploaded Successfully");
+        } catch (e: any) {
+            toast.error(e?.message || "PDF Upload Failed");
+            console.error('PDF upload error:', e);
+        } finally {
+            setIsUploading(false);
+            if (interval) {
+                clearInterval(interval);
+            }
         }
     };
 
-    const handleReload = () => {
-        setUploadedFile(null);
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            toast.error('Please select a PDF file');
+            return;
+        }
+
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            toast.error('File size exceeds 5MB. Please select a smaller file.');
+            return;
+        }
+
+        setUploadedFile(file);
+        setOriginalFileName(file.name);
+        setUploadProgress(0);
+
+        void handleUpload(file);
+
+        e.target.value = '';
+    };
+
+    const handleViewPDF = () => {
+        if (previewUrl) {
+            window.open(previewUrl, '_blank', 'noopener,noreferrer');
+        }
     };
 
     return (
@@ -150,44 +210,56 @@ const PDFUpload: React.FC<{ onUploadToCloudinary: (file: File) => void }> = ({ o
                         accept=".pdf"
                         onChange={handleFileSelect}
                         className="hidden"
+                        disabled={isUploading}
                     />
-                    <div className="bg-purple-600 text-white rounded-lg py-2.5 px-6 font-medium hover:bg-purple-700 cursor-pointer inline-flex items-center gap-2">
+                    <div className={`bg-purple-600 text-white rounded-lg py-2.5 px-6 font-medium hover:bg-purple-700 cursor-pointer inline-flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         <Upload size={18} />
-                        Upload PDF
+                        Select PDF
                     </div>
                 </label>
 
-                <div className="border-t border-gray-300 pt-6">
-                    {/* <button
-                        onClick={handleReload}
-                        className="flex items-center gap-2 text-gray-700 font-medium mb-4 hover:text-gray-900"
-                    >
-                        <RefreshCw size={18} />
-                        Reload PDF
-                    </button> */}
-
-                    {uploadedFile ? (
+                <div className="border-t border-gray-300 pt-6 flex-grow">
+                    {previewUrl ? (
+                        <div className="text-sm text-gray-700 mb-4">
+                            {/* <p className="font-medium mb-2 text-green-600">✓ PDF Saved in Database</p> */}
+                            <div className="b">
+                                <p className="font-medium mb-2 text-gray-800">
+                                    {originalFileName || 'DOT Form.pdf'}
+                                </p>
+                                <button
+                                    onClick={handleViewPDF}
+                                    className="text-blue-600 hover:underline text-sm inline-flex items-center gap-1 hover:text-blue-800"
+                                >
+                                    {/* <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                    View PDF */}
+                                </button>
+                            </div>
+                        </div>
+                    ) : uploadedFile ? (
                         <div className="text-sm text-gray-700">
-                            <p className="font-medium mb-1">Uploaded: {uploadedFile.name}</p>
+                            <p className="font-medium mb-1">Selected: {uploadedFile.name}</p>
                             <p className="text-gray-500">Size: {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
                     ) : (
                         <p className="text-sm text-gray-400">No PDF Uploaded yet</p>
                     )}
                 </div>
-                <div className="mt-auto">
-                    <button
-                        onClick={() => uploadedFile && onUploadToCloudinary(uploadedFile)}
-                        disabled={!uploadedFile}
-                        className="w-full bg-purple-600 text-white rounded-lg py-2 px-4 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        <CloudUpload size={16} />
-                        Upload PDF to Database
-                    </button>
-                </div>
+
+                {isUploading && (
+                    <div className="w-full mt-4">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+                        </div>
+                        <p className="text-xs text-gray-600 mt-2 text-center">{uploadProgress}%</p>
+                    </div>
+                )}
+
+
             </div>
-
-
         </div>
     );
 };
@@ -417,7 +489,11 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                             currentUrl={formData.dotFormImageUrl}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormImageUrl', file)}
                         />
-                        <PDFUpload onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormPdfUrl', file)} />
+                        <PDFUpload
+                            onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormPdfUrl', file)}
+                            currentUrl={formData.dotFormPdfUrl}
+                            currentFileName={formData.dotFormPdfFileName}
+                        />
                     </div>
                 </div>
             </div>
@@ -428,19 +504,19 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                         <p className='text-xs font-semibold text-[#11182780]'>Upload additional images related to the DOT Safety Inspection form</p>
                     </div>
                     <button
-                            onClick={() => setShowAdditional(!showAdditional)}
-                            className="flex gap-2 items-center bg-[#F3EBFF66] border  px-3 py-2 text-sm rounded-lg whitespace-nowrap"
-                        >
-                            {showAdditional ? (
-                                <span className="flex items-center gap-1">
-                                    Hide <ChevronUp size={18} />
-                                </span>
-                            ) : (
-                                <span className="flex items-center gap-1">
-                                    Add Additional Attachments <ChevronDown size={18} />
-                                </span>
-                            )}
-                        </button>
+                        onClick={() => setShowAdditional(!showAdditional)}
+                        className="flex gap-2 items-center bg-[#F3EBFF66] border  px-3 py-2 text-sm rounded-lg whitespace-nowrap"
+                    >
+                        {showAdditional ? (
+                            <span className="flex items-center gap-1">
+                                Hide <ChevronUp size={18} />
+                            </span>
+                        ) : (
+                            <span className="flex items-center gap-1">
+                                Add Additional Attachments <ChevronDown size={18} />
+                            </span>
+                        )}
+                    </button>
                 </div>
                 {showAdditional && (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-4">

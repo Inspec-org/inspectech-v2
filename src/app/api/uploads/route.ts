@@ -12,6 +12,8 @@ export async function POST(req: NextRequest) {
     const folder = (form.get("folder") as string) || "inspections";
     const unitId = (form.get("unitId") as string) || "";
     const field = (form.get("field") as string) || "";
+    const originalFileName = form.get("originalFileName") as string || file?.name || "";
+    
     if (!file) return NextResponse.json({ message: "file is required" }, { status: 400 });
 
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME!;
@@ -29,7 +31,9 @@ export async function POST(req: NextRequest) {
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
-    const toSign = `folder=${folder}&timestamp=${timestamp}`;
+    
+    // Add access_mode=public for public access
+    const toSign = `access_mode=public&folder=${folder}&timestamp=${timestamp}&type=upload`;
     const signature = crypto.createHash("sha1").update(toSign + apiSecret).digest("hex");
 
     const uploadForm = new FormData();
@@ -38,34 +42,58 @@ export async function POST(req: NextRequest) {
     uploadForm.append("timestamp", String(timestamp));
     uploadForm.append("signature", signature);
     uploadForm.append("folder", folder);
+    uploadForm.append("type", "upload");
+    uploadForm.append("access_mode", "public"); // Add this for public access
 
     const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
       method: "POST",
       body: uploadForm,
     });
     const json = await res.json();
+    
+    console.log('Cloudinary response:', json); // Debug log
+    
     if (!res.ok) return NextResponse.json({ message: json.error?.message || "Upload failed" }, { status: res.status });
 
     await connectDB();
 
     if (!unitId || !field) {
-      return NextResponse.json({ secure_url: json.secure_url, public_id: json.public_id }, { status: 200 });
+      return NextResponse.json({ 
+        secure_url: json.secure_url, 
+        public_id: json.public_id,
+        originalFileName 
+      }, { status: 200 });
     }
 
-    const updateOp = { $set: { [field]: json.secure_url } };
+    // Store both URL and filename if it's a PDF
+    const updateFields: any = { [field]: json.secure_url };
+    if (field === 'dotFormPdfUrl' && originalFileName) {
+      updateFields['dotFormPdfFileName'] = originalFileName;
+    }
 
     const updated = await (Inspection as any).findOneAndUpdate(
       { unitId },
-      updateOp,
+      { $set: updateFields },
       { new: true }
     );
 
     if (!updated) {
-      return NextResponse.json({ message: "Inspection not found", secure_url: json.secure_url, public_id: json.public_id }, { status: 404 });
+      return NextResponse.json({ 
+        message: "Inspection not found", 
+        secure_url: json.secure_url, 
+        public_id: json.public_id,
+        originalFileName
+      }, { status: 404 });
     }
 
-    return NextResponse.json({ secure_url: json.secure_url, public_id: json.public_id, inspection: updated }, { status: 200 });
+    return NextResponse.json({ 
+      secure_url: json.secure_url, 
+      public_id: json.public_id, 
+      inspection: updated,
+      originalFileName
+    }, { status: 200 });
   } catch (e: any) {
+    console.error('Upload error:', e);
     return NextResponse.json({ message: e.message || "Internal Server Error" }, { status: 500 });
   }
 }

@@ -70,6 +70,7 @@ const InspectionSchema = new mongoose.Schema({
   doorDetailsImageUrl: { type: String },
   dotFormImageUrl: { type: String },
   dotFormPdfUrl: { type: String },
+  dotFormPdfFileName: { type: String },
   additionalAttachment1: { type: String },
   additionalAttachment2: { type: String },
   additionalAttachment3: { type: String },
