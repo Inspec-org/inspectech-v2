@@ -26,6 +26,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
 }) => {
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
+    const [tableLoading, setTableLoading] = useState(false);
     const [selectedInspections, setSelectedInspections] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -45,7 +46,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
     }, [totalInspections, rowsPerPage]);
 
     const fetchInspections = async () => {
-        // setLoading(true);
+        setTableLoading(true);
         try {
             const vendorId = Cookies.get('selectedVendorId') || '';
             const departmentId = Cookies.get('selectedDepartmentId') || '';
@@ -71,9 +72,10 @@ const RequestAdminReviewModal: React.FC<Props> = ({
             setInspections([]);
             setTotalInspections(0);
         } finally {
-            setLoading(false);
+            setTableLoading(false);
         }
     };
+
 
     useEffect(() => { if (isOpen) { setCurrentPage(1); fetchInspections(); } }, [isOpen]);
     useEffect(() => { if (isOpen) { fetchInspections(); } }, [currentPage, rowsPerPage]);
@@ -120,14 +122,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
         }
     };
     const goToPage = (page: number) => {
-        // if (querykey) {
-        if (setLoading) {
-            setLoading(true);
-        }
-        const params = new URLSearchParams(searchParams);
-        setCurrentPage && setCurrentPage(page)
-        
-        // }
+        setCurrentPage(page);
     };
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-[1100px]">

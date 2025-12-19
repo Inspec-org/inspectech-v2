@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, Briefcase, Home } from 'lucide-react';
+import { ArrowRight, Briefcase, Home, Send } from 'lucide-react';
 import { Modal } from '../ui/modal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
@@ -220,7 +220,7 @@ const InvitationModal: React.FC<Props> = ({
             disabled={loading || !vendorId}
             className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ArrowRight className="w-4 h-4" />
+            <Send className="w-4 h-4" />
             Send Invitation
           </button>
         </div>
