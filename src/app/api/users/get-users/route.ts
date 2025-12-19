@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import User from "@/lib/models/User";
+import "@/lib/models/Vendor";
+
+
 
 export async function GET(req: Request) {
   try {

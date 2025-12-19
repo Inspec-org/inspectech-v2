@@ -341,6 +341,10 @@ function TrackingInspections() {
     };
 
     const handleSendNotification = () => {
+        if (selectedRows.length === 0) {
+            toast.warning('Please select at least one inspection to send notification');
+            return;
+        }
         setIsNotificationModalOpen(true);
     };
 
