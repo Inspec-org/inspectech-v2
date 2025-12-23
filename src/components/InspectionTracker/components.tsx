@@ -52,6 +52,7 @@ export const Header: React.FC<{
                         label="Generate Report"
                         variant="secondary"
                         onClick={onGenerateReport}
+                        disabled={selectedCount === 0}
                     />
                     <ActionButton
                         icon={<Edit3 className="w-4 h-4" />}
@@ -64,7 +65,7 @@ export const Header: React.FC<{
                         icon={<Mail className="w-4 h-4" />}
                         label="Send Admin Notification"
                         variant="success"
-                        disabled={selectedCount === 0}
+                        // disabled={selectedCount === 0}
                         onClick={onSendNotification}
                     />
                     <ActionButton

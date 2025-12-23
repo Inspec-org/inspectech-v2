@@ -173,6 +173,21 @@ function TrackingInspections() {
         getReviews();
 
     }, [selectedFilters, filtersReady]);
+
+    useEffect(() => {
+        const onDept = () => {
+            getReviews();
+        };
+        const onVendor = () => {
+            getReviews();
+        };
+        window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
+        window.addEventListener('selectedVendorChanged', onVendor as EventListener);
+        return () => {
+            window.removeEventListener('selectedDepartmentChanged', onDept as EventListener);
+            window.removeEventListener('selectedVendorChanged', onVendor as EventListener);
+        };
+    }, [getReviews]);
     useEffect(() => {
         const storedFilters = sessionStorage.getItem('trackingFilters');
         if (storedFilters) {
@@ -341,10 +356,10 @@ function TrackingInspections() {
     };
 
     const handleSendNotification = () => {
-        if (selectedRows.length === 0) {
-            toast.warning('Please select at least one inspection to send notification');
-            return;
-        }
+        // if (selectedRows.length === 0) {
+        //     toast.warning('Please select at least one inspection to send notification');
+        //     return;
+        // }
         setIsNotificationModalOpen(true);
     };
 
@@ -682,13 +697,19 @@ function TrackingInspections() {
                         />
                     </div>
                 </div>
-                {openGeneratedReport && <GeneratedReport close={() => setOpenGeneratedReport(false)} />}
+                {openGeneratedReport && (
+                    <GeneratedReport
+                        selectedUnitIds={selectedRows}
+                        close={() => setOpenGeneratedReport(false)}
+                    />
+                )}
             </div>
             <AdminNotificationModal
                 isOpen={isNotificationModalOpen}
                 onClose={() => setIsNotificationModalOpen(false)}
                 selectedUnitIds={selectedRows}
                 allInspections={reports}
+                onUpdated={handleRefreshAfterUpdate}
             />
             <FilterTrackingModal
                 isOpen={isFilterOpen}

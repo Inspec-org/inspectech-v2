@@ -107,8 +107,6 @@ export async function POST(req: NextRequest) {
       .populate({ path: 'vendorId', select: 'name' })
       .lean();
 
-      console.log(result);
-
     const inspections = result.map(item => ({
       ...item,
       vendor: item.vendorId?.name || null

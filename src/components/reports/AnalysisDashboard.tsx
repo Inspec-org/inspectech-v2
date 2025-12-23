@@ -489,12 +489,27 @@ const AnalysisDashboard: React.FC = () => {
     const [appliedBinSize, setAppliedBinSize] = useState(3);
 
     useEffect(() => {
-        const vendorId = Cookies.get('selectedVendorId') || '';
-        const departmentId = Cookies.get('selectedDepartmentId') || '';
-        if (vendorId && departmentId) {
+        const read = () => {
+            const vendorId = Cookies.get('selectedVendorId') || '';
+            const departmentId = Cookies.get('selectedDepartmentId') || '';
             setVendor(vendorId);
             setDept(departmentId);
-        }
+        };
+        read();
+        const onDept = () => {
+            const departmentId = Cookies.get('selectedDepartmentId') || '';
+            setDept(departmentId);
+        };
+        const onVendor = () => {
+            const vendorId = Cookies.get('selectedVendorId') || '';
+            setVendor(vendorId);
+        };
+        window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
+        window.addEventListener('selectedVendorChanged', onVendor as EventListener);
+        return () => {
+            window.removeEventListener('selectedDepartmentChanged', onDept as EventListener);
+            window.removeEventListener('selectedVendorChanged', onVendor as EventListener);
+        };
     }, [])
 
 

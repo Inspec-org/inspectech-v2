@@ -37,6 +37,7 @@ const AppSidebar: React.FC = () => {
   const { logout, user, session_id, setUser } = useContext(UserContext);
   const [dept, setDept] = useState("");
   const [isRequestAdminReviewModalOpen, setIsRequestAdminReviewModalOpen] = useState(false);
+  const [hoverSuspended, setHoverSuspended] = useState(false);
 
   const navItems: NavItem[] = [
     {
@@ -369,25 +370,28 @@ const AppSidebar: React.FC = () => {
 `}</style>
 
       <aside
-        className={`fixed  flex flex-col lg:mt-0 top-0 px-4 left-0 bg-[#1a1d2e] text-gray-300 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-800
-        ${isExpanded || isMobileOpen
-            ? "w-[280px]"
+        className={`fixed flex flex-col lg:mt-0 top-0 px-4 left-0 bg-[#1a1d2e] text-gray-300 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-800
+          ${isExpanded || isMobileOpen
+            ? 'w-[280px]'
             : isHovered
-              ? "w-[280px]"
-              : "w-[90px]"
+              ? 'w-[280px]'
+              : 'w-[90px]'
           }
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:translate-x-0`}
-        onMouseEnter={() => !isExpanded && setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
+        `}
+        onMouseEnter={() => {
+          if (!isExpanded && !hoverSuspended) setIsHovered(true);
+        }}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setHoverSuspended(false);
+        }}
+
       >
         {/* User Profile Section */}
         <div
-          className={`py-6 border-b border-gray-800 ${!isExpanded && !isHovered && !isMobileOpen
-            ? "flex justify-center"
-            : ""
-            }`}
-        >
+          className={`py-6 border-b border-gray-800 ${!isExpanded && !isHovered && !isMobileOpen ? "flex justify-center" : ""}`}>
           {isExpanded || isHovered || isMobileOpen ? (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
@@ -405,7 +409,7 @@ const AppSidebar: React.FC = () => {
                 <p className="text-xs text-gray-400 truncate">
                   {user?.email}
                 </p>
-                {user?.role === "vendor" && (
+                {user?.role === "vendor" || user?.role === "user" && (
                   <div className="flex items-center gap-1 mt-0.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                     <span className="text-xs text-gray-400">Vendor Account</span>
@@ -415,9 +419,9 @@ const AppSidebar: React.FC = () => {
               </div>
               <button
                 onClick={() => {
-
+                  setIsHovered(false);
+                  setHoverSuspended(true);
                   toggleSidebar();
-
                 }}
                 className="text-gray-400 hover:text-white transition-colors"
               >

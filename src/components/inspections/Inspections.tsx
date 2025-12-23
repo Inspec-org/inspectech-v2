@@ -127,11 +127,29 @@ function Inspections() {
     }, [limit])
 
     useEffect(() => {
-        const storedDept = Cookies.get("selectedDepartmentId") || '';
-        setDept(storedDept);
-        setDepartment(storedDept || '');
-        const storedVendor = Cookies.get("selectedVendorId") || '';
-        setVendor(storedVendor);
+        const readFromCookies = () => {
+            const storedDept = Cookies.get('selectedDepartmentId') || '';
+            setDept(storedDept);
+            setDepartment(storedDept || '');
+            const storedVendor = Cookies.get('selectedVendorId') || '';
+            setVendor(storedVendor);
+        };
+        readFromCookies();
+        const onDept = () => {
+            const id = Cookies.get('selectedDepartmentId') || '';
+            setDept(id);
+            setDepartment(id || '');
+        };
+        const onVendor = () => {
+            const id = Cookies.get('selectedVendorId') || '';
+            setVendor(id);
+        };
+        window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
+        window.addEventListener('selectedVendorChanged', onVendor as EventListener);
+        return () => {
+            window.removeEventListener('selectedDepartmentChanged', onDept as EventListener);
+            window.removeEventListener('selectedVendorChanged', onVendor as EventListener);
+        };
     }, []);
 
     const handleChange = (field: string, value: string) => {
@@ -309,12 +327,10 @@ function Inspections() {
         }
     };
     useEffect(() => {
-        setTimeout(() => {
-            console.log(currentPage, limit, selectedFilters, dept, vendor)
-            if (currentPage && limit && selectedFilters && dept && vendor)
-                getInspections();
-        }, 2000);
-    }, [currentPage, limit, search, selectedFilters, dept, vendor]);
+        if (currentPage && limit && dept && vendor) {
+            getInspections();
+        }
+    }, [currentPage, limit, selectedFilters, dept, vendor]);
 
     useEffect(() => {
         const getfilters = async () => {

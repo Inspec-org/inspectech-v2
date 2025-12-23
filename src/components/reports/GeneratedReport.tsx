@@ -58,7 +58,7 @@ type VendorIssueDetail = {
 };
 
 // Components
-const ReportHeader = ({close}:{close: () => void}) => (
+const ReportHeader = ({ close, onDownload }: { close: () => void; onDownload: () => void }) => (
     <div className=" pb-2 border-b border-gray-300">
         <div className="flex justify-between items-start">
             <div>
@@ -68,8 +68,8 @@ const ReportHeader = ({close}:{close: () => void}) => (
                 </div>
                 <p className="text-sm text-gray-600">Data Period: All Available Data (6/8/2023 - 06/02/2025)</p>
             </div>
-            <div className='flex gap-2'>
-                <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border rounded-lg">
+            <div className='flex gap-2 no-print'>
+                <button onClick={onDownload} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border rounded-lg">
                     <Download size={16} />
                     Download PDF
                 </button>
@@ -216,7 +216,7 @@ const StatusChart: React.FC<{ data: StatusChartDatum[] }> = ({ data }) => {
     );
 };
 
-const GeneratedReport = ({ close }: { close: () => void }) => {
+const GeneratedReport = ({ close, selectedUnitIds }: { close: () => void; selectedUnitIds: string[] }) => {
     const [loading, setLoading] = useState(false);
     const [vendorInspections, setVendorInspections] = useState<VendorInspectionChartDatum[]>([]);
     const [issuesByVendor, setIssuesByVendor] = useState<VendorData[]>([]);
@@ -231,7 +231,7 @@ const GeneratedReport = ({ close }: { close: () => void }) => {
                 const res = await apiRequest('/api/reports/generateReport', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({ unitIds: selectedUnitIds })
                 });
 
                 const json = (await res.json()) as GenerateReportResponse;
@@ -320,10 +320,15 @@ const GeneratedReport = ({ close }: { close: () => void }) => {
         fetchReport();
     }, []);
 
+    const handleDownloadPDF = () => {
+        window.print();
+    };
+
     return (
         <div className='p-6'>
-            <div className="p-4 bg-gray-100 mt-4">
-                <ReportHeader close={close} />
+            <style>{`@media print { body * { visibility: hidden; } .printable, .printable * { visibility: visible; } .printable { position: absolute; left: 0; top: 0; width: 100%; } .no-print { display: none !important; } }`}</style>
+            <div className="p-4 bg-gray-100 mt-4 printable">
+                <ReportHeader close={close} onDownload={handleDownloadPDF} />
 
                 <div className="mt-4 p-4">
                     {loading && (
@@ -338,7 +343,7 @@ const GeneratedReport = ({ close }: { close: () => void }) => {
                         <IssuesChart issuesByVendor={issuesByVendor} />
                     </ChartSection>
 
-                    <VendorDetails vendors={vendorIssueDetails} />
+                    {/* <VendorDetails vendors={vendorIssueDetails} /> */}
 
                     <ChartSection title="Report 1C: Current Inspection Status Breakdown by Vendor">
                         <StatusChart data={currentStatus} />

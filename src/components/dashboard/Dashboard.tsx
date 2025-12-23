@@ -140,6 +140,25 @@ function Dashboard() {
         Cookies.set('selectedVendorId', nextSelected?._id || '');
     }, [vendors])
 
+    useEffect(() => {
+        const handleDept = () => {
+            const departmentId = Cookies.get('selectedDepartmentId') || '';
+            const dep = departments.find(d => String(d._id) === String(departmentId)) || null;
+            setSelectedDepartment(dep);
+        };
+        const handleVendor = () => {
+            const vendorId = Cookies.get('selectedVendorId') || '';
+            const v = vendors.find(v => String(v._id) === String(vendorId)) || null;
+            setSelectedVendor(v);
+        };
+        window.addEventListener('selectedDepartmentChanged', handleDept as EventListener);
+        window.addEventListener('selectedVendorChanged', handleVendor as EventListener);
+        return () => {
+            window.removeEventListener('selectedDepartmentChanged', handleDept as EventListener);
+            window.removeEventListener('selectedVendorChanged', handleVendor as EventListener);
+        };
+    }, [departments, vendors])
+
     const getRecent = async () => {
         const vendorId = Cookies.get('selectedVendorId') || ''
         const departmentId = Cookies.get('selectedDepartmentId') || ''
@@ -205,8 +224,8 @@ function Dashboard() {
         <Suspense fallback={<div>Loading...</div>}>
             <h1 className='font-bold text-2xl px-2 py-3'>Dashboard</h1>
             <div className='w-full bg-white space-y-4 p-4 shadow-2xl rounded-2xl'>
-                <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)} vendors={vendors} setSelectedVendor={setSelectedVendor} selectedVendor={vendors.find(v => v.name === selectedVendor?.name)}
-                />
+                {/* <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)} vendors={vendors} setSelectedVendor={setSelectedVendor} selectedVendor={vendors.find(v => v.name === selectedVendor?.name)}
+                /> */}
                 <StatsGrid data={dashboardData?.stats || null} loading={loading} />
                 <div className="grid grid-cols-12 gap-4 items-stretch">
                     <div className="xl:col-span-8 col-span-12 h-full">

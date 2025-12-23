@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
         /* -------------------- BODY -------------------- */
         const body = await req.json();
-        const { departmentId }: { departmentId?: string } = body;
+        const { departmentId, unitIds }: { departmentId?: string; unitIds?: string[] } = body;
 
         /* -------------------- DB -------------------- */
         await connectDB();
@@ -54,6 +54,9 @@ export async function POST(req: NextRequest) {
                 );
             }
             query.departmentId = new Types.ObjectId(departmentId);
+        }
+        if (Array.isArray(unitIds) && unitIds.length > 0) {
+            query.unitId = { $in: unitIds };
         }
 
         /* ======================================================
