@@ -397,6 +397,10 @@
 .apexcharts-legend-text {
   @apply pl-5! !text-gray-700 ;
 }
+
+.swal2-container {
+  z-index: 100000 !important;
+}
 .apexcharts-tooltip-series-group {
   @apply !p-0;
 }

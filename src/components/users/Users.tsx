@@ -187,9 +187,34 @@ const Users: React.FC = () => {
 
 
     useEffect(() => {
-        setVendorId(Cookies.get('selectedVendorId') || '');
-        console.log('vendorId', vendorId)
-    }, []);
+        const read = () => {
+            const v = Cookies.get('selectedVendorId') || '';
+            setVendorId(v);
+        };
+        read();
+        const onVendor = () => {
+            const v = Cookies.get('selectedVendorId') || '';
+            setVendorId(v);
+            getUsers();
+            getInvites();
+            if (activeTab === 'admins' && user?.role === 'admin') {
+                getAdmins();
+            }
+        };
+        const onDept = () => {
+            getUsers();
+            getInvites();
+            if (activeTab === 'admins' && user?.role === 'admin') {
+                getAdmins();
+            }
+        };
+        window.addEventListener('selectedVendorChanged', onVendor as EventListener);
+        window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
+        return () => {
+            window.removeEventListener('selectedVendorChanged', onVendor as EventListener);
+            window.removeEventListener('selectedDepartmentChanged', onDept as EventListener);
+        };
+    }, [activeTab, user]);
 
     const getInvites = async () => {
         if (isResettingInvitationPage.current) {

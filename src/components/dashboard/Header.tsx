@@ -26,10 +26,10 @@ function Header({
   const { user } = useContext(UserContext);
 
   return (
-    <div className="w-full flex flex-col md:flex-row flex-wrap md:items-center gap-6 bg-purple-50/60 px-6 py-3 border-b border-purple-100">
+    <div className="w-full flex flex-col md:flex-row flex-wrap md:items-center gap-6 bg-gradient-to-br from-purple-700 to-purple-800 px-6 py-3 border-b border-purple-100">
       {/* Department Section */}
       <div className="flex xl:flex-row flex-col xl:items-center gap-3">
-        <span className="text-sm font-semibold text-purple-900 tracking-wide">
+        <span className="text-sm font-semibold text-white tracking-wide">
           DEPARTMENT
         </span>
         <div className="relative">
@@ -44,7 +44,7 @@ function Header({
             <ChevronDown className="w-4 h-4 text-gray-500" />
           </button>
           {departmentOpen && (
-            <div className="absolute top-full mt-1 min-w-[220px] bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute top-full mt-1 min-w-[220px] bg-white  border border-gray-200 rounded-lg shadow-lg z-10">
               <div className="py-1">
                 {departments.map((dept) => (
                   <button
@@ -74,7 +74,7 @@ function Header({
 
       {/* Vendor Section */}
       <div className="flex xl:flex-row flex-col xl:items-center gap-3">
-        <span className="text-sm font-semibold text-purple-900 tracking-wide">
+        <span className="text-sm font-semibold text-white tracking-wide">
           VENDOR
         </span>
         <div className="relative">
@@ -104,6 +104,7 @@ function Header({
                       console.log('Vendor ID:', vendor._id);
                       Cookies.set('selectedVendor', vendor.name || '');
                       Cookies.set('selectedVendorId', vendor._id || '');
+                      window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: vendor.name }));
                     }}
                     className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
                   >

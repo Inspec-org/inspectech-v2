@@ -4,7 +4,7 @@ import { Check, ChevronDown } from 'lucide-react';
 
 interface DropdownOption {
     value: string;
-    label: string;
+    label: string | React.ReactNode; // Change this
     disabled?: boolean
 }
 
@@ -55,15 +55,13 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
                 disabled={disabled}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 style={width ? { width } : undefined}
-                className={`px-3 py-2 text-left border rounded-lg flex items-center justify-between ${
-                    width ? width : 'w-full'
-                } ${
-                    disabled
+                className={`px-3 py-2 text-left border rounded-lg flex items-center justify-between ${width ? width : 'w-full'
+                    } ${disabled
                         ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-not-allowed'
                         : 'bg-[#FAF7FF] border-gray-300 text-gray-700 hover:border-gray-400'
-                }`}
+                    }`}
             >
-                <span className={`flex gap-2 items-center ${selectedOption} ? 'text-gray-700' : 'text-gray-500'`}>
+                <span className={`flex gap-2 items-center ${selectedOption ? 'text-gray-700' : 'text-gray-500'}`}>
                     {icon}
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
@@ -75,9 +73,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
             {isOpen && !disabled && (
                 <div
-                    className={`absolute z-50 mt-1 bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto ${
-                        width ? width : 'w-full'
-                    }`}
+                    className={`absolute z-50 mt-1 bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto ${width ? width : 'w-full'
+                        }`}
                     style={width ? { width } : undefined}
                 >
                     {options.map((option) => (

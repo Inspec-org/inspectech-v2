@@ -26,44 +26,37 @@ export async function POST(req: NextRequest) {
         const department = body.department ?? undefined;
         const vendorId = body.vendorId ?? undefined;
         const filters = body.filters ?? {};
-
-        console.log("🟨 RAW REQUEST BODY");
-        console.log(JSON.stringify(body, null, 2));
-
         const query: any = {};
 
         // --------------------------------------------------
         // BASE FILTERS
         // --------------------------------------------------
         if (department) query.departmentId = department;
-        // if (vendorId) query.vendorId = vendorId;
+        if (vendorId) query.vendorId = vendorId;
 
         // --------------------------------------------------
         // UNIT ID (Review)
         // --------------------------------------------------
         if (filters.unitId?.length > 0) {
-            console.log("🟦 UNIT ID FILTER:", filters.unitId);
             query.unitId = { $in: filters.unitId };
         }
 
         // --------------------------------------------------
         // VENDOR FILTER (BY NAME → ID)
         // --------------------------------------------------
-        if (filters.vendor?.length > 0) {
-            console.log("🟪 VENDOR FILTER:", filters.vendor);
+        // if (filters.vendor?.length > 0) {
 
-            const vendorDocs = await Vendor.find({
-                name: { $in: filters.vendor }
-            }).select("_id").lean();
+        //     const vendorDocs = await Vendor.find({
+        //         name: { $in: filters.vendor }
+        //     }).select("_id").lean();
 
-            query.vendorId = { $in: vendorDocs.map(v => v._id) };
-        }
+        //     query.vendorId = { $in: vendorDocs.map(v => v._id) };
+        // }
 
         // --------------------------------------------------
         // DEPARTMENT FILTER (BY NAME → ID)
         // --------------------------------------------------
         if (filters.department?.length > 0) {
-            console.log("🟪 DEPARTMENT FILTER:", filters.department);
 
             const deptDocs = await Department.find({
                 name: { $in: filters.department }
@@ -117,7 +110,6 @@ export async function POST(req: NextRequest) {
         // FETCH INSPECTIONS IF NEEDED
         // --------------------------------------------------
         if (Object.keys(inspectionMatch).length > 0) {
-            console.log("🟥 INSPECTION QUERY:", inspectionMatch);
 
             const { default: Inspection } = await import("@/lib/models/Inspections");
 
@@ -126,8 +118,6 @@ export async function POST(req: NextRequest) {
                 .lean();
 
             const inspectionIds = inspections.map(i => i._id);
-
-            console.log("🟥 MATCHING INSPECTIONS:", inspectionIds.length);
 
             if (inspectionIds.length === 0) {
                 return NextResponse.json({
@@ -167,9 +157,6 @@ export async function POST(req: NextRequest) {
                 $in: filters.review_completed.map((d: string) => new Date(d))
             };
         }
-
-        console.log("🟩 FINAL REVIEW QUERY");
-        console.log(JSON.stringify(query, null, 2));
 
         // --------------------------------------------------
         // QUERY REVIEWS

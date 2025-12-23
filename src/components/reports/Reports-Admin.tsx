@@ -50,12 +50,12 @@ const Reports: React.FC = () => {
                 <h1 className="font-bold text-2xl px-2 py-3">Reports</h1>
                 {/* Tabs */}
                 {user && user.role === 'admin' && (
-                    <div className="inline-block bg-purple-100 p-2 rounded-lg mb-4">
+                    <div className="flex w-full justify-between bg-purple-100 p-2 rounded-lg mb-4">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-6 py-2 rounded-lg text-sm font-medium transition ${activeTab === tab.id
+                                className={`px-6 py-2 w-full rounded-lg text-md font-medium transition ${activeTab === tab.id
                                     ? 'bg-purple-600 text-white'
                                     : 'text-gray-700'
                                     }`}

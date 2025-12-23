@@ -2,6 +2,7 @@
 
 import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
+import DashboardAppHeader from "@/layout/DashboardAppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import { usePathname } from "next/navigation";
@@ -28,7 +29,7 @@ export default function AdminLayout({
   const mainContentMargin = isMobileOpen
     ? "ml-0"
     : isExpanded || isHovered
-      ? "lg:ml-[290px]"
+      ? "lg:ml-[280px]"
       : "lg:ml-[90px]";
 
   return (
@@ -43,7 +44,7 @@ export default function AdminLayout({
           }`}
       >
         {/* Header */}
-        {isDepartmentsPage && <AppHeader />}
+        {isDepartmentsPage ? <AppHeader /> : <DashboardAppHeader />}
 
         {!isDepartmentsPage && (
           <div className="fixed top-4 right-4 z-50 lg:hidden">
@@ -62,7 +63,7 @@ export default function AdminLayout({
         )}
 
         {/* Page Content */}
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 h-full">
+        <div className="px-4 mx-auto max-w-7xl md:px-6 h-full">
           {children}
         </div>
       </div>
