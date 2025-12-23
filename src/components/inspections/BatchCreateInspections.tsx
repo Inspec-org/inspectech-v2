@@ -276,6 +276,24 @@ export default function BatchCreateInspections() {
             const unitIdIndex = headers.findIndex(h => unitIdHeaderCandidates.includes(h.trim().toLowerCase()));
             const equipIdIndex = headers.findIndex(h => equipIdHeaderCandidates.includes(h.trim().toLowerCase()));
             const seenUnitIds = new Map<string, number>();
+            const normalizeHeader = (h: string) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const vinHeaderCandidates = ['vin', 'vehicle identification number', 'vehicleidentificationnumber'];
+            const vinIndex = headers.findIndex(h => {
+                const n = normalizeHeader(h);
+                return vinHeaderCandidates.some(c => {
+                    const cNorm = normalizeHeader(c);
+                    return n === cNorm || n.includes(cNorm) || cNorm.includes(n);
+                });
+            });
+            const dateHeaderCandidates = ['date', 'inspection date', 'inspectiondate'];
+            const dateIndex = headers.findIndex(h => {
+                const n = normalizeHeader(h);
+                return dateHeaderCandidates.some(c => {
+                    const cNorm = normalizeHeader(c);
+                    return n === cNorm || n.includes(cNorm) || cNorm.includes(n);
+                });
+            });
+            const seenVINs = new Map<string, number>();
 
             for (let i = dataStartIndex; i < rows.length; i++) {
                 const currentRow = rows[i];
@@ -323,6 +341,37 @@ export default function BatchCreateInspections() {
                 } else {
                     errors.push({ row: i + 1, field: 'Unit ID', value: '', message: 'Missing Unit ID or Equipment ID/Trailer Number' });
                 }
+                if (vinIndex >= 0) {
+                    const vinVal = norm(String(currentRow[vinIndex] ?? ''));
+                    if (vinVal) {
+                        const keyVin = normId(vinVal);
+                        if (seenVINs.has(keyVin)) {
+                            const firstRow = seenVINs.get(keyVin) || 0;
+                            errors.push({ row: i + 1, field: 'VIN', value: vinVal, message: `Duplicate VIN, first seen at row ${firstRow}` });
+                        } else {
+                            seenVINs.set(keyVin, i + 1);
+                        }
+                    }
+                }
+                if (dateIndex >= 0) {
+                    const t = String(currentRow[dateIndex] ?? '').trim();
+                    if (t) {
+                        let d: Date | null = null;
+                        const m = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/.exec(t);
+                        if (m) {
+                            const year = m[3].length === 2 ? Number(`20${m[3]}`) : Number(m[3]);
+                            const month = Number(m[1]) - 1;
+                            const day = Number(m[2]);
+                            d = new Date(year, month, day);
+                        } else {
+                            const nd = new Date(t);
+                            d = isNaN(nd.getTime()) ? null : nd;
+                        }
+                        if (d && d.getTime() > Date.now()) {
+                            errors.push({ row: i + 1, field: headers[dateIndex], value: t, message: 'Date cannot be from the future' });
+                        }
+                    }
+                }
                 rowData['Unit ID'] = effectiveId;
                 parsedRows.push(rowData);
             }
@@ -352,7 +401,28 @@ export default function BatchCreateInspections() {
                     });
                 }
             } catch (e) { }
-
+            try {
+                const resVin = await apiRequest('/api/inspections/get-inspections', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, limit: 10000, department: department, vendorId }),
+                });
+                const jsonVin = await resVin.json();
+                if (resVin.ok && jsonVin.success && Array.isArray(jsonVin.inspections)) {
+                    const existingVINs = new Set(
+                        jsonVin.inspections
+                            .map((doc: any) => String(doc.vin || '').trim().toLowerCase())
+                            .filter((v: string) => v)
+                    );
+                    parsedRows.forEach((row, i) => {
+                        const vinVal = vinIndex >= 0 ? String(row[headers[vinIndex]] || '').trim().toLowerCase() : '';
+                        if (vinVal && existingVINs.has(vinVal)) {
+                            errors.push({ row: i + 1, field: 'VIN', value: String(row[headers[vinIndex]] || ''), message: 'VIN already exists' });
+                        }
+                    });
+                }
+            } catch (e) { }
+            
             if (errors.length > 0) {
                 setValidationErrors(errors);
                 setPreviewData(null);
