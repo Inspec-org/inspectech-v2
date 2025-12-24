@@ -112,20 +112,73 @@ const BatchEditReviewModal: React.FC<Props> = ({
         </div>
 
         {/* Form Content */}
-        <div className="p-4">
+        <div className="p-4 space-y-4">
           {/* Completion Date */}
           <div>
             <label className="block text-base font-medium text-gray-900 mb-3">
               Completion Date
             </label>
-            <div className="relative">
-              <input
-                type="date"
-                value={formData.reviewCompletedAt || ''}
-                onChange={(e) => onChange('reviewCompletedAt', e.target.value)}
-                className="w-full px-4 py-3 border-2 border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-base"
-              />
-              <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500 pointer-events-none" />
+            <div>
+              {(() => {
+                const t = new Date();
+                const CY = t.getFullYear();
+                const CM = t.getMonth() + 1;
+                const CD = t.getDate();
+                const cur = formData.reviewCompletedAt || '';
+                const [yy, mm, dd] = cur ? cur.split('-').map((n: any) => parseInt(n)) : [CY, CM, CD];
+                return (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={mm}
+                      onChange={(e) => {
+                        const raw = Number(e.target.value);
+                        const m = Math.min(12, Math.max(1, raw));
+                        const cm = yy === CY ? Math.min(m, CM) : m;
+                        const maxDay = yy === CY && cm === CM ? CD : new Date(yy, cm, 0).getDate();
+                        const nd = Math.min(dd, maxDay);
+                        const s = `${String(yy)}-${String(cm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+                        onChange('reviewCompletedAt', s);
+                      }}
+                      className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
+                    />
+                    <span className="text-gray-400">/</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={dd}
+                      onChange={(e) => {
+                        const raw = Number(e.target.value);
+                        const maxDay = yy === CY && mm === CM ? CD : new Date(yy, mm, 0).getDate();
+                        const d = Math.min(maxDay, Math.max(1, raw));
+                        const s = `${String(yy)}-${String(mm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        onChange('reviewCompletedAt', s);
+                      }}
+                      className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
+                    />
+                    <span className="text-gray-400">/</span>
+                    <input
+                      type="number"
+                      min={2000}
+                      max={CY}
+                      value={yy}
+                      onChange={(e) => {
+                        const raw = Number(e.target.value);
+                        const y = Math.min(CY, Math.max(2000, raw));
+                        const cm = y === CY ? Math.min(mm, CM) : mm;
+                        const maxDay = y === CY && cm === CM ? CD : new Date(y, cm, 0).getDate();
+                        const nd = Math.min(dd, maxDay);
+                        const s = `${String(y)}-${String(cm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+                        onChange('reviewCompletedAt', s);
+                      }}
+                      className="w-20 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-700 text-center"
+                    />
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

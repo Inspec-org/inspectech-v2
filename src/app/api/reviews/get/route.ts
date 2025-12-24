@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
         const department = body.department ?? undefined;
         const vendorId = body.vendorId ?? undefined;
         const filters = body.filters ?? {};
+        const optionsOnly = Boolean(body.optionsOnly);
         const query: any = {};
 
         // --------------------------------------------------
@@ -33,6 +34,52 @@ export async function POST(req: NextRequest) {
         // --------------------------------------------------
         if (department) query.departmentId = department;
         if (vendorId) query.vendorId = vendorId;
+
+        if (optionsOnly) {
+            const base = { ...query };
+
+            const unitIds = await Review.distinct("unitId", base);
+            const missingDataRaw = await Review.distinct("missingData", base);
+            const emailRaw = await Review.distinct("emailNotification", base);
+
+            const reqDocs = await Review.find(base).select("reviewRequestedAt").lean();
+            const compDocs = await Review.find(base).select("reviewCompletedAt").lean();
+            const reviewRequested = Array.from(new Set(reqDocs.filter(d => d.reviewRequestedAt).map(d => new Date(d.reviewRequestedAt as any).toISOString().slice(0, 10))));
+            const reviewCompleted = Array.from(new Set(compDocs.filter(d => d.reviewCompletedAt).map(d => new Date(d.reviewCompletedAt as any).toISOString().slice(0, 10))));
+
+            const { default: Inspection } = await import("@/lib/models/Inspections");
+            const insps = await Inspection.find(base)
+                .select("inspectionStatus dateDay dateMonth dateYear")
+                .lean();
+            const inspectionStatus = Array.from(new Set(
+                insps.map((i: any) => String(i.inspectionStatus || "")).filter(Boolean)
+            ));
+            const dateCreated = Array.from(new Set(
+                insps.map((i: any) => {
+                    if (!i.dateYear || !i.dateMonth || !i.dateDay) return null;
+                    const y = String(i.dateYear);
+                    const m = String(i.dateMonth).padStart(2, "0");
+                    const d = String(i.dateDay).padStart(2, "0");
+                    return `${y}-${m}-${d}`;
+                }).filter(Boolean)
+            ));
+
+            const toLabel = (s: string) => (s === "none" ? "None" : s === "incomplete image file" ? "Incomplete Image File" : s === "incomplete checklist" ? "Incomplete Checklist" : s === "incomplete dot form" ? "Incomplete DOT Form" : s);
+
+            const options = {
+                unitId: unitIds.map((v: any) => String(v)),
+                inspectionStatus,
+                vendor: [],
+                department: [],
+                dateCreated,
+                reviewRequested,
+                missingData: missingDataRaw.filter(Boolean).map((v: any) => toLabel(String(v))),
+                reviewCompleted,
+                emailNotification: emailRaw.filter(Boolean).map((v: any) => (String(v) === "yes" ? "Yes" : String(v) === "no" ? "No" : String(v) === "manually sent" ? "Manually Sent" : String(v)))
+            };
+
+            return NextResponse.json({ success: true, options });
+        }
 
         // --------------------------------------------------
         // UNIT ID (Review)
