@@ -271,7 +271,7 @@ const AdminNotificationModal: React.FC<Props> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-[600px] p-5">
-            <div className="flex flex-col max-h-[85vh] 2xl:max-h-full ">
+            <div className="flex flex-col max-h-[85vh]">
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 border-b">
                     <h2 className="text-lg font-medium">Send Admin Notification</h2>
