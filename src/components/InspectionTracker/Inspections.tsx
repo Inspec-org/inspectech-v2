@@ -530,14 +530,50 @@ function TrackingInspections() {
             cell: (row) => (
                 <div className="relative">
                     {editingField?.rowId === row.id && editingField?.field === 'reviewRequested' ? (
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={editingValues?.reviewRequested || (row.review_requested === '—' ? '' : row.review_requested) || ''}
-                                onChange={(e) => setEditingValues((p: any) => ({ ...(p || {}), reviewRequested: e.target.value }))}
-                                className="px-2 py-1 border rounded"
-                                onClick={(e) => e.stopPropagation()}
-                            />
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            {(() => {
+                                const today = new Date();
+                                const CY = today.getFullYear();
+                                const CM = today.getMonth() + 1;
+                                const CD = today.getDate();
+                                const cur = editingValues?.reviewRequested ?? (row.review_requested === '—' ? '' : row.review_requested) ?? '';
+                                const [yy, mm, dd] = cur ? cur.split('-').map((n: any) => parseInt(n)) : [CY, CM, CD];
+                                const years = Array.from({ length: CY - 1950 + 1 }, (_, i) => String(CY - i));
+                                const maxMonth = yy === CY ? CM : 12;
+                                const months = Array.from({ length: maxMonth }, (_, i) => String(i + 1).padStart(2, '0'));
+                                const maxDay = yy === CY && mm === CM ? CD : new Date(yy, mm, 0).getDate();
+                                const days = Array.from({ length: maxDay }, (_, i) => String(i + 1).padStart(2, '0'));
+                                const setDate = (y: number, m: number, d: number) => {
+                                    const CLM = y === CY ? CM : 12;
+                                    const nm = Math.min(m, CLM);
+                                    const CLD = y === CY && nm === CM ? CD : new Date(y, nm, 0).getDate();
+                                    const nd = Math.min(d, CLD);
+                                    const str = `${String(y)}-${String(nm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+                                    setEditingValues((p: any) => ({ ...(p || {}), reviewRequested: str }));
+                                };
+                                return (
+                                    <>
+                                        <ReportDropdown
+                                            options={years.map((y) => ({ value: y, label: y }))}
+                                            width="100px"
+                                            value={String(yy)}
+                                            onChange={(val) => setDate(parseInt(val), mm, dd)}
+                                        />
+                                        <ReportDropdown
+                                            options={months.map((m) => ({ value: m, label: m }))}
+                                            width="90px"
+                                            value={String(mm).padStart(2, '0')}
+                                            onChange={(val) => setDate(yy, parseInt(val), dd)}
+                                        />
+                                        <ReportDropdown
+                                            options={days.map((d) => ({ value: d, label: d }))}
+                                            width="90px"
+                                            value={String(dd).padStart(2, '0')}
+                                            onChange={(val) => setDate(yy, mm, parseInt(val))}
+                                        />
+                                    </>
+                                );
+                            })()}
                             <button onClick={(e) => { e.stopPropagation(); saveEditing(); }} className="p-1"><Check className="w-4 h-4 text-green-600" /></button>
                             <button onClick={(e) => { e.stopPropagation(); cancelEditing(); }} className="p-1"><X className="w-4 h-4 text-red-500" /></button>
                         </div>
@@ -575,14 +611,50 @@ function TrackingInspections() {
             cell: (row) => (
                 <div className="relative">
                     {editingField?.rowId === row.id && editingField?.field === 'reviewCompleted' ? (
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={editingValues?.reviewCompleted || (row.review_completed === 'Pending' ? '' : row.review_completed) || ''}
-                                onChange={(e) => setEditingValues((p: any) => ({ ...(p || {}), reviewCompleted: e.target.value }))}
-                                className="px-2 py-1 border rounded"
-                                onClick={(e) => e.stopPropagation()}
-                            />
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            {(() => {
+                                const today = new Date();
+                                const CY = today.getFullYear();
+                                const CM = today.getMonth() + 1;
+                                const CD = today.getDate();
+                                const cur = editingValues?.reviewCompleted ?? (row.review_completed === 'Pending' ? '' : row.review_completed) ?? '';
+                                const [yy, mm, dd] = cur ? cur.split('-').map((n: any) => parseInt(n)) : [CY, CM, CD];
+                                const years = Array.from({ length: CY - 1950 + 1 }, (_, i) => String(CY - i));
+                                const maxMonth = yy === CY ? CM : 12;
+                                const months = Array.from({ length: maxMonth }, (_, i) => String(i + 1).padStart(2, '0'));
+                                const maxDay = yy === CY && mm === CM ? CD : new Date(yy, mm, 0).getDate();
+                                const days = Array.from({ length: maxDay }, (_, i) => String(i + 1).padStart(2, '0'));
+                                const setDate = (y: number, m: number, d: number) => {
+                                    const CLM = y === CY ? CM : 12;
+                                    const nm = Math.min(m, CLM);
+                                    const CLD = y === CY && nm === CM ? CD : new Date(y, nm, 0).getDate();
+                                    const nd = Math.min(d, CLD);
+                                    const str = `${String(y)}-${String(nm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+                                    setEditingValues((p: any) => ({ ...(p || {}), reviewCompleted: str }));
+                                };
+                                return (
+                                    <>
+                                        <ReportDropdown
+                                            options={years.map((y) => ({ value: y, label: y }))}
+                                            width="100px"
+                                            value={String(yy)}
+                                            onChange={(val) => setDate(parseInt(val), mm, dd)}
+                                        />
+                                        <ReportDropdown
+                                            options={months.map((m) => ({ value: m, label: m }))}
+                                            width="90px"
+                                            value={String(mm).padStart(2, '0')}
+                                            onChange={(val) => setDate(yy, parseInt(val), dd)}
+                                        />
+                                        <ReportDropdown
+                                            options={days.map((d) => ({ value: d, label: d }))}
+                                            width="90px"
+                                            value={String(dd).padStart(2, '0')}
+                                            onChange={(val) => setDate(yy, mm, parseInt(val))}
+                                        />
+                                    </>
+                                );
+                            })()}
                             <button onClick={(e) => { e.stopPropagation(); saveEditing(); }} className="p-1"><Check className="w-4 h-4 text-green-600" /></button>
                             <button onClick={(e) => { e.stopPropagation(); cancelEditing(); }} className="p-1"><X className="w-4 h-4 text-red-500" /></button>
                         </div>
@@ -616,7 +688,7 @@ function TrackingInspections() {
     const filterCount = Object.values(selectedFilters).reduce((acc, arr) => acc + arr.length, 0);
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <div className='bg-white pb-5 max-w-[1080px] mx-auto'>
+            <div className='bg-white pb-5'>
                 <Header
                     title="Inspection Log & Vendor Performance Tracker"
                     description="Track inspection requests, turnaround times, and vendor performance"

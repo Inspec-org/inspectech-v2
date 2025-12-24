@@ -55,6 +55,7 @@ const AdminNotificationModal: React.FC<Props> = ({
     const [availableVendors, setAvailableVendors] = useState<any[]>([]);
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['NEED REVIEW', 'COMPLETE', 'FAIL', 'INCOMPLETE', 'OUT OF CYCLE (DELIVERED)']);
+    const [isSavingConfig, setIsSavingConfig] = useState(false);
 
 
 
@@ -194,6 +195,7 @@ const AdminNotificationModal: React.FC<Props> = ({
     }, [selectedConfig, configurations]);
 
     const handleSaveConfig = async () => {
+        setIsSavingConfig(true);
         try {
             const payload: any = {
                 configId: selectedConfig || undefined,
@@ -230,6 +232,8 @@ const AdminNotificationModal: React.FC<Props> = ({
             // onClose();
         } catch (e: any) {
             toast.error(e?.message || 'Error saving configuration');
+        } finally {
+            setIsSavingConfig(false);
         }
     };
 
@@ -464,7 +468,7 @@ const AdminNotificationModal: React.FC<Props> = ({
                                 disabled={sending}
                                 className={`px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium ${sending ? 'opacity-60 cursor-not-allowed' : ''}`}
                             >
-                                {sending ? 'Sending...' : `Sent(${selectedUnits.length})`}
+                                {sending ? 'Sending...' : `Send (${selectedUnits.length})`}
                             </button>
                         </div>
                     </>
@@ -597,120 +601,6 @@ const AdminNotificationModal: React.FC<Props> = ({
                             </div>
 
                             {/* Enable Automatic Notifications */}
-                            {/* <div className="mb-4 p-4 border rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                                <div>
-                                    <h4 className="text-sm font-medium text-gray-900">Enable Automatic Notifications</h4>
-                                    <p className="text-xs text-gray-500">Automatically send email notification based on schedule and flows</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAutoEnabled}
-                                        onChange={(e) => setIsAutoEnabled(e.target.checked)}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                                </label>
-                            </div>
-                        </div> */}
-
-                            {/* Frequency */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Frequency
-                                </label>
-                                <CustomDropdown
-                                    options={[
-                                        { value: "Daily", label: "Daily" },
-                                        { value: "Weekly", label: "Weekly" },
-                                        { value: "Monthly", label: "Monthly" },
-
-                                    ]}
-                                    width={"w-full"}
-                                    value={frequency}
-                                    onChange={(e) => setFrequency(e)}
-                                />
-                                <p className="text-xs text-gray-400 mt-1">How many times per day:</p>
-                                <CustomDropdown
-                                    options={[
-                                        { value: "Once per day", label: "Once per day" },
-                                        { value: "Twice per day", label: "Twice per day" },
-
-                                    ]}
-                                    width={"w-full"}
-                                    value={timesPerDay}
-                                    onChange={(e) => setTimesPerDay(e)}
-                                />
-
-                            </div>
-
-                            {/* First Send Time */}
-                            {/* <div className="mb-4">
-                                <label className="block text-xs text-gray-500 mb-2">
-                                    {timesPerDay === 'Once per day' ? 'Send at (PDT):' : 'First send at (PDT):'}
-                                </label>
-                                <div className="relative w-full">
-                                    <button
-                                        type="button"
-                                        onClick={() => { setTimePickerTarget('first'); setTimeHour(firstSendHour); setTimeMinute(firstSendMinute); setTimePeriod(firstSendPeriod as 'AM' | 'PM'); setIsTimeOpen(true); }}
-                                        className="px-3 py-2 text-left border rounded-lg bg-[#FAF7FF] border-gray-300 text-gray-700 hover:border-gray-400 w-full"
-                                    >
-                                        {`${firstSendHour}:${firstSendMinute} ${firstSendPeriod}`}
-                                    </button>
-                                    {isTimeOpen && timePickerTarget === 'first' && (
-                                        <div className="absolute z-10 mt-2 w-full bg-[#FAF7FF] border border-gray-200 rounded-xl shadow-lg p-4">
-                                            <div className="grid grid-cols-3 gap-2">
-                                                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
-                                                    {hours.map((h) => (
-                                                        <button
-                                                            type="button"
-                                                            key={h}
-                                                            onClick={() => setTimeHour(h)}
-                                                            className={timeHour === h ? "w-full text-left px-3 py-2 bg-[#F0F7FF] text-[#3EA4F6] text-sm" : "w-full text-left px-3 py-2 text-sm"}
-                                                        >
-                                                            {h}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
-                                                    {minutes.map((m) => (
-                                                        <button
-                                                            type="button"
-                                                            key={m}
-                                                            onClick={() => setTimeMinute(m)}
-                                                            className={timeMinute === m ? "w-full text-left px-3 py-2 bg-[#F0F7FF] text-[#3EA4F6] text-sm" : "w-full text-left px-3 py-2 text-sm"}
-                                                        >
-                                                            {m}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
-                                                    {["AM", "PM"].map((p) => (
-                                                        <button
-                                                            type="button"
-                                                            key={p}
-                                                            onClick={() => setTimePeriod(p as "AM" | "PM")}
-                                                            className={timePeriod === p ? "w-full text-left px-3 py-2 bg-[#F0F7FF] text-[#3EA4F6] text-sm" : "w-full text-left px-3 py-2 text-sm"}
-                                                        >
-                                                            {p}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="mt-3 flex justify-end">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => { setFirstSendHour(timeHour); setFirstSendMinute(timeMinute); setFirstSendPeriod(timePeriod); setIsTimeOpen(false); setTimePickerTarget(null); }}
-                                                    className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-                                                >
-                                                    Set
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div> */}
                             <TimePickerDropdown
                                 isOpen={isFirstTimeOpen}
                                 onClose={() => setIsFirstTimeOpen(false)}
@@ -726,71 +616,6 @@ const AdminNotificationModal: React.FC<Props> = ({
                                 label={timesPerDay === 'Once per day' ? 'Send at (PDT):' : 'First send at (PDT):'}
                             />
                             {/* Second Send Time */}
-                            {/* <div className={`mb-4 ${timesPerDay === 'Twice per day' ? '' : 'hidden'}`}>
-                                <label className="block text-xs text-gray-500 mb-2">
-                                    Second send at (PDT):
-                                </label>
-                                <div className="relative w-full">
-                                    <button
-                                        type="button"
-                                        onClick={() => { setTimePickerTarget('second'); setTimeHour(secondSendHour); setTimeMinute(secondSendMinute); setTimePeriod(secondSendPeriod as 'AM' | 'PM'); setIsTimeOpen(true); }}
-                                        className="px-3 py-2 text-left border rounded-lg bg-[#FAF7FF] border-gray-300 text-gray-700 hover:border-gray-400 w-full"
-                                    >
-                                        {`${secondSendHour}:${secondSendMinute} ${secondSendPeriod}`}
-                                    </button>
-                                    {isTimeOpen && timePickerTarget === 'second' && (
-                                        <div className="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg p-4">
-                                            <div className="grid grid-cols-3 gap-2">
-                                                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
-                                                    {hours.map((h) => (
-                                                        <button
-                                                            type="button"
-                                                            key={h}
-                                                            onClick={() => setTimeHour(h)}
-                                                            className={timeHour === h ? "w-full text-left px-3 py-2 bg-[#F0F7FF] text-[#3EA4F6] text-sm" : "w-full text-left px-3 py-2 text-sm"}
-                                                        >
-                                                            {h}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
-                                                    {minutes.map((m) => (
-                                                        <button
-                                                            type="button"
-                                                            key={m}
-                                                            onClick={() => setTimeMinute(m)}
-                                                            className={timeMinute === m ? "w-full text-left px-3 py-2 bg-[#F0F7FF] text-[#3EA4F6] text-sm" : "w-full text-left px-3 py-2 text-sm"}
-                                                        >
-                                                            {m}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
-                                                    {["AM", "PM"].map((p) => (
-                                                        <button
-                                                            type="button"
-                                                            key={p}
-                                                            onClick={() => setTimePeriod(p as "AM" | "PM")}
-                                                            className={timePeriod === p ? "w-full text-left px-3 py-2 bg-[#F0F7FF] text-[#3EA4F6] text-sm" : "w-full text-left px-3 py-2 text-sm"}
-                                                        >
-                                                            {p}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="mt-3 flex justify-end">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => { setSecondSendHour(timeHour); setSecondSendMinute(timeMinute); setSecondSendPeriod(timePeriod); setIsTimeOpen(false); setTimePickerTarget(null); }}
-                                                    className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-                                                >
-                                                    Set
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div> */}
                             <div className={timesPerDay === 'Twice per day' ? '' : 'hidden'}>
                                 <TimePickerDropdown
                                     isOpen={isSecondTimeOpen}
@@ -873,8 +698,11 @@ const AdminNotificationModal: React.FC<Props> = ({
 
                             {/* Update Configuration Button */}
                             <div className="flex justify-end pb-4">
-                                <button onClick={handleSaveConfig} className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
-                                    {selectedConfig ? 'Update Configuration' : 'Save Configuration'}
+                                <button onClick={handleSaveConfig} disabled={isSavingConfig} className={`px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium ${isSavingConfig ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                    {isSavingConfig
+                                        ? (selectedConfig ? 'Updating...' : 'Saving...')
+                                        : (selectedConfig ? 'Update Configuration' : 'Save Configuration')
+                                    }
                                 </button>
                             </div>
                         </div>

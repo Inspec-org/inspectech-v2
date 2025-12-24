@@ -63,7 +63,7 @@ export default function AdminLayout({
         )}
 
         {/* Page Content */}
-        <div className="px-4 mx-auto max-w-7xl md:px-6 h-full">
+        <div className="px-4 mx-auto max-w-6xl md:px-6">
           {children}
         </div>
       </div>

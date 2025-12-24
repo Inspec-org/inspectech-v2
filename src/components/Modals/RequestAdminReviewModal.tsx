@@ -158,29 +158,41 @@ const RequestAdminReviewModal: React.FC<Props> = ({
 
 
                 {/* Inspections List */}
-                <div className="border border-gray-200 rounded-lg mb-4">
-                    {inspections.map((inspection, index) => (
-                        <div
-                            key={`${inspection.unitId}-${index}`}
-                            className={`flex items-center justify-between px-4 py-4 ${index !== inspections.length - 1 ? 'border-b border-gray-200' : ''
-                                } hover:bg-gray-50 transition-colors`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedInspections.includes(inspection.unitId)}
-                                    onChange={() => toggleInspection(inspection.unitId)}
-                                    className="circle-checkbox"
-                                />
-                                <span className="text-sm font-medium">{inspection.unitId}</span>
-                            </div>
-                            <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                                {(inspection.inspectionStatus || 'complete').toUpperCase()}
-                            </span>
-                            <div></div>
-                        </div>
-                    ))}
-                </div>
+               <div className="border border-gray-200 rounded-lg mb-4">
+  {inspections.map((inspection, index) => (
+    <div
+      key={`${inspection.unitId}-${index}`}
+      className={`flex items-center px-4 py-4 ${
+        index !== inspections.length - 1 ? "border-b border-gray-200" : ""
+      } hover:bg-gray-50 transition-colors`}
+    >
+      {/* LEFT */}
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <input
+          type="checkbox"
+          checked={selectedInspections.includes(inspection.unitId)}
+          onChange={() => toggleInspection(inspection.unitId)}
+          className="circle-checkbox"
+        />
+
+        <span className="text-sm font-medium truncate">
+          {inspection.unitId}
+        </span>
+      </div>
+
+      {/* CENTER (LOCKED CENTER) */}
+      <div className="flex justify-center w-32">
+        <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+          {(inspection.inspectionStatus || "complete").toUpperCase()}
+        </span>
+      </div>
+
+      {/* RIGHT (SPACER TO BALANCE CENTER) */}
+      <div className="flex-1" />
+    </div>
+  ))}
+</div>
+
 
                 {/* Pagination */}
                 <div className="flex sm:flex-row flex-col-reverse justify-between items-center mt-4 bg-white p-4 sm:gap-0 gap-2 mb-6">

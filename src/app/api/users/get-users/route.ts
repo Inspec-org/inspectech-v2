@@ -12,7 +12,6 @@ export async function GET(req: Request) {
     const role = url.searchParams.get("role");
     const page = parseInt(url.searchParams.get("page") || "1", 10);
     const limit = parseInt(url.searchParams.get("limit") || "10", 10);
-
     if (!vendorId) {
       return NextResponse.json(
         { success: false, message: "vendorId is required" },
@@ -35,13 +34,33 @@ export async function GET(req: Request) {
       .populate("vendorId")
       .populate("vendorAccess");
 
-    const users = records.map((u: any) => ({
-      ...u.toObject(),
-      vendor: u.vendorId?.name || (Array.isArray(u.vendorAccess) && u.vendorAccess[0]?.name) || null,
-      vendorId: undefined,
-    }));
+    const users = records.map((u: any) => {
+      const obj = u.toObject();
 
-    
+      let vendorName = null;
+
+      // Case 1: Direct vendorId match
+      if (obj.vendorId && String(obj.vendorId._id) === vendorId) {
+        vendorName = obj.vendorId.name;
+      }
+
+      // Case 2: Admin with vendorAccess array
+      if (!vendorName && Array.isArray(obj.vendorAccess)) {
+        const matchedVendor = obj.vendorAccess.find(
+          (v: any) => String(v._id) === vendorId
+        );
+        vendorName = matchedVendor?.name || null;
+      }
+
+      return {
+        ...obj,
+        vendor: vendorName,
+        vendorId: undefined,
+        vendorAccess: undefined, // optional cleanup
+      };
+    });
+
+
 
     return NextResponse.json({
       success: true,

@@ -195,11 +195,6 @@ const Users: React.FC = () => {
         const onVendor = () => {
             const v = Cookies.get('selectedVendorId') || '';
             setVendorId(v);
-            getUsers();
-            getInvites();
-            if (activeTab === 'admins' && user?.role === 'admin') {
-                getAdmins();
-            }
         };
         const onDept = () => {
             getUsers();
@@ -219,6 +214,13 @@ const Users: React.FC = () => {
     const getInvites = async () => {
         if (isResettingInvitationPage.current) {
             isResettingInvitationPage.current = false;
+            return;
+        }
+        if (!vendorId) {
+            setInvites([]);
+            setTotalInvitations(0);
+            setTotalInvitationsPages([]);
+            setInvitationLoading(false);
             return;
         }
         setInvitationLoading(true);
@@ -244,6 +246,13 @@ const Users: React.FC = () => {
     const getUsers = async () => {
         if (isResettingUserPage.current) {
             isResettingUserPage.current = false;
+            return;
+        }
+        if (!vendorId) {
+            setUsers([]);
+            setTotalUsers(0);
+            setTotalUsersPages([]);
+            setUserLoading(false);
             return;
         }
         setUserLoading(true);
@@ -298,13 +307,11 @@ const Users: React.FC = () => {
     };
 
     useEffect(() => {
-        setTimeout(() => {
-            getUsers();
-        }, 2000);
-    }, [userCurrentPage, userlimit]);
+        getUsers();
+    }, [userCurrentPage, userlimit, vendorId]);
     useEffect(() => {
         getInvites();
-    }, [invitationCurrentPage, Invitationslimit]);
+    }, [invitationCurrentPage, Invitationslimit, vendorId]);
 
     useEffect(() => {
         if (activeTab === 'admins' && user?.role === 'admin' && vendorId) {
@@ -376,7 +383,7 @@ const Users: React.FC = () => {
         {
             header: "Company",
             accessor: "department",
-            cell: (row) => <div className="opacity-60">{row.department}</div>,
+            cell: () => <div className="opacity-60">{Cookies.get('selectedDepartment') || 'N/A'}</div>,
         },
     ];
 
