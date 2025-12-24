@@ -97,14 +97,30 @@ export async function POST(req: NextRequest) {
 
         // DATE CREATED
         if (filters.dateCreated?.length > 0) {
-            const dates = filters.dateCreated.map((d: string) => new Date(d));
 
-            inspectionMatch.$or = dates.map((dt: Date) => ({
-                dateDay: dt.getUTCDate(),
-                dateMonth: dt.getUTCMonth() + 1,
-                dateYear: dt.getUTCFullYear()
-            }));
+            const dates = filters.dateCreated.map((d: string, index: number) => {
+                const parsed = new Date(d);
+                return parsed;
+            });
+            inspectionMatch.$or = dates.map((dt: Date, index: number) => {
+                const day = dt.getUTCDate();
+                const month = dt.getUTCMonth() + 1;
+                const year = dt.getUTCFullYear();
+
+                // For day and month less than 10, match both number and string with leading zero
+                const dayMatch = day < 10 ? { $in: [day, `0${day}`] } : day;
+                const monthMatch = month < 10 ? { $in: [month, `0${month}`] } : month;
+
+                const clause = {
+                    dateDay: dayMatch,
+                    dateMonth: monthMatch,
+                    dateYear: year,
+                };
+                return clause;
+            });
         }
+
+
 
         // --------------------------------------------------
         // FETCH INSPECTIONS IF NEEDED
@@ -162,6 +178,7 @@ export async function POST(req: NextRequest) {
         // QUERY REVIEWS
         // --------------------------------------------------
         const total = await Review.countDocuments(query);
+        console.log("🔍 [QUERY]:", query);
 
         const result = await Review.find(query)
             .sort({ createdAt: -1 })
@@ -175,6 +192,8 @@ export async function POST(req: NextRequest) {
         // --------------------------------------------------
         const vendorIds = [...new Set(result.map(r => String(r.vendorId)))];
         const deptIds = [...new Set(result.map(r => String(r.departmentId)))];
+
+
 
         const vendors = await Vendor.find({ _id: { $in: vendorIds } })
             .select("name")

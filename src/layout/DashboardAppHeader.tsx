@@ -76,7 +76,7 @@ export default function DashboardAppHeader() {
   }, [vendors]);
 
   return (
-    <div className="sticky top-0 flex w-full z-40">
+    <div className="sticky top-0 flex w-full z-40 ">
       <Header
         departments={departments}
         setSelectedDepartment={setSelectedDepartment}

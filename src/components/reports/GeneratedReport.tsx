@@ -327,7 +327,7 @@ const GeneratedReport = ({ close, selectedUnitIds }: { close: () => void; select
     return (
         <div className='p-6'>
             <style>{`@media print { body * { visibility: hidden; } .printable, .printable * { visibility: visible; } .printable { position: absolute; left: 0; top: 0; width: 100%; } .no-print { display: none !important; } }`}</style>
-            <div className="p-4 bg-gray-100 mt-4 printable">
+            <div className="p-4 bg-[#FAFAFA] mt-4 printable">
                 <ReportHeader close={close} onDownload={handleDownloadPDF} />
 
                 <div className="mt-4 p-4">
