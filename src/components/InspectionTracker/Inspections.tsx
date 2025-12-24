@@ -1,6 +1,7 @@
 'use client'
 import { Edit3, FileText, Filter, Mail, Trash2, X, Check } from 'lucide-react';
 import React, { Suspense, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import GenericDataTable, { Column } from '../tables/GenericDataTable';
 import { ReportDropdown } from '../ui/dropdown/reportsDropdown';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -44,8 +45,17 @@ function TrackingInspections() {
     const [totalCount, setTotalCount] = useState(0);
     const { isOpen: isFilterOpen, openModal: openFilterModal, closeModal: closeEFilterModal } = useModal();
     const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: string[] }>({});
+    const searchParams = useSearchParams();
+    const currentPage = parseInt(searchParams.get('tracking_page') || '1', 10);
+    const [pageSize, setPageSize] = useState<number>(10);
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams);
+        params.set('tracking_page', '1');
+        window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+    }, [pageSize]);
     const [vendors, setVendors] = useState<any[]>([]);
     const [departments, setDepartments] = useState<any[]>([]);
+    const [fullOptions, setFullOptions] = useState<{ [key: string]: string[] }>({});
     const [editingField, setEditingField] = useState<{ rowId: string; field: string } | null>(null);
     const [editingValues, setEditingValues] = useState<any>(null);
     const [inspectionData, setInspectionData] = useState<any[]>([]);
@@ -79,8 +89,8 @@ function TrackingInspections() {
             setLoading(true);
 
             const payload = {
-                page: 1,
-                limit: 5,
+                page: currentPage,
+                limit: pageSize,
                 department: departmentId,
                 vendorId,
                 filters: selectedFilters,
@@ -147,7 +157,7 @@ function TrackingInspections() {
         } finally {
             setLoading(false);
         }
-    }, [selectedFilters]);
+    }, [selectedFilters, currentPage, pageSize]);
 
     // fetch vendor & department lists for inline editing
     useEffect(() => {
@@ -163,6 +173,17 @@ function TrackingInspections() {
                     const jd = await dRes.json();
                     setDepartments(jd.departments || []);
                 }
+                const vendorId = Cookies.get('selectedVendorId') || '';
+                const departmentId = Cookies.get('selectedDepartmentId') || '';
+                const oRes = await apiRequest('/api/reviews/get', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, limit: 1, vendorId, department: departmentId, optionsOnly: true })
+                });
+                if (oRes.ok) {
+                    const jo = await oRes.json();
+                    setFullOptions(jo.options || {});
+                }
             } catch (e) {
                 // ignore
             }
@@ -172,14 +193,50 @@ function TrackingInspections() {
         if (!filtersReady) return;
         getReviews();
 
-    }, [selectedFilters, filtersReady]);
+    }, [selectedFilters, filtersReady, currentPage, pageSize]);
 
     useEffect(() => {
         const onDept = () => {
+            const params = new URLSearchParams(searchParams);
+            params.set('tracking_page', '1');
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
             getReviews();
+            (async () => {
+                try {
+                    const vendorId = Cookies.get('selectedVendorId') || '';
+                    const departmentId = Cookies.get('selectedDepartmentId') || '';
+                    const oRes = await apiRequest('/api/reviews/get', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: 1, limit: 1, vendorId, department: departmentId, optionsOnly: true })
+                    });
+                    if (oRes.ok) {
+                        const jo = await oRes.json();
+                        setFullOptions(jo.options || {});
+                    }
+                } catch (e) {}
+            })();
         };
         const onVendor = () => {
+            const params = new URLSearchParams(searchParams);
+            params.set('tracking_page', '1');
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
             getReviews();
+            (async () => {
+                try {
+                    const vendorId = Cookies.get('selectedVendorId') || '';
+                    const departmentId = Cookies.get('selectedDepartmentId') || '';
+                    const oRes = await apiRequest('/api/reviews/get', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: 1, limit: 1, vendorId, department: departmentId, optionsOnly: true })
+                    });
+                    if (oRes.ok) {
+                        const jo = await oRes.json();
+                        setFullOptions(jo.options || {});
+                    }
+                } catch (e) {}
+            })();
         };
         window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
         window.addEventListener('selectedVendorChanged', onVendor as EventListener);
@@ -187,7 +244,7 @@ function TrackingInspections() {
             window.removeEventListener('selectedDepartmentChanged', onDept as EventListener);
             window.removeEventListener('selectedVendorChanged', onVendor as EventListener);
         };
-    }, [getReviews]);
+    }, [getReviews, searchParams]);
     useEffect(() => {
         const storedFilters = sessionStorage.getItem('trackingFilters');
         if (storedFilters) {
@@ -532,46 +589,63 @@ function TrackingInspections() {
                     {editingField?.rowId === row.id && editingField?.field === 'reviewRequested' ? (
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                             {(() => {
-                                const today = new Date();
-                                const CY = today.getFullYear();
-                                const CM = today.getMonth() + 1;
-                                const CD = today.getDate();
+                                const t = new Date();
+                                const CY = t.getFullYear();
+                                const CM = t.getMonth() + 1;
+                                const CD = t.getDate();
                                 const cur = editingValues?.reviewRequested ?? (row.review_requested === '—' ? '' : row.review_requested) ?? '';
                                 const [yy, mm, dd] = cur ? cur.split('-').map((n: any) => parseInt(n)) : [CY, CM, CD];
-                                const years = Array.from({ length: CY - 1950 + 1 }, (_, i) => String(CY - i));
-                                const maxMonth = yy === CY ? CM : 12;
-                                const months = Array.from({ length: maxMonth }, (_, i) => String(i + 1).padStart(2, '0'));
-                                const maxDay = yy === CY && mm === CM ? CD : new Date(yy, mm, 0).getDate();
-                                const days = Array.from({ length: maxDay }, (_, i) => String(i + 1).padStart(2, '0'));
-                                const setDate = (y: number, m: number, d: number) => {
-                                    const CLM = y === CY ? CM : 12;
-                                    const nm = Math.min(m, CLM);
-                                    const CLD = y === CY && nm === CM ? CD : new Date(y, nm, 0).getDate();
-                                    const nd = Math.min(d, CLD);
-                                    const str = `${String(y)}-${String(nm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
-                                    setEditingValues((p: any) => ({ ...(p || {}), reviewRequested: str }));
-                                };
                                 return (
-                                    <>
-                                        <ReportDropdown
-                                            options={years.map((y) => ({ value: y, label: y }))}
-                                            width="100px"
-                                            value={String(yy)}
-                                            onChange={(val) => setDate(parseInt(val), mm, dd)}
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={12}
+                                            value={mm}
+                                            onChange={(e) => {
+                                                const raw = Number(e.target.value);
+                                                const m = Math.min(12, Math.max(1, raw));
+                                                const cm = yy === CY ? Math.min(m, CM) : m;
+                                                const maxDay = yy === CY && cm === CM ? CD : new Date(yy, cm, 0).getDate();
+                                                const nd = Math.min(dd, maxDay);
+                                                const s = `${String(yy)}-${String(cm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+                                                setEditingValues((p: any) => ({ ...(p || {}), reviewRequested: s }));
+                                            }}
+                                            className="w-16 px-3 py-1 bg-[#FAF7FF] border border-gray-300 rounded text-center"
                                         />
-                                        <ReportDropdown
-                                            options={months.map((m) => ({ value: m, label: m }))}
-                                            width="90px"
-                                            value={String(mm).padStart(2, '0')}
-                                            onChange={(val) => setDate(yy, parseInt(val), dd)}
+                                        <span className="text-gray-400">/</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={31}
+                                            value={dd}
+                                            onChange={(e) => {
+                                                const raw = Number(e.target.value);
+                                                const maxDay = yy === CY && mm === CM ? CD : new Date(yy, mm, 0).getDate();
+                                                const d = Math.min(maxDay, Math.max(1, raw));
+                                                const s = `${String(yy)}-${String(mm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                                setEditingValues((p: any) => ({ ...(p || {}), reviewRequested: s }));
+                                            }}
+                                            className="w-16 px-3 py-1 bg-[#FAF7FF] border border-gray-300 rounded text-center"
                                         />
-                                        <ReportDropdown
-                                            options={days.map((d) => ({ value: d, label: d }))}
-                                            width="90px"
-                                            value={String(dd).padStart(2, '0')}
-                                            onChange={(val) => setDate(yy, mm, parseInt(val))}
+                                        <span className="text-gray-400">/</span>
+                                        <input
+                                            type="number"
+                                            min={2000}
+                                            max={CY}
+                                            value={yy}
+                                            onChange={(e) => {
+                                                const raw = Number(e.target.value);
+                                                const y = Math.min(CY, Math.max(2000, raw));
+                                                const cm = y === CY ? Math.min(mm, CM) : mm;
+                                                const maxDay = y === CY && cm === CM ? CD : new Date(y, cm, 0).getDate();
+                                                const nd = Math.min(dd, maxDay);
+                                                const s = `${String(y)}-${String(cm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+                                                setEditingValues((p: any) => ({ ...(p || {}), reviewRequested: s }));
+                                            }}
+                                            className="w-20 px-3 py-1 bg-[#FAF7FF] border border-gray-300 rounded text-center"
                                         />
-                                    </>
+                                    </div>
                                 );
                             })()}
                             <button onClick={(e) => { e.stopPropagation(); saveEditing(); }} className="p-1"><Check className="w-4 h-4 text-green-600" /></button>
@@ -579,7 +653,7 @@ function TrackingInspections() {
                         </div>
                     ) : (
                         <div className="group relative pr-6">
-                            <div className="opacity-70">{row.review_requested}</div>
+                            <div className="opacity-70 whitespace-nowrap">{row.review_requested}</div>
                             <button onClick={(e) => { e.stopPropagation(); startEditing(row, 'reviewRequested'); }} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Edit3 className="w-4 h-4 text-gray-400" />
                             </button>
@@ -613,46 +687,63 @@ function TrackingInspections() {
                     {editingField?.rowId === row.id && editingField?.field === 'reviewCompleted' ? (
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                             {(() => {
-                                const today = new Date();
-                                const CY = today.getFullYear();
-                                const CM = today.getMonth() + 1;
-                                const CD = today.getDate();
+                                const t = new Date();
+                                const CY = t.getFullYear();
+                                const CM = t.getMonth() + 1;
+                                const CD = t.getDate();
                                 const cur = editingValues?.reviewCompleted ?? (row.review_completed === 'Pending' ? '' : row.review_completed) ?? '';
                                 const [yy, mm, dd] = cur ? cur.split('-').map((n: any) => parseInt(n)) : [CY, CM, CD];
-                                const years = Array.from({ length: CY - 1950 + 1 }, (_, i) => String(CY - i));
-                                const maxMonth = yy === CY ? CM : 12;
-                                const months = Array.from({ length: maxMonth }, (_, i) => String(i + 1).padStart(2, '0'));
-                                const maxDay = yy === CY && mm === CM ? CD : new Date(yy, mm, 0).getDate();
-                                const days = Array.from({ length: maxDay }, (_, i) => String(i + 1).padStart(2, '0'));
-                                const setDate = (y: number, m: number, d: number) => {
-                                    const CLM = y === CY ? CM : 12;
-                                    const nm = Math.min(m, CLM);
-                                    const CLD = y === CY && nm === CM ? CD : new Date(y, nm, 0).getDate();
-                                    const nd = Math.min(d, CLD);
-                                    const str = `${String(y)}-${String(nm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
-                                    setEditingValues((p: any) => ({ ...(p || {}), reviewCompleted: str }));
-                                };
                                 return (
-                                    <>
-                                        <ReportDropdown
-                                            options={years.map((y) => ({ value: y, label: y }))}
-                                            width="100px"
-                                            value={String(yy)}
-                                            onChange={(val) => setDate(parseInt(val), mm, dd)}
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={12}
+                                            value={mm}
+                                            onChange={(e) => {
+                                                const raw = Number(e.target.value);
+                                                const m = Math.min(12, Math.max(1, raw));
+                                                const cm = yy === CY ? Math.min(m, CM) : m;
+                                                const maxDay = yy === CY && cm === CM ? CD : new Date(yy, cm, 0).getDate();
+                                                const nd = Math.min(dd, maxDay);
+                                                const s = `${String(yy)}-${String(cm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+                                                setEditingValues((p: any) => ({ ...(p || {}), reviewCompleted: s }));
+                                            }}
+                                            className="w-16 px-3 py-1 bg-[#FAF7FF] border border-gray-300 rounded text-center"
                                         />
-                                        <ReportDropdown
-                                            options={months.map((m) => ({ value: m, label: m }))}
-                                            width="90px"
-                                            value={String(mm).padStart(2, '0')}
-                                            onChange={(val) => setDate(yy, parseInt(val), dd)}
+                                        <span className="text-gray-400">/</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={31}
+                                            value={dd}
+                                            onChange={(e) => {
+                                                const raw = Number(e.target.value);
+                                                const maxDay = yy === CY && mm === CM ? CD : new Date(yy, mm, 0).getDate();
+                                                const d = Math.min(maxDay, Math.max(1, raw));
+                                                const s = `${String(yy)}-${String(mm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                                setEditingValues((p: any) => ({ ...(p || {}), reviewCompleted: s }));
+                                            }}
+                                            className="w-16 px-3 py-1 bg-[#FAF7FF] border border-gray-300 rounded text-center"
                                         />
-                                        <ReportDropdown
-                                            options={days.map((d) => ({ value: d, label: d }))}
-                                            width="90px"
-                                            value={String(dd).padStart(2, '0')}
-                                            onChange={(val) => setDate(yy, mm, parseInt(val))}
+                                        <span className="text-gray-400">/</span>
+                                        <input
+                                            type="number"
+                                            min={2000}
+                                            max={CY}
+                                            value={yy}
+                                            onChange={(e) => {
+                                                const raw = Number(e.target.value);
+                                                const y = Math.min(CY, Math.max(2000, raw));
+                                                const cm = y === CY ? Math.min(mm, CM) : mm;
+                                                const maxDay = y === CY && cm === CM ? CD : new Date(y, cm, 0).getDate();
+                                                const nd = Math.min(dd, maxDay);
+                                                const s = `${String(y)}-${String(cm).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+                                                setEditingValues((p: any) => ({ ...(p || {}), reviewCompleted: s }));
+                                            }}
+                                            className="w-20 px-3 py-1 bg-[#FAF7FF] border border-gray-300 rounded text-center"
                                         />
-                                    </>
+                                    </div>
                                 );
                             })()}
                             <button onClick={(e) => { e.stopPropagation(); saveEditing(); }} className="p-1"><Check className="w-4 h-4 text-green-600" /></button>
@@ -660,7 +751,7 @@ function TrackingInspections() {
                         </div>
                     ) : (
                         <div className="group relative pr-6">
-                            <div className="opacity-70">{row.review_completed}</div>
+                            <div className="opacity-70 whitespace-nowrap">{row.review_completed}</div>
                             <button onClick={(e) => { e.stopPropagation(); startEditing(row, 'reviewCompleted'); }} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Edit3 className="w-4 h-4 text-gray-400" />
                             </button>
@@ -763,7 +854,7 @@ function TrackingInspections() {
                 )}
                 <div className="px-4">
                     <div className="h-full">
-                        <GenericDataTable title="" data={reports} tabs={[1]} columns={columns} pageSize={5} currentPage={1} totalCount={totalCount} loading={loading} setLoading={setLoading} querykey="user_page" emptyStateImages={{
+                        <GenericDataTable title="" data={reports} tabs={Array.from({ length: Math.max(1, Math.ceil(totalCount / pageSize)) }, (_, i) => i + 1)} columns={columns} pageSize={pageSize} currentPage={currentPage} totalCount={totalCount} loading={loading} setLoading={setLoading} setPageSize={setPageSize} querykey="tracking_page" emptyStateImages={{
                             "All Users": "/images/No Users.svg"
                         }}
                         />
@@ -789,6 +880,9 @@ function TrackingInspections() {
                 onApply={handleApplyFilters}
                 initialFilters={selectedFilters}
                 trackingData={inspectionData}
+                vendors={vendors}
+                departments={departments}
+                fullOptions={fullOptions}
             />
             <BatchEditReviewModal
                 isOpen={isEditModalOpen}

@@ -112,7 +112,10 @@ const FilterTrackingModal: React.FC<{
         review_completed: string;
         email_notifcation: string;
     }[];
-}> = ({ onClose, isOpen, onApply, initialFilters, trackingData }) => {
+    vendors: { _id: string; name: string }[];
+    departments: { _id: string; name: string }[];
+    fullOptions?: { [key: string]: string[] };
+}> = ({ onClose, isOpen, onApply, initialFilters, trackingData, vendors, departments, fullOptions }) => {
     const [activeFilter, setActiveFilter] = useState('unitId');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: string[] }>(initialFilters);
@@ -127,16 +130,16 @@ const FilterTrackingModal: React.FC<{
         Array.from(new Set(vals.filter(Boolean))).map(v => ({ id: v, label: v }));
 
     const dynamicOptionsMap: { [key: string]: option[] } = useMemo(() => ({
-        unitId: toOptions(trackingData.map(i => i.id)),
-        inspectionStatus: toOptions(trackingData.map(i => i.status)),
-        vendor: toOptions(trackingData.map(i => i.vendor)),
-        department: toOptions(trackingData.map(i => i.department)),
-        dateCreated: toOptions(trackingData.map(i => i.date_created)),
-        reviewRequested: toOptions(trackingData.map(i => i.review_requested)),
-        missingData: toOptions(trackingData.map(i => i.missing_data)),
-        reviewCompleted: toOptions(trackingData.map(i => i.review_completed)),
-        emailNotification: toOptions(trackingData.map(i => i.email_notifcation)),
-    }), [trackingData]);
+        unitId: (fullOptions?.unitId || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.id)),
+        inspectionStatus: (fullOptions?.inspectionStatus || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.status)),
+        vendor: Array.from(new Set(vendors.map(v => v.name))).map(n => ({ id: n, label: n })),
+        department: Array.from(new Set(departments.map(d => d.name))).map(n => ({ id: n, label: n })),
+        dateCreated: (fullOptions?.dateCreated || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.date_created)),
+        reviewRequested: (fullOptions?.reviewRequested || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.review_requested)),
+        missingData: (fullOptions?.missingData || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.missing_data)),
+        reviewCompleted: (fullOptions?.reviewCompleted || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.review_completed)),
+        emailNotification: (fullOptions?.emailNotification || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.email_notifcation)),
+    }), [trackingData, vendors, departments, fullOptions]);
 
     const handleToggleId = (id: string) => {
         setSelectedFilters(prev => {
