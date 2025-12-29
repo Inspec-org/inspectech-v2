@@ -44,6 +44,7 @@ function Inspections() {
     const [search, setSearch] = useState("");
     const [limit, setLimit] = useState(10);
     const isResettingInspectionPage = useRef(false);
+    const prevLimitRef = useRef(limit);
     const pageTabs = useMemo(() => {
         const totalPages = Math.ceil(totalInspections / limit);
         return Array.from({ length: totalPages }, (_, i) => (i + 1));
@@ -116,29 +117,37 @@ function Inspections() {
     const totalFiltersCount = Object.values(selectedFilters).reduce((sum, arr) => sum + arr.length, 0);
     const [dept, setDept] = useState<string | null>(null);
     const [vendor, setVendor] = useState<string | null>(null);
+    const [deptName, setDeptName] = useState<string | null>(null);
 
     useEffect(() => {
-        if (currentPage !== 1) {
-            isResettingInspectionPage.current = true;
-            const params = new URLSearchParams(searchParams);
-            params.set('inspection_page', "1");
-            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+        if (prevLimitRef.current !== limit) {
+            if (currentPage !== 1) {
+                isResettingInspectionPage.current = true;
+                const params = new URLSearchParams(searchParams);
+                params.set('inspection_page', "1");
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+            }
+            prevLimitRef.current = limit;
         }
-    }, [limit])
+    }, [limit, currentPage, searchParams])
 
     useEffect(() => {
         const readFromCookies = () => {
-            const storedDept = Cookies.get('selectedDepartmentId') || '';
-            setDept(storedDept);
-            setDepartment(storedDept || '');
+            const storedDeptId = Cookies.get('selectedDepartmentId') || '';
+            const storedDeptName = Cookies.get('selectedDepartment') || '';
+            setDept(storedDeptId);
+            setDepartment(storedDeptId || '');
+            setDeptName(storedDeptName || '');
             const storedVendor = Cookies.get('selectedVendorId') || '';
             setVendor(storedVendor);
         };
         readFromCookies();
         const onDept = () => {
             const id = Cookies.get('selectedDepartmentId') || '';
+            const name = Cookies.get('selectedDepartment') || '';
             setDept(id);
             setDepartment(id || '');
+            setDeptName(name || '');
         };
         const onVendor = () => {
             const id = Cookies.get('selectedVendorId') || '';
@@ -234,6 +243,67 @@ function Inspections() {
                 if (typeof val === 'object') return JSON.stringify(val);
                 return String(val);
             };
+
+            // apply required transformations before flattening
+            const transform = (doc: any): any => {
+                const result: any = {};
+                let vendorSetFromVendorId = false;
+                for (const [key, value] of Object.entries(doc)) {
+                    if (key === '_id' || key === '__v' || key === 'updatedAt' || key === 'createdAt') {
+                        continue;
+                    }
+                    if (key === 'departmentId') {
+                        const name = (deptName || '') || (typeof value === 'object' ? (value as any)?.name || '' : '');
+                        result['department'] = name;
+                        continue;
+                    }
+                    if (key === 'vendorId') {
+                        const name = typeof value === 'object' ? (value as any)?.name || '' : '';
+                        if (name) {
+                            result['vendor'] = name;
+                            vendorSetFromVendorId = true;
+                        }
+                        // omit vendorId from export
+                        continue;
+                    }
+                    if (key === 'vendor') {
+                        if (!vendorSetFromVendorId) {
+                            result['vendor'] = value as any;
+                        }
+                        continue;
+                    }
+                    if (key === 'durationMin') {
+                        const sec = (doc as any)?.durationSec ?? '';
+                        result['duration'] = `${value ?? ''} m ${sec} s`;
+                        continue;
+                    }
+                    if (key === 'durationSec') {
+                        // merged into duration
+                        continue;
+                    }
+                    if (key === 'dateDay') {
+                        const month = (doc as any)?.dateMonth ?? '';
+                        const year = (doc as any)?.dateYear ?? '';
+                        result['date'] = `${value ?? ''}-${month}-${year}`;
+                        continue;
+                    }
+                    if (key === 'dateMonth' || key === 'dateYear') {
+                        // merged into date
+                        continue;
+                    }
+                    if (key === 'rtbIndicator') {
+                        result['atis regulator'] = value as any;
+                        continue;
+                    }
+                    if (key === 'amenikis') {
+                        result['aerokits'] = value as any;
+                        continue;
+                    }
+                    result[key] = value as any;
+                }
+                return result;
+            };
+
             const flatten = (obj: any, prefix = ''): Record<string, string> => {
                 const out: Record<string, string> = {};
                 Object.entries(obj).forEach(([key, value]) => {
@@ -246,7 +316,9 @@ function Inspections() {
                 });
                 return out;
             };
-            const flatRows: Record<string, string>[] = items.map((doc: any) => flatten(doc));
+
+            const transformed: any[] = items.map(transform);
+            const flatRows: Record<string, string>[] = transformed.map((doc: any) => flatten(doc));
             const headers: string[] = Array.from(new Set(flatRows.flatMap((r) => Object.keys(r))));
             const triggerDownload = (blob: Blob, filename: string) => {
                 const url = URL.createObjectURL(blob);
@@ -264,7 +336,7 @@ function Inspections() {
             };
             const filename = `inspections_${new Date().toISOString().slice(0, 10)}.${format === 'excel' ? 'xlsx' : format}`;
             if (format === 'json') {
-                const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+                const blob = new Blob([JSON.stringify(transformed, null, 2)], { type: 'application/json' });
                 triggerDownload(blob, filename);
             } else if (format === 'csv') {
                 const csvRows = flatRows.map((row) => headers.map((h) => escapeCSV(row[h])).join(','));
@@ -612,7 +684,7 @@ function Inspections() {
 
             <BatchEditInspectionsModal isOpen={isEditModalOpen} onClose={closeEditModal} formData={formData} setFormData={setFormData} onChange={handleChange} onDropdownChange={handleDropdownChange} selectedUnitIds={selectedRows} onUpdated={handleRefreshAfterUpdate} />
 
-            <ExportInspectionsModal isOpen={isExportOpen} onClose={closeExportModal} selectedExportType={selectedExportType} onSelectedExportTypeChange={setSelectedExportType} onExport={handleExportInspections} />
+            <ExportInspectionsModal isOpen={isExportOpen} onClose={closeExportModal} selectedExportType={selectedExportType} onSelectedExportTypeChange={setSelectedExportType} onExport={handleExportInspections} selectedUnitIds={selectedRows} />
 
             <FilterInspectionsModal
                 isOpen={isFilterOpen}

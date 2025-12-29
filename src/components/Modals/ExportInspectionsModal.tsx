@@ -9,9 +9,10 @@ type Props = {
   selectedExportType: string;
   onSelectedExportTypeChange: (val: string) => void;
   onExport: (format: string) => Promise<void> | void;
+  selectedUnitIds?: string[];
 };
 
-const ExportInspectionsModal: React.FC<Props> = ({ isOpen, onClose, selectedExportType, onSelectedExportTypeChange, onExport }) => {
+const ExportInspectionsModal: React.FC<Props> = ({ isOpen, onClose, selectedExportType, onSelectedExportTypeChange, onExport, selectedUnitIds }) => {
   const [isExporting, setIsExporting] = useState(false);
   const handleExportClick = async () => {
     setIsExporting(true);
@@ -29,7 +30,7 @@ const ExportInspectionsModal: React.FC<Props> = ({ isOpen, onClose, selectedExpo
           <Download className="w-6 h-6" />
           <h2 className="text-lg font-semibold">Export Data</h2>
         </div>
-        <p className="text-gray-600 mb-6 text-sm">Select a pormat to export 40 inspection records</p>
+        <p className="text-gray-600 mb-6 text-sm">Select a format to export {selectedUnitIds?.length || 0} inspection record(s)</p>
 
         <div>
           <div className="flex gap-2 items-start mb-5 border rounded-xl p-4">

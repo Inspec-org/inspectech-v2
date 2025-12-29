@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Upload, Check, Image, ImageIcon, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload } from 'lucide-react';
+import { Upload, Check, Image, ImageIcon, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload, X, ZoomIn } from 'lucide-react';
 import { FormData } from './Edit';
 import { toast } from 'react-toastify';
 interface UploadCardProps {
@@ -7,15 +7,18 @@ interface UploadCardProps {
     description: string;
     currentUrl?: string | null;
     onUploadToCloudinary: (file: File) => Promise<void>;
+    onRemove?: () => void;
+    onZoom?: () => void;
 }
 type TabType = 'Front Left Side' | 'Front Right Side' | 'Rare Left Side' | 'Rare Right Side' | 'Inside Trailer Image' | 'Door Details Image';
 
-const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl, onUploadToCloudinary }) => {
+const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl, onUploadToCloudinary, onRemove, onZoom }) => {
     const [isUploaded, setIsUploaded] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -65,11 +68,47 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                 <p className="text-sm text-gray-600">{description}</p>
             </div>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-4 flex flex-col items-center justify-center min-h-[200px]">
-                {previewUrl ? (
-                    <img src={previewUrl} alt="Selected Preview" className="max-h-48 object-contain rounded-md border" />
-                ) : currentUrl ? (
-                    <img src={currentUrl} alt="Current Saved" className="max-h-48 object-contain rounded-md border" />
+            <div
+                className={`border-2 border-dashed rounded-lg p-8 mb-4 flex flex-col items-center justify-center min-h-[200px] relative ${isDragOver ? 'border-purple-500 bg-purple-50' : 'border-gray-300'}`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOver(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (!file) return;
+                    setSelectedFile(file);
+                    const url = URL.createObjectURL(file);
+                    setPreviewUrl(url);
+                    setIsUploaded(false);
+                    setUploadProgress(0);
+                    handleUpload(file);
+                }}
+            >
+                {(previewUrl || currentUrl) ? (
+                    <>
+                        <img src={previewUrl || currentUrl || ''} alt="Preview" className="max-h-48 object-contain rounded-md border" />
+                        {onRemove && (
+                            <button
+                                type="button"
+                                onClick={() => { setSelectedFile(null); setPreviewUrl(null); setIsUploaded(false); onRemove(); }}
+                                className="absolute top-2 right-2 bg-white/90 hover:bg-white border border-gray-300 rounded-full p-1 shadow-sm"
+                                aria-label="Remove image"
+                            >
+                                <X size={16} className="text-gray-700" />
+                            </button>
+                        )}
+                        {onZoom && (
+                            <button
+                                type="button"
+                                onClick={onZoom}
+                                className="absolute bottom-2 left-2 bg-white/90 hover:bg-white rounded-full px-2 py-1 text-xs "
+                                aria-label="Zoom slideshow"
+                            >
+                                <ZoomIn size={20}/>
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <>
                         <div className="w-16 h-16 mb-3 flex items-center justify-center">
@@ -402,6 +441,28 @@ const ImageAlignmentGuide: React.FC = () => {
 const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; onUploadToCloudinary: (field: string, file: File) => Promise<void>; }> = ({ formData, setFormData, onUploadToCloudinary }) => {
     const [showAdditional, setShowAdditional] = useState(false);
 
+    const openSlideshow = (startTitle?: string) => {
+        const slides = [
+            { title: 'Front Left Side', url: formData.frontLeftSideUrl },
+            { title: 'Front Right Side', url: formData.frontRightSideUrl },
+            { title: 'Rear Left Side', url: formData.rearLeftSideUrl },
+            { title: 'Rear Right Side', url: formData.rearRightSideUrl },
+            { title: 'Inside Trailer Image', url: formData.insideTrailerImageUrl },
+            { title: 'Door Details Image', url: formData.doorDetailsImageUrl },
+            { title: 'DOT Form Image', url: formData.dotFormImageUrl },
+            { title: 'Additional Attachment 1', url: formData.additionalAttachment1 },
+            { title: 'Additional Attachment 2', url: formData.additionalAttachment2 },
+            { title: 'Additional Attachment 3', url: formData.additionalAttachment3 },
+        ].filter(s => !!s.url);
+        if (slides.length === 0) return;
+        const startIndex = startTitle ? slides.findIndex(s => s.title === startTitle) : 0;
+        try {
+            localStorage.setItem('inspections_slideshow', JSON.stringify(slides));
+            localStorage.setItem('inspections_slideshow_start', String(Math.max(0, startIndex)));
+        } catch {}
+        window.open('/slide_show', '_blank');
+    };
+
     const handleUpload = (file: File) => {
         setFormData((prev: any) => ({
             ...prev,
@@ -424,12 +485,16 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                             description="Upload an image showing the front left of the trailer"
                             currentUrl={formData.frontLeftSideUrl}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('frontLeftSideUrl', file)}
+                            onRemove={() => setFormData(prev => ({ ...prev, frontLeftSideUrl: '' }))}
+                            onZoom={() => openSlideshow('Front Left Side')}
                         />
                         <UploadCard
                             title="Front Right Side"
                             description="Upload an image showing the front right of the trailer"
                             currentUrl={formData.frontRightSideUrl}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('frontRightSideUrl', file)}
+                            onRemove={() => setFormData(prev => ({ ...prev, frontRightSideUrl: '' }))}
+                            onZoom={() => openSlideshow('Front Right Side')}
                         />
                     </div>
                 </div>
@@ -442,12 +507,16 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                             description="Upload an image showing the rear left of the trailer"
                             currentUrl={formData.rearLeftSideUrl}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('rearLeftSideUrl', file)}
+                            onRemove={() => setFormData(prev => ({ ...prev, rearLeftSideUrl: '' }))}
+                            onZoom={() => openSlideshow('Rear Left Side')}
                         />
                         <UploadCard
                             title="Rear Right Side"
                             description="Upload an image showing the rear right of the trailer"
                             currentUrl={formData.rearRightSideUrl}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('rearRightSideUrl', file)}
+                            onRemove={() => setFormData(prev => ({ ...prev, rearRightSideUrl: '' }))}
+                            onZoom={() => openSlideshow('Rear Right Side')}
                         />
                     </div>
                 </div>
@@ -461,6 +530,8 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                                 description="Upload an image showing the inside of the trailer"
                                 currentUrl={formData.insideTrailerImageUrl}
                                 onUploadToCloudinary={(file) => onUploadToCloudinary('insideTrailerImageUrl', file)}
+                                onRemove={() => setFormData(prev => ({ ...prev, insideTrailerImageUrl: '' }))}
+                                onZoom={() => openSlideshow('Inside Trailer Image')}
                             />
                         </div>
                     </div>
@@ -472,6 +543,8 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                                 description="Upload an image showing the door details of the trailer"
                                 currentUrl={formData.doorDetailsImageUrl}
                                 onUploadToCloudinary={(file) => onUploadToCloudinary('doorDetailsImageUrl', file)}
+                                onRemove={() => setFormData(prev => ({ ...prev, doorDetailsImageUrl: '' }))}
+                                onZoom={() => openSlideshow('Door Details Image')}
                             />
                         </div>
                     </div>
@@ -488,6 +561,8 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                             description="Upload an image showing the dot form of the trailer"
                             currentUrl={formData.dotFormImageUrl}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormImageUrl', file)}
+                            onRemove={() => setFormData(prev => ({ ...prev, dotFormImageUrl: '' }))}
+                            onZoom={() => openSlideshow('DOT Form Image')}
                         />
                         <PDFUpload
                             onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormPdfUrl', file)}
@@ -525,18 +600,24 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
                             description="Upload an image showing the additionalform1 of the trailer"
                             currentUrl={formData.additionalAttachment1}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment1', file)}
+                            onRemove={() => setFormData(prev => ({ ...prev, additionalAttachment1: '' }))}
+                            onZoom={() => openSlideshow('Additional Attachment 1')}
                         />
                         <UploadCard
                             title="Additional Attachment 2"
                             description="Upload an image showing the additionalform2 of the trailer"
                             currentUrl={formData.additionalAttachment2}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment2', file)}
+                            onRemove={() => setFormData(prev => ({ ...prev, additionalAttachment2: '' }))}
+                            onZoom={() => openSlideshow('Additional Attachment 2')}
                         />
                         <UploadCard
                             title="Additional Attachment 3"
                             description="Upload an image showing the additionalform3 of the trailer"
                             currentUrl={formData.additionalAttachment3}
                             onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment3', file)}
+                            onRemove={() => setFormData(prev => ({ ...prev, additionalAttachment3: '' }))}
+                            onZoom={() => openSlideshow('Additional Attachment 3')}
                         />
                     </div>
                 )}
