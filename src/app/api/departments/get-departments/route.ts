@@ -23,6 +23,15 @@ export async function GET(req: NextRequest) {
       departments = await Department.find({
         name: { $regex: "trailers", $options: "i" }
       });
+
+      departments.sort((a, b) => {
+        const aIsUS = a.name.toLowerCase().includes("us");
+        const bIsUS = b.name.toLowerCase().includes("us");
+
+        if (aIsUS && !bIsUS) return -1;
+        if (!aIsUS && bIsUS) return 1;
+        return a.name.localeCompare(b.name);
+      });
     }
 
     // Add color field based on department name
@@ -38,6 +47,7 @@ export async function GET(req: NextRequest) {
       return { ...dept.toObject(), color };
     });
 
+    console.log(departmentsWithColor);
     return NextResponse.json({ message: "success", departments: departmentsWithColor });
 
   } catch (error: any) {

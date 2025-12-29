@@ -17,7 +17,7 @@ export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
   getDepartments
 }) => {
   return (
-    <div className=" ">
+    <div className="mt-4">
       <div className="max-w-6xl mx-auto h-full flex flex-col justify-center">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#FAF5FF] to-[60%] p-4 flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-0 justify-between mb-8 rounded-lg">
