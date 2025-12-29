@@ -29,39 +29,49 @@ export default function PassRateCard({ passRate, passed, failed, loading }: Pass
         </div>
       ) : (
         <>
-          <div className="flex justify-center mb-8">
-            <div className="relative w-40 h-40">
-              <svg className="w-40 h-40 transform -rotate-90">
-                {/* Background circle */}
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="55"
-                  stroke="#e5e7eb"
-                  strokeWidth="8"
-                  fill="none"
-                />
-                {/* Progress circle */}
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="55"
-                  stroke="#8b5cf6"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  className="transition-all duration-1000 ease-out"
-                />
-              </svg>
-              {/* Center text */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="text-xl font-bold text-purple-600">{passRate}%</div>
-                <div className="text-xs text-purple-500 mt-1">Pass Rate</div>
-              </div>
-            </div>
-          </div>
+          <div className="flex items-center justify-center mb-8">
+  <div className="relative w-45 h-45 flex items-center justify-center overflow-hidden">
+    <svg
+      className="w-full h-full transform -rotate-90"
+      viewBox="0 0 160 160"
+    >
+      {/* Background circle */}
+      <circle
+        cx="80"
+        cy="80"
+        r="68"
+        stroke="#e5e7eb"
+        strokeWidth="14"
+        fill="none"
+      />
+
+      {/* Progress circle */}
+      <circle
+        cx="80"
+        cy="80"
+        r="68"
+        stroke="#8b5cf6"
+        strokeWidth="14"
+        fill="none"
+        strokeDasharray={circumference}
+        strokeDashoffset={strokeDashoffset}
+        strokeLinecap="round"
+        className="transition-all duration-1000 ease-out"
+      />
+    </svg>
+
+    {/* Center text */}
+    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+      <div className="text-3xl font-bold text-purple-600">
+        {passRate}%
+      </div>
+      <div className="text-sm text-purple-500 mt-1">
+        Pass Rate
+      </div>
+    </div>
+  </div>
+</div>
+
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 gap-4">
