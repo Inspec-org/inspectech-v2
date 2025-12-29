@@ -19,6 +19,7 @@ const InspectionSchema = new mongoose.Schema({
   notes: { type: String },
 
   poNumber: { type: String },
+  owner: { type: String },
   equipmentNumber: { type: String },
   vin: { type: String },
   licensePlateId: { type: String },
@@ -61,6 +62,7 @@ const InspectionSchema = new mongoose.Schema({
   cartbars: { type: String },
   tpms: { type: String },
   trailerHeightDecal: { type: String },
+  conspicuityTape: { type: String },
 
   frontLeftSideUrl: { type: String },
   frontRightSideUrl: { type: String },
