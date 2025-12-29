@@ -32,6 +32,7 @@ export interface FormData {
   dateYear: string;
   notes: string;
   poNumber: string;
+  owner: string;
   equipmentNumber: string;
   vin: string;
   licensePlateId: string;
@@ -56,6 +57,7 @@ export interface FormData {
   tireModel: string;
   tireBrand: string;
   amenikis: string;
+  conspicuityTape: string;
   doorBranding: string;
   doorColor: string;
   doorSensor: string;
@@ -119,6 +121,7 @@ export default function Edit({ type }: { type: string }) {
     dateYear: today.getFullYear().toString(),
     notes: '',
     poNumber: '',
+    owner: '',
     equipmentNumber: '',
     vin: '',
     licensePlateId: '',
@@ -143,6 +146,7 @@ export default function Edit({ type }: { type: string }) {
     tireModel: '',
     tireBrand: '',
     amenikis: '',
+    conspicuityTape: '',
     doorBranding: '',
     doorColor: '',
     doorSensor: '',
@@ -209,6 +213,18 @@ export default function Edit({ type }: { type: string }) {
     })();
   }, []);
 
+  useEffect(() => {
+    if (type === 'edit') {
+      const onDeptChanged = () => { Router.push(`/${user?.role}/inspections`); };
+      const onVendorChanged = () => { Router.push(`/${user?.role}/inspections`); };
+      window.addEventListener('selectedDepartmentChanged', onDeptChanged as EventListener);
+      window.addEventListener('selectedVendorChanged', onVendorChanged as EventListener);
+      return () => {
+        window.removeEventListener('selectedDepartmentChanged', onDeptChanged as EventListener);
+        window.removeEventListener('selectedVendorChanged', onVendorChanged as EventListener);
+      };
+    }
+  }, [Router, user?.role, type]);
 
   useEffect(() => {
     console.log("params", type)
