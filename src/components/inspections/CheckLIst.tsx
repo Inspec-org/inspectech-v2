@@ -74,7 +74,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             value={formData.poNumber}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-12 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none"
+                                            className="w-full px-3 py-2 pr-14 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none"
                                         />
 
                                         <button
@@ -98,7 +98,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                                 value={formData.owner}
                                                 onChange={handleChange}
                                                 placeholder="Enter value or click N/A"
-                                                className="w-full px-3 py-2 pr-12 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none"
+                                                className="w-full px-3 py-2 pr-14 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none"
                                             />
                                             <button
                                                 type="button"
@@ -122,7 +122,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             value={formData.equipmentNumber}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                         />
                                         <button
                                             type="button"
@@ -144,7 +144,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             value={formData.vin}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                         />
                                         <button
                                             type="button"
@@ -165,7 +165,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             value={formData.licensePlateId}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                         />
                                         <button
                                             type="button"
@@ -186,7 +186,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             value={formData.licensePlateCountry}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                         />
                                         <button
                                             type="button"
@@ -207,7 +207,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             value={formData.licensePlateExpiration}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                         />
                                         <button
                                             type="button"
@@ -230,7 +230,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             value={formData.licensePlateState}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                         />
                                         <button
                                             type="button"
@@ -251,7 +251,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                             value={formData.possessionOrigin}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                         />
                                         <button
                                             type="button"
@@ -668,7 +668,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         value={formData.tireModel}
                                         onChange={handleChange}
                                         placeholder="Enter value or click N/A"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                        className="w-full px-3 py-2 border pr-12 border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                     />
                                     <button
                                         type="button"
@@ -761,7 +761,7 @@ export default function CheckList({ prop, formData, setFormData }: { prop: strin
                                         value={formData.doorBranding}
                                         onChange={handleChange}
                                         placeholder="Enter value or click N/A"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                        className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
                                     />
                                     <button
                                         type="button"
