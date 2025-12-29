@@ -43,6 +43,12 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
     red: 'border-[#E96513]',
     green: 'border-emerald-600',
   };
+  const glowClasses: Record<string, string> = {
+    purple: 'glow-purple',
+    blue: 'glow-blue',
+    red: 'glow-red',
+    green: 'glow-green',
+  };
   const renderIcon = () => {
     if (department.imageType === 'icon') {
       const iconProps = { className: "w-6 h-6 text-white" };
@@ -58,8 +64,8 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
 
     return (
       <Image
-        width={24}
-        height={24}
+        width={34}
+        height={34}
         src={department.image || "/images/departments/van.svg"}
         alt="Icon"
       />
@@ -71,22 +77,22 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
     <div className="p-1"> {/* Add padding container */}
       <div
         onClick={() => onClick?.(department)}
-        className={`group relative border ${borderClasses[department.color]} rounded-xl p-6 transition-all transform hover:scale-[1.02] hover:shadow-lg cursor-pointer`}
+        className={`group relative border ${borderClasses[department.color]} rounded-xl px-6 py-10 transition-all transform hover:scale-[1.02] hover:shadow-lg cursor-pointer glow-border ${glowClasses[department.color]}`}
         style={{
           background: `linear-gradient(137deg, white 0%, #FAF5FF 100%)`,
         }}
       >
-        {department.isActive && (
+        {/* {department.isActive && ( */}
           <span
-            className="absolute top-4 right-4 px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full"
+            className="absolute top-4 right-4 px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-green-500 to-green-600 rounded-full"
           >
             ACTIVE
           </span>
-        )}
+        {/* )} */}
 
         {/* Icon */}
         <div
-          className={`${colorClasses[department.color]} w-12 h-12 rounded-lg flex items-center justify-center mb-4 transition-transform duration-2000 group-hover:scale-110`}
+          className={`${colorClasses[department.color]} w-14 h-14 rounded-lg flex items-center justify-center mb-4 transition-transform duration-2000 group-hover:scale-110`}
         >
           {renderIcon()}
         </div>
@@ -113,6 +119,38 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
           />
         </div>
       </div>
+      <style jsx>{`
+        .glow-border { position: relative; z-index: 0; }
+        .glow-border::before {
+          content: "";
+          position: absolute;
+          inset: -2px;
+          border-radius: 0.75rem;
+          border: 2px solid var(--glow-color);
+          opacity: 0.9;
+          pointer-events: none;
+        }
+        .glow-border::after {
+          content: "";
+          position: absolute;
+          inset: -2px;
+          border-radius: 0.75rem;
+          border: 2px solid var(--glow-color);
+          opacity: 0.6;
+          transform: scale(1);
+          animation: pulseOut 2.4s ease-out infinite;
+          pointer-events: none;
+        }
+        .glow-purple::before, .glow-purple::after { --glow-color: #A78BFA; }
+        .glow-blue::before, .glow-blue::after { --glow-color: #93C5FD; }
+        .glow-red::before, .glow-red::after { --glow-color: #F59E0B; }
+        .glow-green::before, .glow-green::after { --glow-color: #34D399; }
+        @keyframes pulseOut {
+          0% { transform: scale(1); opacity: 0.6; }
+          60% { transform: scale(1.08); opacity: 0; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 };

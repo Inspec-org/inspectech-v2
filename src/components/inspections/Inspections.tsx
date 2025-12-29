@@ -247,9 +247,30 @@ function Inspections() {
             // apply required transformations before flattening
             const transform = (doc: any): any => {
                 const result: any = {};
+                const imageKeys = [
+                    'frontLeftSideUrl',
+                    'frontRightSideUrl',
+                    'rearLeftSideUrl',
+                    'rearRightSideUrl',
+                    'doorDetailsImageUrl',
+                    'insideTrailerImageUrl',
+                    'dotFormImageUrl',
+                    'dotFormPdfUrl',
+                    'additionalAttachment1',
+                    'additionalAttachment2',
+                    'additionalAttachment3'
+                ];
+                const images: Record<string, any> = {};
                 let vendorSetFromVendorId = false;
                 for (const [key, value] of Object.entries(doc)) {
                     if (key === '_id' || key === '__v' || key === 'updatedAt' || key === 'createdAt') {
+                        continue;
+                    }
+                    if (key === 'dotFormPdfFileName') {
+                        continue;
+                    }
+                    if (imageKeys.includes(key)) {
+                        images[key] = value as any;
                         continue;
                     }
                     if (key === 'departmentId') {
@@ -263,7 +284,6 @@ function Inspections() {
                             result['vendor'] = name;
                             vendorSetFromVendorId = true;
                         }
-                        // omit vendorId from export
                         continue;
                     }
                     if (key === 'vendor') {
@@ -278,7 +298,6 @@ function Inspections() {
                         continue;
                     }
                     if (key === 'durationSec') {
-                        // merged into duration
                         continue;
                     }
                     if (key === 'dateDay') {
@@ -288,7 +307,6 @@ function Inspections() {
                         continue;
                     }
                     if (key === 'dateMonth' || key === 'dateYear') {
-                        // merged into date
                         continue;
                     }
                     if (key === 'rtbIndicator') {
@@ -301,6 +319,11 @@ function Inspections() {
                     }
                     result[key] = value as any;
                 }
+                imageKeys.forEach((k) => {
+                    if (images[k] !== undefined && images[k] !== null) {
+                        result[k] = images[k];
+                    }
+                });
                 return result;
             };
 
@@ -319,7 +342,10 @@ function Inspections() {
 
             const transformed: any[] = items.map(transform);
             const flatRows: Record<string, string>[] = transformed.map((doc: any) => flatten(doc));
-            const headers: string[] = Array.from(new Set(flatRows.flatMap((r) => Object.keys(r))));
+            const allHeaders: string[] = Array.from(new Set(flatRows.flatMap((r) => Object.keys(r))));
+            const imageHeaders = ['frontLeftSideUrl','frontRightSideUrl','rearLeftSideUrl','rearRightSideUrl','doorDetailsImageUrl','insideTrailerImageUrl','dotFormImageUrl','dotFormPdfUrl'];
+            const nonImageHeaders = allHeaders.filter((h) => h !== 'dotFormPdfFileName' && !imageHeaders.includes(h));
+            const headers: string[] = [...nonImageHeaders, ...imageHeaders.filter((h) => allHeaders.includes(h))];
             const triggerDownload = (blob: Blob, filename: string) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
