@@ -16,9 +16,9 @@ export async function GET(req: Request) {
     }
 
     await connectDB();
-    const totalInvitations = await Invitation.countDocuments({ vendorId });
+    const totalInvitations = await Invitation.countDocuments({ vendorId, status: { $ne: "expired" } });
 
-    const records = await Invitation.find({ vendorId })
+    const records = await Invitation.find({ vendorId, status: { $ne: "expired" } })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)

@@ -65,6 +65,19 @@ interface recentData {
 function Dashboard() {
 
     const [departments, setDepartments] = React.useState<Department[]>([]);
+    const readCache = (key: string) => {
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (!obj || typeof obj !== 'object') return null;
+        if (!obj.ts || obj.ts + 300000 < Date.now()) return null;
+        return obj.data;
+      } catch { return null; }
+    };
+    const writeCache = (key: string, data: any) => {
+      try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+    };
     const [vendors, setVendors] = React.useState<Vendor[]>([]);
     const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
     const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(null);
@@ -162,6 +175,13 @@ function Dashboard() {
     const getRecent = async () => {
         const vendorId = Cookies.get('selectedVendorId') || ''
         const departmentId = Cookies.get('selectedDepartmentId') || ''
+        const key = `recent:${vendorId}:${departmentId}`;
+        const cached = readCache(key);
+        if (cached) {
+            setRecentData(cached);
+            setRecentLoading(false);
+            return;
+        }
         try {
             setRecentLoading(true)
             const res = await apiRequest(("/api/dashboard/get_recent_inspections"), {
@@ -173,11 +193,10 @@ function Dashboard() {
             });
             if (res.ok) {
                 const json = await res.json();
-                console.log(json)
                 setRecentData(json.dashboard);
+                writeCache(key, json.dashboard);
             }
         } catch (error) {
-            console.error('Error fetching recent inspections', error);
             const errorMessage = error instanceof Error ? error.message : 'An error occurred';
             toast.error(errorMessage);
         }
@@ -190,7 +209,13 @@ function Dashboard() {
         const getStats = async () => {
             const vendorId = Cookies.get('selectedVendorId') || ''
             const departmentId = Cookies.get('selectedDepartmentId') || ''
-            console.log("stats api")
+            const key = `stats:${vendorId}:${departmentId}`;
+            const cached = readCache(key);
+            if (cached) {
+                setDashboardData(cached);
+                setLoading(false);
+                return;
+            }
             try {
                 const res = await apiRequest(("/api/dashboard/allData"), {
                     method: "POST",
@@ -201,11 +226,10 @@ function Dashboard() {
                 });
                 if (res.ok) {
                     const json = await res.json();
-                    console.log(json)
                     setDashboardData(json.dashboard);
+                    writeCache(key, json.dashboard);
                 }
             } catch (error) {
-                console.error('Error fetching dashboard Data:', error);
                 const errorMessage = error instanceof Error ? error.message : 'An error occurred';
                 toast.error(errorMessage);
             }
