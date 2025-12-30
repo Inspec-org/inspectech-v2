@@ -310,7 +310,11 @@ function Inspections() {
                         continue;
                     }
                     if (key === 'rtbIndicator') {
-                        result['atis regulator'] = value as any;
+                        result['atisRegulator'] = value as any;
+                        continue;
+                    }
+                    if (key === "possessionOrigin") {
+                        result['possessionOriginLocation'] = value as any;
                         continue;
                     }
                     if (key === 'amenikis') {
@@ -343,9 +347,82 @@ function Inspections() {
             const transformed: any[] = items.map(transform);
             const flatRows: Record<string, string>[] = transformed.map((doc: any) => flatten(doc));
             const allHeaders: string[] = Array.from(new Set(flatRows.flatMap((r) => Object.keys(r))));
-            const imageHeaders = ['frontLeftSideUrl','frontRightSideUrl','rearLeftSideUrl','rearRightSideUrl','doorDetailsImageUrl','insideTrailerImageUrl','dotFormImageUrl','dotFormPdfUrl'];
-            const nonImageHeaders = allHeaders.filter((h) => h !== 'dotFormPdfFileName' && !imageHeaders.includes(h));
-            const headers: string[] = [...nonImageHeaders, ...imageHeaders.filter((h) => allHeaders.includes(h))];
+
+            const imageHeaders = ['frontLeftSideUrl', 'frontRightSideUrl', 'rearLeftSideUrl', 'rearRightSideUrl', 'doorDetailsImageUrl', 'insideTrailerImageUrl', 'dotFormImageUrl', 'dotFormPdfUrl', 'additionalAttachment1', 'additionalAttachment2', 'additionalAttachment3'];
+            const isCanada = (deptName || '').toLowerCase() === 'canada trailers';
+
+            const generalOrder = [
+                'unitId',
+                'department',
+                'inspectionStatus',
+                'reviewReason',
+                'type',
+                'inspector',
+                'vendor',
+                'location',
+                'delivered',
+                'duration',
+                'date',
+                'notes'
+            ];
+
+            let checklistOrder = [
+                // Identification & Registration
+                'poNumber',
+                'owner',
+                'equipmentNumber',
+                'vin',
+                'licensePlateId',
+                'licensePlateCountry',
+                'licensePlateExpiration',
+                'licensePlateState',
+                'possessionOrigin',
+                'manufacturer',
+                'modelYear',
+                // Sensors & Electrical
+                'absSensor',
+                'airTankMonitor',
+                'atis regulator',
+                'lightOutSensor',
+                'sensorError',
+                'ultrasonicCargoSensor',
+                // Physical Dimensions & Components
+                'length',
+                'height',
+                'grossAxleWeightRating',
+                'axleType',
+                'brakeType',
+                'suspensionType',
+                'tireModel',
+                'tireBrand',
+                // Features & Appearance
+                'aerokits',
+                'doorBranding',
+                'doorColor',
+                'doorSensor',
+                'doorType',
+                'lashSystem',
+                'mudFlapType',
+                'panelBranding',
+                'noseBranding',
+                'conspicuityTape',
+                'skirted',
+                'skirtColor',
+                'captiveBeam',
+                'cargoCameras',
+                'cartbars',
+                'tpms',
+                'trailerHeightDecal'
+            ];
+            if (!isCanada) {
+                checklistOrder = checklistOrder.filter(h => h !== 'owner' && h !== 'conspicuityTape');
+            }
+
+            const generalHeaders = generalOrder.filter(h => allHeaders.includes(h));
+            const checklistHeaders = checklistOrder.filter(h => allHeaders.includes(h));
+            const mediaHeaders = imageHeaders.filter(h => allHeaders.includes(h));
+
+            const headers: string[] = [...generalHeaders, ...checklistHeaders, ...mediaHeaders];
             const triggerDownload = (blob: Blob, filename: string) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -362,7 +439,12 @@ function Inspections() {
             };
             const filename = `inspections_${new Date().toISOString().slice(0, 10)}.${format === 'excel' ? 'xlsx' : format}`;
             if (format === 'json') {
-                const blob = new Blob([JSON.stringify(transformed, null, 2)], { type: 'application/json' });
+                const ordered = transformed.map(obj => {
+                    const o: any = {};
+                    headers.forEach(h => { if (obj[h] !== undefined) o[h] = obj[h]; });
+                    return o;
+                });
+                const blob = new Blob([JSON.stringify(ordered, null, 2)], { type: 'application/json' });
                 triggerDownload(blob, filename);
             } else if (format === 'csv') {
                 const csvRows = flatRows.map((row) => headers.map((h) => escapeCSV(row[h])).join(','));

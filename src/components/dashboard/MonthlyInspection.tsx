@@ -167,7 +167,7 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
 
 
     return (
-        <div className="bg-white px-6 pt-6 border border-gray-200 rounded-2xl">
+        <div className="bg-white p-6 border border-gray-200 rounded-2xl">
             <div className="flex xl:flex-row flex-col justify-between xl:items-center mb-6">
                 <h3 className="font-semibold text-gray-900 text-lg">
                     {view} Inspection Results

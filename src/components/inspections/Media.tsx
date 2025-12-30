@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Check, Image, ImageIcon, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload, X, ZoomIn } from 'lucide-react';
 import { FormData } from './Edit';
 import { toast } from 'react-toastify';
@@ -19,6 +19,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isDragOver, setIsDragOver] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -61,15 +62,16 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
         }
     };
 
+    const isEmpty = !(previewUrl || currentUrl);
     return (
-        <div className="border border-gray-300 rounded-lg p-4 bg-white">
+        <div className="border border-gray-300 rounded-lg p-4 bg-white h-full flex flex-col">
             <div className="mb-4">
                 <h3 className="font-semibold text-base mb-1">{title}</h3>
                 <p className="text-sm text-gray-600">{description}</p>
             </div>
 
             <div
-                className={`border-2 border-dashed rounded-lg p-8 mb-4 flex flex-col items-center justify-center min-h-[200px] relative ${isDragOver ? 'border-purple-500 bg-purple-50' : 'border-gray-300'}`}
+                className={`border-2 border-dashed rounded-lg ${isEmpty ? 'p-8 min-h-[200px] cursor-pointer hover:bg-gray-50' : 'p-2'} mb-4 flex flex-col items-center justify-center relative flex-1 ${isDragOver ? 'border-purple-500 bg-purple-50' : 'border-gray-300'}`}
                 onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                 onDragLeave={() => setIsDragOver(false)}
                 onDrop={(e) => {
@@ -84,10 +86,11 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                     setUploadProgress(0);
                     handleUpload(file);
                 }}
+                onClick={() => { if (!(previewUrl || currentUrl)) inputRef.current?.click(); }}
             >
                 {(previewUrl || currentUrl) ? (
                     <>
-                        <img src={previewUrl || currentUrl || ''} alt="Preview" className="max-h-48 object-contain rounded-md border" />
+                        <img src={previewUrl || currentUrl || ''} alt="Preview" className="w-full max-h-56 object-contain" />
                         {onRemove && (
                             <button
                                 type="button"
@@ -125,12 +128,13 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                 <input
                     type="file"
                     accept=".jpg,.jpeg,.png"
+                    ref={inputRef}
                     onChange={handleFileSelect}
                     className="hidden"
                 />
-                <div className="border border-gray-300 rounded-lg py-2 px-4 text-center cursor-pointer hover:bg-gray-50 flex items-center justify-center gap-2">
+                <div className="border border-gray-300 rounded-lg py-2 px-4 text-center cursor-pointer bg-[#FAF4FF] hover:bg-[#FAF4FF]/60 flex items-center justify-center gap-2">
                     <Upload size={16} />
-                    <span className="text-sm font-medium">Select Image</span>
+                    <span className="text-sm font-medium ">Select Image</span>
                 </div>
             </label>
 

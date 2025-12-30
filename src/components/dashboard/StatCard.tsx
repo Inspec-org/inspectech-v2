@@ -1,4 +1,7 @@
-import React from 'react';
+'use client'
+import React, { useContext } from 'react';
+import { useRouter } from 'next/navigation';
+import { UserContext } from '@/context/authContext';
 import { CheckSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { stats } from './Dashboard';
 import { ClipLoader } from 'react-spinners';
@@ -44,12 +47,30 @@ const variantStyles = {
 export const StatCard: React.FC<StatCardProps> = ({ label, value, variant, loading }) => {
   const styles = variantStyles[variant];
   const Icon = styles.Icon;
+  const router = useRouter();
+  const { user } = useContext(UserContext);
+  const role = user?.role || 'user';
+
+  const handleClick = () => {
+    try {
+      if (variant === 'purple') {
+        sessionStorage.removeItem('inspectionFilters');
+      } else if (variant === 'green') {
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatuses: ['pass'] }));
+      } else if (variant === 'red') {
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatuses: ['fail'] }));
+      } else if (variant === 'yellow') {
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatuses: ['needs review'] }));
+      }
+    } catch {}
+    router.push(`/${role}/inspections`);
+  };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div onClick={handleClick} className="bg-white rounded-br-xl rounded-tr-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow border-l-8 border-l-black cursor-pointer">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm text-gray-600 mb-2">{label}</p>
+          <p className="text-base text-gray-600 mb-2">{label}</p>
           {loading ? (
             <ClipLoader color={styles.color} size={24} />
           ) : (
