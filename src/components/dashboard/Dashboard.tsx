@@ -88,6 +88,23 @@ function Dashboard() {
     const { user } = useContext(UserContext);
 
     useEffect(() => {
+        const vendorId = Cookies.get('selectedVendorId') || '';
+        const departmentId = Cookies.get('selectedDepartmentId') || '';
+        if (vendorId && departmentId) {
+            const cachedStats = readCache(`stats:${vendorId}:${departmentId}`);
+            if (cachedStats) {
+                setDashboardData(cachedStats);
+                setLoading(false);
+            }
+            const cachedRecent = readCache(`recent:${vendorId}:${departmentId}`);
+            if (cachedRecent) {
+                setRecentData(cachedRecent);
+                setRecentLoading(false);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
         const department = Cookies.get("selectedDepartment");
         if (departments.length > 0) {
             console.log(department)
