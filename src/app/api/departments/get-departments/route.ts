@@ -46,8 +46,6 @@ export async function GET(req: NextRequest) {
 
       return { ...dept.toObject(), color };
     });
-
-    console.log(departmentsWithColor);
     return NextResponse.json({ message: "success", departments: departmentsWithColor });
 
   } catch (error: any) {
