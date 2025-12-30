@@ -1,5 +1,5 @@
 'use client'
-import { ArrowRight, Briefcase, Cross, Download, Edit, Edit3, Filter, Plus, X } from 'lucide-react'
+import { ArrowRight, Briefcase, Cross, Download, Edit, Edit3, Filter, Plus, X, CheckSquare } from 'lucide-react'
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx';
 import GenericDataTable, { Column } from "@/components/tables/GenericDataTable";
@@ -376,13 +376,13 @@ function Inspections() {
                 'licensePlateCountry',
                 'licensePlateExpiration',
                 'licensePlateState',
-                'possessionOrigin',
+                'possessionOriginLocation',
                 'manufacturer',
                 'modelYear',
                 // Sensors & Electrical
                 'absSensor',
                 'airTankMonitor',
-                'atis regulator',
+                'atisRegulator',
                 'lightOutSensor',
                 'sensorError',
                 'ultrasonicCargoSensor',
@@ -405,9 +405,9 @@ function Inspections() {
                 'mudFlapType',
                 'panelBranding',
                 'noseBranding',
-                'conspicuityTape',
                 'skirted',
                 'skirtColor',
+                'conspicuityTape',
                 'captiveBeam',
                 'cargoCameras',
                 'cartbars',
@@ -686,8 +686,16 @@ function Inspections() {
 
     return (
         <div>
-            <h1 className='font-bold text-2xl px-2 py-3'>Inspections</h1>
+           
             <div className='bg-white p-4'>
+                <div className="flex items-center gap-3 p-2 border-b border-purple-100 bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#ded1eb] to-[100%] rounded-xl mb-4">
+                <div className="p-1.5 rounded-md ">
+                    <CheckSquare className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                    <h1 className="text-lg md:text-xl font-semibold text-gray-900">Inspections</h1>
+                </div>
+            </div>
                 {/* header */}
                 <div className='flex flex-col sm:flex-row gap-3 justify-between'>
                     <div className='flex flex-wrap gap-2'>
