@@ -44,10 +44,17 @@ const Reports: React.FC = () => {
 
 
     return (
-        <div className="">
+        <div className="bg-white p-4">
             <div className="relative">
                 {/* Page Title */}
-                <h1 className="font-bold text-2xl px-2 py-3">Reports</h1>
+                <div className="flex items-center gap-3 p-2 border-b border-purple-100 bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#ded1eb] to-[100%] rounded-xl mb-4">
+                    <div className="p-1.5 rounded-md ">
+                        <FileText className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div>
+                        <h1 className="text-lg md:text-xl font-semibold text-gray-900">Reports</h1>
+                    </div>
+                </div>
                 {/* Tabs */}
                 {user && user.role === 'admin' && (
                     <div className="flex w-full justify-between bg-purple-100 p-2 rounded-lg mb-4">

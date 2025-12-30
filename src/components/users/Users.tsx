@@ -1,6 +1,6 @@
 'use client';
 import React, { Suspense, useContext, useEffect, useRef, useState } from 'react';
-import { Filter, FileDown, Edit, Send, Trash2, X, FileText, Edit3, Mail, Plus, Divide } from 'lucide-react';
+import { Filter, FileDown, Edit, Send, Trash2, X, FileText, Edit3, Mail, Plus, Divide, Users } from 'lucide-react';
 import GenericDataTable, { Column } from '../tables/GenericDataTable';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { ReportDropdown } from '../ui/dropdown/reportsDropdown';
@@ -39,90 +39,9 @@ type UserData = {
 };
 
 
-export const dummyUsers: UserData[] = [
-    {
-        id: "1",
-        firstName: "John",
-        lastName: "Doe",
-        email: "john.doe@example.com",
-        vendor: "ABC Vendor",
-    },
-    {
-        id: "2",
-        firstName: "Jane",
-        lastName: "Smith",
-        email: "jane.smith@example.com",
-        vendor: "ABC Vendor",
-    },
-    {
-        id: "3",
-        firstName: "Michael",
-        lastName: "Anderson",
-        email: "michael.anderson@example.com",
-        vendor: "ABC Vendor",
-    },
-    {
-        id: "4",
-        firstName: "Emily",
-        lastName: "Stone",
-        email: "emily.stone@example.com",
-        vendor: "ABC Vendor",
-    },
-    {
-        id: "5",
-        firstName: "David",
-        lastName: "Brown",
-        email: "david.brown@example.com",
-        vendor: "ABC Vendor",
-    },
-];
-
-export const dummyAdmins: UserData[] = [
-    {
-        id: "1",
-        firstName: "John",
-        lastName: "Doe",
-        email: "john.doe@example.com",
-        vendor: "ABC Vendor",
-        department: "US Purchase Trailers",
-    },
-    {
-        id: "2",
-        firstName: "Jane",
-        lastName: "Smith",
-        email: "jane.smith@example.com",
-        vendor: "ABC Vendor",
-        department: "US Purchase Trailers",
-    },
-    {
-        id: "3",
-        firstName: "Michael",
-        lastName: "Anderson",
-        email: "michael.anderson@example.com",
-        vendor: "ABC Vendor",
-        department: "Canada Trailers",
-    },
-    {
-        id: "4",
-        firstName: "Emily",
-        lastName: "Stone",
-        email: "emily.stone@example.com",
-        vendor: "ABC Vendor",
-        department: "US Purchase Trailers",
-    },
-    {
-        id: "5",
-        firstName: "David",
-        lastName: "Brown",
-        email: "david.brown@example.com",
-        vendor: "ABC Vendor",
-        department: "Canada Trailers",
-    },
-];
-
 
 // Main Reports Component
-const Users: React.FC = () => {
+const UserModule: React.FC = () => {
     const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = useState('users');
     const [userLoading, setUserLoading] = useState(true)
@@ -436,11 +355,19 @@ const Users: React.FC = () => {
         <Suspense fallback={<div>Loading...</div>}>
             <div className="relative">
                 {/* Page Title */}
-                <h1 className="font-bold text-2xl px-2 py-3">Users</h1>
+
 
 
 
                 <div className='bg-white p-6'>
+                    <div className="flex items-center gap-3 p-2 border-b border-purple-100 bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#ded1eb] to-[100%] rounded-xl mb-4">
+                        <div className="p-1.5 rounded-md ">
+                            <Users className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg md:text-xl font-semibold text-gray-900">Users</h1>
+                        </div>
+                    </div>
                     <div className="flex justify-between mb-5">
                         {/* Tabs */}
                         <div className="inline-block bg-purple-100 p-2 rounded-lg ">
@@ -517,4 +444,4 @@ const Users: React.FC = () => {
     );
 };
 
-export default Users;
+export default UserModule;

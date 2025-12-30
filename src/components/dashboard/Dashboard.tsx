@@ -1,5 +1,6 @@
 'use client'
 import React, { Suspense, useContext, useEffect } from 'react'
+import { LayoutDashboard } from 'lucide-react';
 import Header from './Header'
 import { StatsGrid } from './StatCard';
 import MonthlyInspectionChart from './MonthlyInspection';
@@ -263,8 +264,17 @@ function Dashboard() {
 
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <h1 className='font-bold text-2xl px-2 py-3'>Dashboard</h1>
+
             <div className='w-full bg-white space-y-4 p-4 shadow-2xl rounded-2xl'>
+                <div className="flex items-center gap-3 p-2 border-b border-purple-100 bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#ded1eb] to-[100%] rounded-xl">
+                    <div className="p-1.5 rounded-md ">
+                        <LayoutDashboard className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div>
+                        <h1 className="text-lg md:text-xl font-semibold text-gray-900">Dashboard</h1>
+                       
+                    </div>
+                </div>
                 {/* <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)} vendors={vendors} setSelectedVendor={setSelectedVendor} selectedVendor={vendors.find(v => v.name === selectedVendor?.name)}
                 /> */}
                 <StatsGrid data={dashboardData?.stats || null} loading={loading} />

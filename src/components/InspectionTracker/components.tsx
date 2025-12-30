@@ -1,4 +1,4 @@
-import { Edit3, FileText, Filter, Mail, Trash2, X } from 'lucide-react';
+import { Edit3, FileText, Filter, Mail, Trash2, X, CheckSquare } from 'lucide-react';
 import React from 'react'
 interface ActionButton {
     icon: React.ReactNode;
@@ -34,10 +34,19 @@ export const Header: React.FC<{
         return (
             <div className="rounded-lg p-4">
                 {/* Title and Description */}
-                <div className="mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-1">{title}</h2>
-                    <p className="text-sm text-gray-600">{description}</p>
+                <div className="flex items-center gap-3 p-2 border-b border-purple-100 bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#ded1eb] to-[100%] rounded-xl  mb-4">
+                    <div className="p-1.5 rounded-md ">
+                        <CheckSquare className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className='flex flex-col'>
+                        <h2 className="text-lg md:text-xl font-semibold text-gray-900">{title}</h2>
+                        {description && (
+                            <p className="text-sm text-gray-600 ">{description}</p>
+                        )}
+                    </div>
+
                 </div>
+
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-3">
