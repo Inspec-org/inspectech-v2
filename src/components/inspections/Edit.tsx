@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, useContext } from 'react';
-import { ArrowLeft, Users, Trash2, Save, Database, Info, CheckSquare, Image, Filter, Check, Edit2, CheckCircle, Briefcase } from 'lucide-react';
+import { ArrowLeft, Users, Trash2, Save, Database, Info, CheckSquare, Image, Filter, Check, Edit2, CheckCircle, XCircle, Briefcase } from 'lucide-react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import General from './General';
 import CheckList from './CheckLIst';
@@ -13,6 +13,7 @@ import { ClipLoader } from 'react-spinners';
 import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
 import { useModal } from '@/hooks/useModal';
 import Cookies from 'js-cookie';
+import { evaluateInspectionData, openDetailedResults as openDetailedResultsReport } from './processing';
 
 export interface FormData {
   unitId: string;
@@ -100,8 +101,8 @@ export default function Edit({ type }: { type: string }) {
   const [saveLoading, setSaveLoading] = useState(false);
   const { isOpen, openModal, closeModal } = useModal();
   const [department, setDepartment] = useState("");
-
-
+  const [processResult, setProcessResult] = useState<{ status: 'pass' | 'fail'; missing: string[] } | null>(null);
+  const [showProcessDetails, setShowProcessDetails] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     unitId: '',
@@ -193,6 +194,8 @@ export default function Edit({ type }: { type: string }) {
       } catch (e: any) { }
     })();
   }, []);
+
+
 
   useEffect(() => {
     const vendorName = Cookies.get('selectedVendor') || '';
@@ -352,6 +355,18 @@ export default function Edit({ type }: { type: string }) {
     }
   };
 
+
+  const processInspectionData = () => {
+    const res = evaluateInspectionData(formData);
+    setProcessResult(res);
+    setShowProcessDetails(false);
+  };
+
+  const openDetailedResults = () => {
+    openDetailedResultsReport(formData);
+  };
+
+
   return (
     <div className="bg-white p-4">
       {loading && (
@@ -382,15 +397,36 @@ export default function Edit({ type }: { type: string }) {
                   <span>Delete Inspection</span>
                 </button>
 
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading} onClick={saveInspection}>
+                <button
+                  className="group flex gap-2 items-center bg-white hover:bg-[#0075FF] border border-[#0075FF] text-sm rounded-xl text-[#0075FF] hover:text-white w-full px-3 py-2 disabled:opacity-60"
+                  disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
+                  onClick={saveInspection}
+                >
                   {saveLoading ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#0075FF] group-hover:text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                       <span>Saving...</span>
-                    </>) : (
+                    </>
+                  ) : (
                     <>
                       <Edit2 size={18} />
                       <span>Save Changes</span>
@@ -398,7 +434,7 @@ export default function Edit({ type }: { type: string }) {
                   )}
                 </button>
 
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2'>
+                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' onClick={processInspectionData}>
                   <CheckCircle size={18} />
                   <span>Process Inspection Data</span>
                 </button>
@@ -443,6 +479,43 @@ export default function Edit({ type }: { type: string }) {
           )}
 
         </div>
+
+        {processResult && (
+          <div className={`rounded-xl border px-4 py-3 mb-4 ${processResult.status === 'pass' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {processResult.status === 'pass' ? (
+                  <CheckCircle size={18} className="text-green-600" />
+                ) : (
+                  <XCircle size={18} className="text-red-600" />
+                )}
+                <span className="font-semibold">{processResult.status.toUpperCase()} - Inspection Data Processing Complete</span>
+              </div>
+              <button
+                className={`flex items-center gap-2 px-3 py-1 text-sm rounded-lg border ${processResult.status === 'pass' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}
+                onClick={openDetailedResults}
+              >
+                <span>View Detailed Results</span>
+              </button>
+            </div>
+            {showProcessDetails && (
+              <div className="mt-3 text-sm text-gray-700">
+                {processResult.missing.length ? (
+                  <>
+                    <p className="mb-2">Missing fields:</p>
+                    <ul className="list-disc pl-5">
+                      {processResult.missing.map((m, i) => (
+                        <li key={i}>{m}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p>All required checklist and media data are present.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 mb-6 border-b">

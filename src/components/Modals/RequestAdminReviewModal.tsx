@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
 import { useSearchParams } from 'next/navigation';
+import { evaluateInspectionData } from '../inspections/processing';
 
 type Props = {
     isOpen: boolean;
@@ -102,10 +103,39 @@ const RequestAdminReviewModal: React.FC<Props> = ({
             const vendorName = Cookies.get('selectedVendor') || '';
             const vendorId = Cookies.get('selectedVendorId') || '';
             const departmentId = Cookies.get('selectedDepartmentId') || '';
+
+            const detailsRows: string[] = [];
+            await Promise.all(selectedInspections.map(async (unitId) => {
+                try {
+                    const res = await apiRequest(`/api/inspections/get-inspection-details?unitId=${encodeURIComponent(unitId)}`);
+                    const json = await res.json();
+                    if (res.ok && json.success && json.inspection) {
+                        const doc = json.inspection;
+                        const checklistStatus = evaluateInspectionData(doc).status.toUpperCase();
+                        const imgs = [
+                            doc.frontLeftSideUrl,
+                            doc.frontRightSideUrl,
+                            doc.rearLeftSideUrl,
+                            doc.rearRightSideUrl,
+                            doc.insideTrailerImageUrl,
+                            doc.doorDetailsImageUrl,
+                        ].map((v: any) => String(v || '').trim());
+                        const imageStatus = imgs.some(v => !v) ? 'Incomplete Image File' : 'PASS';
+                        detailsRows.push(`${unitId},${checklistStatus},${imageStatus}`);
+                    } else {
+                        detailsRows.push(`${unitId},N/A,N/A`);
+                    }
+                } catch {
+                    detailsRows.push(`${unitId},N/A,N/A`);
+                }
+            }));
+
+            const detailsCsv = `Unit ID,Inspection Checklist Status,Inspection Image Status\n${detailsRows.join('\n')}`;
+
             const res = await apiRequest('/api/admin-review/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ recipients, unitIds: selectedInspections, vendorName, vendorId, departmentId })
+                body: JSON.stringify({ recipients, unitIds: selectedInspections, vendorName, vendorId, departmentId, detailsCsv })
             });
             const json = await res.json();
             if (!res.ok || !json.success) throw new Error(json.message || 'Failed to send email');
@@ -125,8 +155,8 @@ const RequestAdminReviewModal: React.FC<Props> = ({
         setCurrentPage(page);
     };
     return (
-        <Modal isOpen={isOpen} onClose={onClose} className="max-w-[1100px]">
-            <div className="p-6 bg-[#F9F6FE]">
+        <Modal isOpen={isOpen} onClose={onClose} className="max-w-[1100px] max-h-[90vh]">
+            <div className="p-6 bg-[#F9F6FE] max-h-[90vh]">
                 <h2 className="text-2xl font-semibold mb-6">Request Admin Review</h2>
 
                 {/* Email Recipients */}
@@ -158,40 +188,39 @@ const RequestAdminReviewModal: React.FC<Props> = ({
 
 
                 {/* Inspections List */}
-               <div className="border border-gray-200 rounded-lg mb-4">
-  {inspections.map((inspection, index) => (
-    <div
-      key={`${inspection.unitId}-${index}`}
-      className={`flex items-center px-4 py-4 ${
-        index !== inspections.length - 1 ? "border-b border-gray-200" : ""
-      } hover:bg-gray-50 transition-colors`}
-    >
-      {/* LEFT */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <input
-          type="checkbox"
-          checked={selectedInspections.includes(inspection.unitId)}
-          onChange={() => toggleInspection(inspection.unitId)}
-          className="circle-checkbox"
-        />
+                <div className="border border-gray-200 rounded-lg mb-4 max-h-[30vh] overflow-y-auto">
+                    {inspections.map((inspection, index) => (
+                        <div
+                            key={`${inspection.unitId}-${index}`}
+                            className={`flex items-center px-4 py-4 ${index !== inspections.length - 1 ? "border-b border-gray-200" : ""
+                                } hover:bg-gray-50 transition-colors`}
+                        >
+                            {/* LEFT */}
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedInspections.includes(inspection.unitId)}
+                                    onChange={() => toggleInspection(inspection.unitId)}
+                                    className="circle-checkbox"
+                                />
 
-        <span className="text-sm font-medium truncate">
-          {inspection.unitId}
-        </span>
-      </div>
+                                <span className="text-sm font-medium truncate">
+                                    {inspection.unitId}
+                                </span>
+                            </div>
 
-      {/* CENTER (LOCKED CENTER) */}
-      <div className="flex justify-center w-32">
-        <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
-          {(inspection.inspectionStatus || "complete").toUpperCase()}
-        </span>
-      </div>
+                            {/* CENTER (LOCKED CENTER) */}
+                            <div className="flex justify-center w-32">
+                                <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                                    {(inspection.inspectionStatus || "complete").toUpperCase()}
+                                </span>
+                            </div>
 
-      {/* RIGHT (SPACER TO BALANCE CENTER) */}
-      <div className="flex-1" />
-    </div>
-  ))}
-</div>
+                            {/* RIGHT (SPACER TO BALANCE CENTER) */}
+                            <div className="flex-1" />
+                        </div>
+                    ))}
+                </div>
 
 
                 {/* Pagination */}
