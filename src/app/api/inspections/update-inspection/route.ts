@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
+import Review from "@/lib/models/Reviews";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function PUT(req: NextRequest) {
@@ -46,6 +47,8 @@ export async function PUT(req: NextRequest) {
       delete cleaned["delivered_status"];
     }
 
+    const existing = await Inspection.findOne({ unitId: cleaned.unitId }).select("inspectionStatus");
+
     const updated = await Inspection.findOneAndUpdate(
       { unitId: cleaned.unitId },
       { $set: cleaned },
@@ -54,6 +57,40 @@ export async function PUT(req: NextRequest) {
 
     if (!updated) {
       return NextResponse.json({ success: false, message: "Inspection not found" }, { status: 404 });
+    }
+
+    const status = String(updated.inspectionStatus || "").trim().toLowerCase();
+    const needsReview = status === "needs review" || status === "need review";
+    const reason = String(updated.reviewReason || "").trim();
+    if (needsReview && reason) {
+      const map: Record<string, string> = {
+        incomplete_image: "incomplete image file",
+        incomplete_checklist: "incomplete checklist",
+        incomplete_dot: "incomplete dot form",
+      };
+      const md = map[reason];
+      if (md) {
+        await Review.findOneAndUpdate(
+          { unitId: updated.unitId, vendorId: updated.vendorId, departmentId: updated.departmentId },
+          { $set: { missingData: md } }
+        );
+      }
+    }
+
+    const prevStatus = String((existing?.inspectionStatus) || "").trim().toLowerCase();
+    const changedToPass = prevStatus !== "pass" && status === "pass";
+    const changedFromPass = prevStatus === "pass" && status !== "pass";
+
+    if (changedToPass) {
+      await Review.findOneAndUpdate(
+        { unitId: updated.unitId, vendorId: updated.vendorId, departmentId: updated.departmentId },
+        { $set: { reviewCompletedAt: new Date() } }
+      );
+    } else if (changedFromPass) {
+      await Review.findOneAndUpdate(
+        { unitId: updated.unitId, vendorId: updated.vendorId, departmentId: updated.departmentId },
+        { $set: { reviewCompletedAt: null } }
+      );
     }
 
     return NextResponse.json({ success: true, inspection: updated }, { status: 200 });

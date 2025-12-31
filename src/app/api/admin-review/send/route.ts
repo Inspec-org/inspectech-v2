@@ -6,7 +6,7 @@ import Review from "@/lib/models/Reviews";
 
 export async function POST(req: NextRequest) {
   try {
-    const { recipients, unitIds, vendorName, vendorId, departmentId } = await req.json();
+    const { recipients, unitIds, vendorName, vendorId, departmentId, detailsCsv } = await req.json();
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return NextResponse.json({ success: false, message: "recipients must be a non-empty array" }, { status: 400 });
@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
       </div></body></html>
     `;
 
-    const csv = "unitId\n" + unitIds.join("\n");
-    const attachments = [{ filename: "unit_ids.csv", content: csv, contentType: "text/csv" }];
+    const csv = detailsCsv ? detailsCsv : "unitId\n" + unitIds.join("\n");
+    const attachments = [{ filename: detailsCsv ? "inspection_details.csv" : "unit_ids.csv", content: csv, contentType: "text/csv" }];
 
     if (!vendorId || !departmentId) {
       return NextResponse.json({ success: false, message: "vendorId and departmentId required" }, { status: 400 });
