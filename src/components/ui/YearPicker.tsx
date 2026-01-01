@@ -6,6 +6,7 @@ interface YearPickerProps {
     minYear?: number;
     maxYear?: number;
     width?: string
+    name?: string
 }
 
 const YearPicker: React.FC<YearPickerProps> = ({ 
@@ -13,7 +14,8 @@ const YearPicker: React.FC<YearPickerProps> = ({
     onChange, 
     minYear = 1980, 
     maxYear = new Date().getFullYear(),
-    width
+    width,
+    name
 }) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [displayYears, setDisplayYears] = useState<number[]>([]);
@@ -49,6 +51,7 @@ const YearPicker: React.FC<YearPickerProps> = ({
         <div className="relative" ref={ref}>
             <input
                 type="text"
+                name={name}
                 value={value || ''}
                 readOnly
                 onClick={() => setIsOpen(!isOpen)}

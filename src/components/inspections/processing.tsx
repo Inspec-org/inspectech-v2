@@ -1,7 +1,7 @@
 'use client';
 import Cookies from 'js-cookie';
 
-export type ProcessResult = { status: 'pass' | 'fail'; missing: string[] };
+export type ProcessResult = { status: 'pass' | 'fail'; missing: string[]; missingKeys: string[] };
 
 const labelMap: Record<string, string> = {
     poNumber: 'PO Number',
@@ -51,15 +51,16 @@ const label = (k: string) => labelMap[k] || k;
 
 export const evaluateInspectionData = (formData: any): ProcessResult => {
     const missing: string[] = [];
+    const missingKeys: string[] = [];
     const isCanadaTrailers = ((Cookies.get('selectedDepartment') || '').toLowerCase() === 'canada trailers');
-    const require = (key: string) => { if (!get(formData, key)) missing.push(label(key)); };
+    const require = (key: string) => { if (!get(formData, key)) { missing.push(label(key)); missingKeys.push(key); } };
 
     ['poNumber', 'equipmentNumber', 'vin', 'licensePlateId', 'licensePlateCountry', 'licensePlateExpiration', 'licensePlateState', 'possessionOrigin'].forEach(require);
     ['manufacturer', 'modelYear', 'length', 'height', 'grossAxleWeightRating', 'axleType', 'brakeType', 'suspensionType', 'tireModel', 'tireBrand', 'amenikis', 'doorBranding', 'doorColor', 'doorSensor', 'doorType', 'lashSystem', 'mudFlapType', 'panelBranding', 'noseBranding', 'skirted', 'skirtColor', 'captiveBeam', 'cargoCameras', 'cartbars', 'tpms', 'trailerHeightDecal'].forEach(require);
     if (isCanadaTrailers) ['owner', 'conspicuityTape'].forEach(require);
 
     const status: 'pass' | 'fail' = missing.length ? 'fail' : 'pass';
-    return { status, missing };
+    return { status, missing, missingKeys };
 };
 
 export const openDetailedResults = (formData: any): void => {

@@ -34,7 +34,12 @@ type NavItem = {
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
   const pathname = usePathname();
-  const { logout, user, session_id, setUser } = useContext(UserContext);
+  const { logout, user, session_id, setUser, loading } = useContext(UserContext);
+  const roleFromPath = React.useMemo(() => {
+    const seg = (pathname || "").split("/")[1];
+    return seg === "admin" || seg === "user" || seg === "vendor" ? seg : undefined;
+  }, [pathname]);
+  const currentRole = user?.role ?? roleFromPath;
   const [dept, setDept] = useState("");
   const [isRequestAdminReviewModalOpen, setIsRequestAdminReviewModalOpen] = useState(false);
   const [hoverSuspended, setHoverSuspended] = useState(false);
@@ -43,34 +48,34 @@ const AppSidebar: React.FC = () => {
     {
       icon: <Home />,
       name: "Dashboard",
-      path: `/${user?.role}/dashboard`,
+      path: currentRole ? `/${currentRole}/dashboard` : undefined,
     },
     {
       icon: <ClipboardCheck />,
       name: "Inspections",
-      path: `/${user?.role}/inspections`,
+      path: currentRole ? `/${currentRole}/inspections` : undefined,
     },
     {
       icon: <BarChart4 />,
       name: "Reports",
-      path: `/${user?.role}/reports`,
+      path: currentRole ? `/${currentRole}/reports` : undefined,
     },
     {
       icon: <Users />,
       name: "Users",
-      path: `/${user?.role}/users`
+      path: currentRole ? `/${currentRole}/users` : undefined,
     },
-    user?.role === "vendor" || user?.role === "user"
+    currentRole === "vendor" || currentRole === "user"
       ? {
-        icon: <Mail />,
-        name: "Request Admin Review",
-        onClick: () => setIsRequestAdminReviewModalOpen(true),
-      }
+          icon: <Mail />,
+          name: "Request Admin Review",
+          onClick: () => setIsRequestAdminReviewModalOpen(true),
+        }
       : {
-        icon: <CircleQuestionMark />,
-        name: "Inspection Vendor Tracker",
-        path: `/${user?.role}/inspection-vendor-tracker`,
-      },
+          icon: <CircleQuestionMark />,
+          name: "Inspection Vendor Tracker",
+          path: currentRole ? `/${currentRole}/inspection-vendor-tracker` : undefined,
+        },
   ];
 
   const renderMenuItems = (

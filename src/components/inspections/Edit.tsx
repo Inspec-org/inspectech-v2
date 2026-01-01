@@ -13,7 +13,7 @@ import { ClipLoader } from 'react-spinners';
 import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
 import { useModal } from '@/hooks/useModal';
 import Cookies from 'js-cookie';
-import { evaluateInspectionData, openDetailedResults as openDetailedResultsReport } from './processing';
+import { evaluateInspectionData, openDetailedResults as openDetailedResultsReport, ProcessResult } from './processing';
 
 export interface FormData {
   unitId: string;
@@ -101,7 +101,7 @@ export default function Edit({ type }: { type: string }) {
   const [saveLoading, setSaveLoading] = useState(false);
   const { isOpen, openModal, closeModal } = useModal();
   const [department, setDepartment] = useState("");
-  const [processResult, setProcessResult] = useState<{ status: 'pass' | 'fail'; missing: string[] } | null>(null);
+  const [processResult, setProcessResult] = useState<ProcessResult | null>(null);
   const [showProcessDetails, setShowProcessDetails] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
@@ -357,13 +357,15 @@ export default function Edit({ type }: { type: string }) {
 
 
   const processInspectionData = () => {
-    const res = evaluateInspectionData(formData);
+    const source = lastSaved ?? formData;
+    const res = evaluateInspectionData(source);
     setProcessResult(res);
     setShowProcessDetails(false);
   };
 
   const openDetailedResults = () => {
-    openDetailedResultsReport(formData);
+    const source = lastSaved ?? formData;
+    openDetailedResultsReport(source);
   };
 
 
@@ -588,7 +590,7 @@ export default function Edit({ type }: { type: string }) {
         )}
 
         {activeTab === 'checklist' && (
-          <CheckList prop='single' formData={formData} setFormData={setFormData} />
+          <CheckList prop='single' formData={formData} setFormData={setFormData} missingKeys={processResult?.missingKeys} />
         )}
 
         {activeTab === 'media' && (
