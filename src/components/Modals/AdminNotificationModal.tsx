@@ -43,15 +43,19 @@ const AdminNotificationModal: React.FC<Props> = ({
     const [autoEmailRecipients, setAutoEmailRecipients] = useState('');
     const [isAutoEnabled, setIsAutoEnabled] = useState(false);
     const [frequency, setFrequency] = useState('Daily');
-    const [timesPerDay, setTimesPerDay] = useState('Twice per day');
+    const [timesPerDay, setTimesPerDay] = useState('Once per day');
     const [firstSendHour, setFirstSendHour] = useState('04');
     const [firstSendMinute, setFirstSendMinute] = useState('16');
     const [firstSendPeriod, setFirstSendPeriod] = useState('PM');
     const [secondSendHour, setSecondSendHour] = useState('04');
     const [secondSendMinute, setSecondSendMinute] = useState('26');
     const [secondSendPeriod, setSecondSendPeriod] = useState('PM');
+    const [thirdSendHour, setThirdSendHour] = useState('04');
+    const [thirdSendMinute, setThirdSendMinute] = useState('36');
+    const [thirdSendPeriod, setThirdSendPeriod] = useState('PM');
     const [isFirstTimeOpen, setIsFirstTimeOpen] = useState(false);
     const [isSecondTimeOpen, setIsSecondTimeOpen] = useState(false);
+    const [isThirdTimeOpen, setIsThirdTimeOpen] = useState(false);
     const [availableVendors, setAvailableVendors] = useState<any[]>([]);
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['NEED REVIEW', 'COMPLETE', 'FAIL', 'INCOMPLETE', 'OUT OF CYCLE (DELIVERED)']);
@@ -601,6 +605,32 @@ const AdminNotificationModal: React.FC<Props> = ({
                             </div>
 
                             {/* Enable Automatic Notifications */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Frequency:</label>
+                                <ModalDropdown
+                                    options={[
+                                        { value: 'Daily', label: 'Daily' },
+                                        { value: 'Weekly', label: 'Weekly' },
+                                        { value: 'Monthly', label: 'Monthly' },
+                                    ]}
+                                    width={"w-full"}
+                                    value={frequency}
+                                    onChange={(e) => setFrequency(e)}
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">How many times per day:</label>
+                                <ModalDropdown
+                                    options={[
+                                        { value: 'Once per day', label: 'Once per day' },
+                                        { value: 'Twice per day', label: 'Twice per day' },
+                                        { value: 'Three times per day', label: 'Three times per day' },
+                                    ]}
+                                    width={"w-full"}
+                                    value={timesPerDay}
+                                    onChange={(e) => setTimesPerDay(e)}
+                                />
+                            </div>
                             <TimePickerDropdown
                                 isOpen={isFirstTimeOpen}
                                 onClose={() => setIsFirstTimeOpen(false)}
@@ -616,7 +646,7 @@ const AdminNotificationModal: React.FC<Props> = ({
                                 label={timesPerDay === 'Once per day' ? 'Send at (PDT):' : 'First send at (PDT):'}
                             />
                             {/* Second Send Time */}
-                            <div className={timesPerDay === 'Twice per day' ? '' : 'hidden'}>
+                            <div className={timesPerDay === 'Twice per day' || timesPerDay === 'Three times per day' ? '' : 'hidden'}>
                                 <TimePickerDropdown
                                     isOpen={isSecondTimeOpen}
                                     onClose={() => setIsSecondTimeOpen(false)}
@@ -630,6 +660,23 @@ const AdminNotificationModal: React.FC<Props> = ({
                                         setSecondSendPeriod(p);
                                     }}
                                     label="Second send at (PDT):"
+                                />
+                            </div>
+
+                            <div className={timesPerDay === 'Three times per day' ? '' : 'hidden'}>
+                                <TimePickerDropdown
+                                    isOpen={isThirdTimeOpen}
+                                    onClose={() => setIsThirdTimeOpen(false)}
+                                    onOpen={() => setIsThirdTimeOpen(true)}
+                                    hour={secondSendHour}
+                                    minute={secondSendMinute}
+                                    period={secondSendPeriod as 'AM' | 'PM'}
+                                    onTimeChange={(h, m, p) => {
+                                        setThirdSendHour(h);
+                                        setThirdSendMinute(m);
+                                        setThirdSendPeriod(p);
+                                    }}
+                                    label="Third send at (PDT):"
                                 />
                             </div>
 

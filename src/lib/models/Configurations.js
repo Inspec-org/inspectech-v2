@@ -11,7 +11,7 @@ const ConfigurationSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   isAutoEnabled: { type: Boolean, default: false },
   frequency: { type: String, enum: ['Daily', 'Weekly', 'Monthly'], default: 'Daily' },
-  timesPerDay: { type: String, enum: ['Once per day', 'Twice per day'], default: 'Twice per day' },
+  timesPerDay: { type: String, enum: ['Once per day', 'Twice per day', 'Three times per day'], default: 'Once per day' },
   times: { type: [SendTimeSchema], default: [] },
   recipients: { type: [String], default: [] },
   vendors: { type: [String], default: [] },

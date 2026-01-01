@@ -16,6 +16,7 @@ interface CustomDropdownProps {
     disabled?: boolean;
     width?: string
     icon?: React.ReactNode
+    name?: string
 }
 
 export const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -25,7 +26,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     placeholder = 'Select option',
     disabled = false,
     width,
-    icon
+    icon,
+    name
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -49,7 +51,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     };
 
     return (
-        <div ref={dropdownRef} className="relative">
+        <div ref={dropdownRef} className="relative" data-name={name}>
             <button
                 type="button"
                 disabled={disabled}

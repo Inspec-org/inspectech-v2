@@ -59,6 +59,24 @@ const isTimeMatch = (cfgTimes: any[], now: ReturnType<typeof to12Hour>) => {
 
 /* --------------------------------- runner --------------------------------- */
 
+const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+const isFrequencyMatch = (cfg: any, now: Date) => {
+  const freq = String(cfg?.frequency || 'Daily');
+  if (freq === 'Daily') return true;
+  if (freq === 'Weekly') {
+    const match = now.getDay() === 1;
+    console.log('📅 [AUTO][FREQ] Weekly check', { targetDow: 1, nowDow: now.getDay(), match });
+    return match;
+  }
+  if (freq === 'Monthly') {
+    const match = now.getDate() === 1;
+    console.log('📅 [AUTO][FREQ] Monthly check', { targetDom: 1, nowDom: now.getDate(), match });
+    return match;
+  }
+  return true;
+};
+
 const runAuto = async () => {
   console.log("⏱️ [AUTO] Job started");
 
@@ -77,6 +95,11 @@ const runAuto = async () => {
   for (const cfg of configs) {
     console.log(`⚙️ [AUTO] Checking config: ${cfg._id}`);
     console.log(`🕒 [AUTO] Config times: ${cfg.times || "none"} time: ${time}`);
+    console.log(`📅 [AUTO] Config frequency: ${cfg.frequency}`);
+    if (!isFrequencyMatch(cfg, now)) {
+      console.log("⏭️ [AUTO] Frequency does not match – skipping config");
+      continue;
+    }
     if (!isTimeMatch(cfg.times ?? [], time)) {
       console.log("⏭️ [AUTO] Time does not match – skipping config");
       continue;
