@@ -38,33 +38,41 @@ export async function POST(req: NextRequest) {
 
     // All arrays use { pass, fail }
 
-    // -------- MONTHLY: 12 months of CURRENT YEAR --------
     const monthly = Array.from({ length: 12 }, () => ({ pass: 0, fail: 0 }));
-
+    const monthlyKeys: Array<{ y: number; m: number }> = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(year, now.getMonth() - i, 1);
+      monthlyKeys.push({ y: d.getFullYear(), m: d.getMonth() });
+    }
+    const monthIndexMap = new Map<string, number>();
+    monthlyKeys.forEach((km, idx) => monthIndexMap.set(`${km.y}-${km.m}`, idx));
     inspections.forEach((i) => {
-      const date = new Date(i.createdAt);
-      if (date.getFullYear() === year) {
-        const monthIndex = date.getMonth(); // 0–11
-        if (i.inspectionStatus === "pass") {
-          monthly[monthIndex].pass++;
-        } else if (i.inspectionStatus === "fail") {
-          monthly[monthIndex].fail++;
-        }
+      const d = new Date(i.createdAt);
+      const idx = monthIndexMap.get(`${d.getFullYear()}-${d.getMonth()}`);
+      if (idx !== undefined) {
+        if (i.inspectionStatus === "pass") monthly[idx].pass++;
+        else if (i.inspectionStatus === "fail") monthly[idx].fail++;
       }
     });
 
-    // -------- QUARTERLY: 4 quarters of CURRENT YEAR --------
     const quarterly = Array.from({ length: 4 }, () => ({ pass: 0, fail: 0 }));
-
+    const currQ = Math.floor(now.getMonth() / 3);
+    const quarterKeys: Array<{ y: number; q: number }> = [];
+    for (let i = 3; i >= 0; i--) {
+      let q = currQ - i;
+      let y = year;
+      while (q < 0) { q += 4; y -= 1; }
+      quarterKeys.push({ y, q });
+    }
+    const quarterIndexMap = new Map<string, number>();
+    quarterKeys.forEach((kq, idx) => quarterIndexMap.set(`${kq.y}-${kq.q}`, idx));
     inspections.forEach((i) => {
-      const date = new Date(i.createdAt);
-      if (date.getFullYear() === year) {
-        const quarterIndex = Math.floor(date.getMonth() / 3); // 0,1,2,3
-        if (i.inspectionStatus === "pass") {
-          quarterly[quarterIndex].pass++;
-        } else if (i.inspectionStatus === "fail") {
-          quarterly[quarterIndex].fail++;
-        }
+      const d = new Date(i.createdAt);
+      const q = Math.floor(d.getMonth() / 3);
+      const idx = quarterIndexMap.get(`${d.getFullYear()}-${q}`);
+      if (idx !== undefined) {
+        if (i.inspectionStatus === "pass") quarterly[idx].pass++;
+        else if (i.inspectionStatus === "fail") quarterly[idx].fail++;
       }
     });
 

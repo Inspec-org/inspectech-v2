@@ -25,6 +25,7 @@ interface ValidationError {
 const FIELD_CATEGORIES = {
     identification: [
         'poNumber',
+        'owner',
         'equipmentId',
         'vin',
         'licensePlateId',
@@ -65,6 +66,7 @@ const FIELD_CATEGORIES = {
         'noseBranding',
         'skirted',
         'skirtColor',
+        'conspicuityTape',
         'captiveBeam',
         'cargoCamera',
         'cartbars',
@@ -113,81 +115,63 @@ export default function BatchCreateInspections() {
         setVendorId(vendId || '');
     }, []);
 
-    const handleChange = (field: string, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
+    useEffect(() => {
+        const onDeptChanged = () => {
+            const deptId = Cookies.get('selectedDepartmentId') || '';
+            setDepartment(deptId || '');
+            if (previewData) {
+                setPreviewData(null);
+                setValidationErrors([]);
+                setFile(null);
+            }
+        };
+        const onVendorChanged = () => {
+            const vendId = Cookies.get('selectedVendorId') || '';
+            setVendorId(vendId || '');
+            if (previewData) {
+                setPreviewData(null);
+                setValidationErrors([]);
+                setFile(null);
+            }
+        };
+        window.addEventListener('selectedDepartmentChanged', onDeptChanged as EventListener);
+        window.addEventListener('selectedVendorChanged', onVendorChanged as EventListener);
+        return () => {
+            window.removeEventListener('selectedDepartmentChanged', onDeptChanged as EventListener);
+            window.removeEventListener('selectedVendorChanged', onVendorChanged as EventListener);
+        };
+    }, [previewData]);
 
-    const handleSave = () => {
-        console.log('Saving:', formData);
-        // if (onSave) {
-        //     onSave(formData);
-        // }
-        // setIsOpen(false);
-        // if (onClose) {
-        //     onClose();
-        // }
-    };
+ 
+    
 
-    const countFieldCategories = (headers: string[]) => {
+    const countFieldCategories = (headers: string[], isCanada: boolean) => {
         const normalizeHeader = (h: string) =>
             h.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
-        const counts = {
-            identification: 0,
-            dimensional: 0,
-            feature: 0,
-            sensor: 0
+        const counts = { identification: 0, dimensional: 0, feature: 0, sensor: 0 };
+        const CATS = {
+            identification: isCanada ? FIELD_CATEGORIES.identification : FIELD_CATEGORIES.identification.filter(f => f !== 'owner'),
+            sensor: FIELD_CATEGORIES.sensor,
+            dimensional: FIELD_CATEGORIES.dimensional,
+            feature: isCanada ? FIELD_CATEGORIES.feature : FIELD_CATEGORIES.feature.filter(f => f !== 'conspicuityTape'),
         };
 
         headers.forEach(header => {
             const normalized = normalizeHeader(header);
-
-            // Helper to check if a field matches
             const matchesField = (field: string) => {
                 const normalizedField = normalizeHeader(field);
-                // Exact match first
                 if (normalized === normalizedField) return true;
-                // Only allow partial matches if the normalized header is much longer
-                // This prevents "height" from matching "trailerheightdecal"
                 if (normalized.length > normalizedField.length + 3) {
                     return normalized.includes(normalizedField);
                 }
                 return false;
             };
-
-            // Check each category in order
-            // IDENTIFICATION
-            if (FIELD_CATEGORIES.identification.some(matchesField)) {
-                counts.identification++;
-                console.log("MATCHED identification:", header, "updated count =", counts.identification);
-                return;
-            }
-
-            // SENSOR
-            if (FIELD_CATEGORIES.sensor.some(matchesField)) {
-                counts.sensor++;
-                console.log("MATCHED sensor:", header, "updated count =", counts.sensor);
-                return;
-            }
-
-            // FEATURE (check before dimensional to catch specific compound names)
-            if (FIELD_CATEGORIES.feature.some(matchesField)) {
-                counts.feature++;
-                console.log("MATCHED feature:", header, "updated count =", counts.feature);
-                return;
-            }
-
-            // DIMENSIONAL
-            if (FIELD_CATEGORIES.dimensional.some(matchesField)) {
-                counts.dimensional++;
-                console.log("MATCHED dimensional:", header, "updated count =", counts.dimensional);
-                return;
-            }
-
-            console.log("UNMATCHED field:", header);
+            if (CATS.identification.some(matchesField)) { counts.identification++; return; }
+            if (CATS.sensor.some(matchesField)) { counts.sensor++; return; }
+            if (CATS.feature.some(matchesField)) { counts.feature++; return; }
+            if (CATS.dimensional.some(matchesField)) { counts.dimensional++; return; }
         });
-
-        console.log("FINAL COUNTS →", counts);
         return counts;
     };
 
@@ -202,6 +186,7 @@ export default function BatchCreateInspections() {
                     value: selectedFile.name,
                     message: 'Please upload a CSV or Excel file'
                 }]);
+                event.target.value = '';
                 return;
             }
             setFile(selectedFile);
@@ -209,6 +194,7 @@ export default function BatchCreateInspections() {
             setPreviewData(null);
             processFile(selectedFile);
         }
+        event.target.value = '';
     };
 
     const processFile = async (file: File) => {
@@ -277,13 +263,10 @@ export default function BatchCreateInspections() {
             const equipIdIndex = headers.findIndex(h => equipIdHeaderCandidates.includes(h.trim().toLowerCase()));
             const seenUnitIds = new Map<string, number>();
             const normalizeHeader = (h: string) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-            const vinHeaderCandidates = ['vin', 'vehicle identification number', 'vehicleidentificationnumber'];
+            const vinHeaderCandidates = ['vin', 'vehicle identification number'];
             const vinIndex = headers.findIndex(h => {
                 const n = normalizeHeader(h);
-                return vinHeaderCandidates.some(c => {
-                    const cNorm = normalizeHeader(c);
-                    return n === cNorm || n.includes(cNorm) || cNorm.includes(n);
-                });
+                return vinHeaderCandidates.some(c => normalizeHeader(c) === n);
             });
             const dateHeaderCandidates = ['date', 'inspection date', 'inspectiondate'];
             const dateIndex = headers.findIndex(h => {
@@ -294,6 +277,92 @@ export default function BatchCreateInspections() {
                 });
             });
             const seenVINs = new Map<string, number>();
+            const isCanadaTrailers = ((Cookies.get('selectedDepartment') || '').toLowerCase() === 'canada trailers');
+            const matchHeader = (h: string, key: string) => {
+                const n = normalizeHeader(h);
+                const nk = normalizeHeader(key);
+                return n === nk;
+            };
+            const getDropdownAllowed = (key?: string): string[] => {
+                if (!key) return [];
+                const base: Record<string, string[]> = {
+                    manufacturer: ["N/A","Atro","Cartwright","DiMond","Don-Bur","Great Dane","Hyundai","Lufkin","Manac","Operbus","Stoughton","Strick","Tiger","TrailerMobile","Unity","Vanguard","Wabash"],
+                    length: isCanadaTrailers ? ["N/A","28 ft","53 ft"] : ["N/A","28 ft","48 ft","53 ft"],
+                    height: ["N/A","13 ft 6 in"],
+                    grossaxleweightrating: ["N/A","20000 lbs","34000 lbs"],
+                    axletype: ["N/A","Dual Axle","Single Axle"],
+                    braketype: ["N/A","Disc","Drum"],
+                    suspensiontype: ["N/A","Air","Spring"],
+                    tirebrand: ["N/A","Bridgestone","Continental","Firestone","Goodyear","Michelin"],
+                    doorcolor: ["N/A","Pantone 432 C","White"],
+                    doortype: ["N/A","Swing","Roll"],
+                    mudflaptype: ["N/A","Fast-Flap"],
+                    panelbranding: ["N/A","Bowman","Prime","Tape on White","Smile on Blue 2016","Smile on Blue 2017","Smile on Blue 2018","Smile on White 2019","Unbranded","XTRA Lease"],
+                    nosebranding: ["N/A","Captive Mean"],
+                    skirtcolor: ["N/A","Ekostinger","Pantone 432 C","Transtex","White"],
+                    conspicuitytape: ["N/A","Bottom Rear","Full Rear Perimeter"],
+                };
+                return base[key] || [];
+            };
+            const headerKinds = headers.map(h => {
+                const n = normalizeHeader(h);
+                const MAP: Record<string, { type: 'dropdown' | 'radio' | 'text' | 'year'; key?: string }> = {
+                    manufacturer: { type: 'dropdown', key: 'manufacturer' },
+                    modelyear: { type: 'year', key: 'modelyear' },
+                    length: { type: 'dropdown', key: 'length' },
+                    height: { type: 'dropdown', key: 'height' },
+                    grossaxleweightrating: { type: 'dropdown', key: 'grossaxleweightrating' },
+                    axletype: { type: 'dropdown', key: 'axletype' },
+                    braketype: { type: 'dropdown', key: 'braketype' },
+                    suspensiontype: { type: 'dropdown', key: 'suspensiontype' },
+                    tirebrand: { type: 'dropdown', key: 'tirebrand' },
+                    doorcolor: { type: 'dropdown', key: 'doorcolor' },
+                    doortype: { type: 'dropdown', key: 'doortype' },
+                    mudflaptype: { type: 'dropdown', key: 'mudflaptype' },
+                    panelbranding: { type: 'dropdown', key: 'panelbranding' },
+                    nosebranding: { type: 'dropdown', key: 'nosebranding' },
+                    skirtcolor: { type: 'dropdown', key: 'skirtcolor' },
+                    conspicuitytape: { type: 'dropdown', key: 'conspicuitytape' },
+                    amenikis: { type: 'radio' },
+                    aerokits: { type: 'radio' },
+                    doorsensor: { type: 'radio' },
+                    lashsystem: { type: 'radio' },
+                    captivebeam: { type: 'radio' },
+                    cargocamera: { type: 'radio' },
+                    cargocameras: { type: 'radio' },
+                    cartbars: { type: 'radio' },
+                    tpms: { type: 'radio' },
+                    trailerheightdecal: { type: 'radio' },
+                    abssensor: { type: 'radio' },
+                    airtankmonitor: { type: 'radio' },
+                    atisregulator: { type: 'radio' },
+                    rtbindicator: { type: 'radio' },
+                    lightoutsensor: { type: 'radio' },
+                    sensorerror: { type: 'radio' },
+                    ultrasoniccargosensor: { type: 'radio' },
+                    skirted: { type: 'radio' },
+                    ponumber: { type: 'text' },
+                    equipmentid: { type: 'text' },
+                    equipmentidtrailernumber: { type: 'text' },
+                    vin: { type: 'text' },
+                    licenseplateid: { type: 'text' },
+                    licenseplatecountry: { type: 'text' },
+                    licenseplateexpiration: { type: 'text' },
+                    licenseplatestateprovince: { type: 'text' },
+                    possessionorigin: { type: 'text' },
+                    doorbranding: { type: 'text' },
+                    tiremodel: { type: 'text' },
+                    owner: { type: 'text' },
+                    type: { type: 'text' },
+                };
+                return MAP[n] || { type: 'unknown' };
+            });
+            if (isCanadaTrailers) {
+                const hasOwner = headers.some(h => matchHeader(h, 'owner'));
+                const hasConsp = headers.some(h => matchHeader(h, 'conspicuityTape'));
+                if (!hasOwner) errors.push({ row: 0, field: 'owner', value: '', message: 'Missing required column for Canada: owner' });
+                if (!hasConsp) errors.push({ row: 0, field: 'conspicuityTape', value: '', message: 'Missing required column for Canada: conspicuityTape' });
+            }
 
             for (let i = dataStartIndex; i < rows.length; i++) {
                 const currentRow = rows[i];
@@ -306,13 +375,29 @@ export default function BatchCreateInspections() {
                     rowData[header] = strVal;
                 });
 
-                Object.keys(allowedByHeader).forEach(h => {
-                    const v = norm(String(rowData[h] ?? ''));
+                Object.keys(allowedByHeader).forEach(() => {});
+                headers.forEach((header, idx) => {
+                    const v = norm(String(currentRow[idx] ?? ''));
                     if (!v) return;
-                    const allowed = allowedByHeader[h];
-                    const match = allowed.some(a => a.toLowerCase() === v.toLowerCase());
-                    if (!match) {
-                        errors.push({ row: i + 1, field: h, value: String(rowData[h] ?? ''), message: `Value must be one of: ${allowed.join(', ')}` });
+                    const kind = headerKinds[idx];
+                    if (kind.type === 'dropdown') {
+                        const allowedA = getDropdownAllowed(kind.key);
+                        const allowedB = allowedByHeader[header] || [];
+                        const allowed = Array.from(new Set([...allowedA, ...allowedB]));
+                        const ok = allowed.length ? allowed.some(a => a.toLowerCase() === v.toLowerCase()) : true;
+                        if (!ok) errors.push({ row: i + 1, field: header, value: v, message: `Value must be one of: ${allowed.join(', ')}` });
+                    } else if (kind.type === 'radio') {
+                        const ok = ['n/a','yes','no'].includes(v.toLowerCase());
+                        if (!ok) errors.push({ row: i + 1, field: header, value: v, message: 'Value must be one of: N/A, Yes, No' });
+                    } else if (kind.type === 'year') {
+                        if (v.toLowerCase() !== 'n/a') {
+                            const num = Number(v);
+                            const maxY = new Date().getFullYear() + 1;
+                            if (!Number.isFinite(num) || num < 1980 || num > maxY) {
+                                errors.push({ row: i + 1, field: header, value: v, message: `Year must be between 1980 and ${maxY}, or N/A` });
+                            }
+                        }
+                    } else if (kind.type === 'text') {
                     }
                 });
 
@@ -343,7 +428,7 @@ export default function BatchCreateInspections() {
                 }
                 if (vinIndex >= 0) {
                     const vinVal = norm(String(currentRow[vinIndex] ?? ''));
-                    if (vinVal) {
+                    if (vinVal && vinVal.toLowerCase() !== 'n/a') {
                         const keyVin = normId(vinVal);
                         if (seenVINs.has(keyVin)) {
                             const firstRow = seenVINs.get(keyVin) || 0;
@@ -388,7 +473,7 @@ export default function BatchCreateInspections() {
                 const res = await apiRequest('/api/inspections/check-unit-ids', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ unitIds: unitIdsToCheck, departmentId: department }),
+                    body: JSON.stringify({ unitIds: unitIdsToCheck, departmentId: department, vendorId }),
                 });
                 const dup = await res.json();
                 if (res.ok && dup.success && Array.isArray(dup.existing) && dup.existing.length) {
@@ -434,14 +519,20 @@ export default function BatchCreateInspections() {
 
                 // Calculate stats from enhancedHeaders (excluding Sr No and Unit ID)
                 const dataHeaders = enhancedHeaders.filter(h => !['Sr No', 'Unit ID'].includes(h));
-                const categoryCounts = countFieldCategories(dataHeaders);
+                const categoryCounts = countFieldCategories(dataHeaders, isCanadaTrailers);
 
                 // Log missing fields
+                const cats = {
+                    identification: isCanadaTrailers ? FIELD_CATEGORIES.identification : FIELD_CATEGORIES.identification.filter(f => f !== 'owner'),
+                    sensor: FIELD_CATEGORIES.sensor,
+                    dimensional: FIELD_CATEGORIES.dimensional,
+                    feature: isCanadaTrailers ? FIELD_CATEGORIES.feature : FIELD_CATEGORIES.feature.filter(f => f !== 'conspicuityTape'),
+                };
                 const allExpectedFields = [
-                    ...FIELD_CATEGORIES.identification,
-                    ...FIELD_CATEGORIES.sensor,
-                    ...FIELD_CATEGORIES.dimensional,
-                    ...FIELD_CATEGORIES.feature
+                    ...cats.identification,
+                    ...cats.sensor,
+                    ...cats.dimensional,
+                    ...cats.feature
                 ];
 
                 const normalizeHeader = (h: string) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -639,46 +730,36 @@ export default function BatchCreateInspections() {
                 return bestMatch?.key || null;
             };
 
-            let success = 0, fail = 0;
+            const payloads: any[] = [];
             for (const row of previewData.rows) {
                 const payload: any = { unitId: String(row['Unit ID'] || '').trim(), departmentId: department, vendorId };
-
                 previewData.headers
                     .filter(h => !['Sr No', 'Unit ID'].includes(h))
                     .forEach(h => {
                         const normalized = normalize(h);
                         const v = row[h];
-
-                        // Check for special fields first
                         if (normalized === 'date') {
                             Object.assign(payload, parseDate(String(v ?? '')));
                         } else if (normalized === 'duration') {
                             Object.assign(payload, parseDuration(String(v ?? '')));
                         } else {
-                            // Use fuzzy matching for regular fields
                             const key = findBestMatch(h);
-                            console.log(`Header "${h}" (${normalized}) → Matched to: ${key || 'NO MATCH'}`);
-                            if (key) {
-                                payload[key] = v;
-                            }
+                            if (key) payload[key] = v;
                         }
                     });
-
-                console.log('Payload for row:', payload);
-
-                const res = await apiRequest('/api/inspections/add-new-inspection', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
-
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.message);
-                }
-                if (res.ok && data.success) success++; else fail++;
+                payloads.push(payload);
             }
-
+            const res = await apiRequest('/api/inspections/batch-create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payloads }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Batch create failed');
+            }
+            const success = Number(data?.successCount || 0);
+            const fail = Number(data?.failCount || 0);
             toast.success(`Created ${success} inspections${fail ? `, ${fail} failed` : ''}`);
             router.back();
         } catch (e) {
