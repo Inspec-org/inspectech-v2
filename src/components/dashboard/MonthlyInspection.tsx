@@ -12,20 +12,17 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const MONTHS = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-];
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const getRollingMonthLabels = () => {
+    const now = new Date();
+    const curr = now.getMonth();
+    return Array.from({ length: 12 }, (_, i) => MONTHS[(curr - 11 + i + 12) % 12]);
+};
+const getRollingQuarterLabels = () => {
+    const now = new Date();
+    const currQ = Math.floor(now.getMonth() / 3);
+    return Array.from({ length: 4 }, (_, i) => `Q${((currQ - 3 + i + 4) % 4) + 1}`);
+};
 
 type InspectionApi = {
     labels: string[];
@@ -57,8 +54,8 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
                     data.annually;
 
         const labels =
-            view === "Monthly" ? MONTHS :
-                view === "Quarterly" ? ["Q1", "Q2", "Q3", "Q4"] :
+            view === "Monthly" ? getRollingMonthLabels() :
+                view === "Quarterly" ? getRollingQuarterLabels() :
                     last4Years; // 12 months
 
         const passData = selected.map(i => i.pass);

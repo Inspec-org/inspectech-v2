@@ -19,8 +19,10 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
     const isCanadaTrailers = ((Cookies.get('selectedDepartment') || '').toLowerCase() === 'canada trailers');
 
     useEffect(() => {
-        const cls = 'missing-field-label';
-        document.querySelectorAll('.' + cls).forEach(el => el.classList.remove(cls));
+        const labelCls = 'missing-field-label';
+        const fieldCls = 'missing-field-input';
+        document.querySelectorAll('.' + labelCls).forEach(el => el.classList.remove(labelCls));
+        document.querySelectorAll('.' + fieldCls).forEach(el => el.classList.remove(fieldCls));
         (missingKeys || []).forEach((key) => {
             const input = document.querySelector<HTMLInputElement>(`input[name="${key}"]`);
             if (input) {
@@ -35,12 +37,14 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                     }
                     labelEl = container?.previousElementSibling as HTMLElement | null;
                 }
-                if (labelEl) labelEl.classList.add(cls);
+                if (labelEl) labelEl.classList.add(labelCls);
+                if (container) container.classList.add(fieldCls);
             }
             const dd = document.querySelector(`[data-name="${key}"]`) as HTMLElement | null;
             if (dd) {
                 const labelEl = dd.parentElement?.querySelector('label') as HTMLElement | null;
-                if (labelEl) labelEl.classList.add(cls);
+                if (labelEl) labelEl.classList.add(labelCls);
+                dd.classList.add(fieldCls);
             }
         });
     }, [missingKeys]);
@@ -77,7 +81,12 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
     return (
         <div className="">
-            <style jsx>{`.missing-field-label::after{content:" *";color:#ef4444;font-weight:700;}`}</style>
+            <style jsx>{`
+              .missing-field-label{color:#ef4444 !important;}
+              .missing-field-input.relative input{background-color:#fee2e2 !important;border-color:#ef4444 !important;}
+              .missing-field-input.flex{background-color:#fee2e2 !important;border:1px solid #ef4444 !important;border-radius:8px;}
+              .missing-field-input>button{background-color:#fee2e2 !important;border-color:#ef4444 !important;color:#b91c1c !important;}
+            `}</style>
             <div className="">
 
                 <div className={`flex  ${prop === "single" ? `md:flex-row flex-col ${expandedSections.identification || expandedSections.sensors ? "mb-5" : ""}` : "flex-col px-4"} justify-between items-start gap-2 `}>

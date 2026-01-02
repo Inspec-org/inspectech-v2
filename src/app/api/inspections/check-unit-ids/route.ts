@@ -21,10 +21,14 @@ export async function POST(req: NextRequest) {
     if (!departmentId) {
       return NextResponse.json({ success: false, message: "departmentId required" }, { status: 400 });
     }
+    const vendorId = body?.vendorId || '';
+    if (!vendorId) {
+      return NextResponse.json({ success: false, message: "vendorId required" }, { status: 400 });
+    }
 
     await connectDB();
 
-    const docs = await Inspection.find({ unitId: { $in: unitIds }, vendorId: user?._id, departmentId })
+    const docs = await Inspection.find({ unitId: { $in: unitIds }, vendorId, departmentId })
       .select("unitId")
       .lean();
 
