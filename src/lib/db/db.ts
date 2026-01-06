@@ -3,10 +3,6 @@ import { startInvitationCron } from "@/lib/cron/invitations";
 
 const MONGODB_URI = process.env.MONGO_URI;
 
-if (!MONGODB_URI) {
-  throw new Error("Missing MONGO_URI");
-}
-
 // 👇 Global cache (VERY IMPORTANT)
 let cached = (global as any).mongoose;
 
@@ -24,7 +20,11 @@ export async function connectDB() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI || "", {
+    const uri = process.env.MONGO_URI || MONGODB_URI;
+    if (!uri) {
+      throw new Error("Missing MONGO_URI");
+    }
+    cached.promise = mongoose.connect(uri, {
       bufferCommands: false,
     });
   }
