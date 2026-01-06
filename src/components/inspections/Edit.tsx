@@ -350,7 +350,7 @@ export default function Edit({ type }: { type: string }) {
       });
     } catch (e: any) {
       console.error('Upload error:', e);
-      toast.error(e.message || 'Cloudinary upload failed');
+      toast.error(e.message || 'Upload failed');
       throw e; // Re-throw to handle in PDFUpload component
     }
   };
