@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDatabase, ref, get } from "firebase/database";
-import { database } from "@/utils/firebase";
+import * as admin from "firebase-admin";
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const snapshot = await get(ref(database, `${body.data.userId}/settings/notificationsEnabled`));
+        if (!admin.apps.length) {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+                }),
+                databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`,
+            });
+        }
+        const db = admin.database();
+        const snapshot = await db.ref(`${body.data.userId}/settings/notificationsEnabled`).get();
         const enabled = snapshot.val();
 
         if (!enabled) {
