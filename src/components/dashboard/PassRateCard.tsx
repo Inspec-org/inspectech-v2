@@ -13,8 +13,10 @@ interface PassRateCardProps {
 }
 
 export default function PassRateCard({ passRate, passed, failed, loading }: PassRateCardProps) {
-  const circumference = 2 * Math.PI * 55;
-  const strokeDashoffset = circumference - (passRate / 100) * circumference;
+  const radius = 68;
+  const circumference = 2 * Math.PI * radius;
+  const normalizedPassRate = Number.isFinite(passRate) ? Math.min(Math.max(passRate, 0), 100) : 0;
+  const strokeDashoffset = circumference * (1 - normalizedPassRate / 100);
   const router = useRouter();
   const { user } = useContext(UserContext);
   const role = user?.role || 'user';
@@ -50,7 +52,7 @@ export default function PassRateCard({ passRate, passed, failed, loading }: Pass
                 <circle
                   cx="80"
                   cy="80"
-                  r="68"
+                  r={radius}
                   stroke="#e5e7eb"
                   strokeWidth="14"
                   fill="none"
@@ -60,7 +62,7 @@ export default function PassRateCard({ passRate, passed, failed, loading }: Pass
                 <circle
                   cx="80"
                   cy="80"
-                  r="68"
+                  r={radius}
                   stroke="#8b5cf6"
                   strokeWidth="14"
                   fill="none"
