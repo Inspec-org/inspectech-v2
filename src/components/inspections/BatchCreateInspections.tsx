@@ -798,7 +798,7 @@ export default function BatchCreateInspections() {
                             </button>
                             <button onClick={handleCreateInspections} disabled={!previewData || isSaving} className="flex items-center gap-2 px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                 <FolderPlus size={18} />
-                                <span>{isSaving ? 'Creating...' : 'Create Inspections'}</span>
+                                <span>{isSaving ? 'Creating...' : (previewData?.rows?.length ? `Create ${previewData.rows.length} Inspections` : 'Create Inspections')}</span>
                             </button>
                         </div>
                     </div>
