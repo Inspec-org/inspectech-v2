@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
 import { getUserFromToken } from "@/lib/getUserFromToken";
-
+import * as admin from "firebase-admin";
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
@@ -13,15 +13,24 @@ export async function POST(req: NextRequest) {
     const unitId = (form.get("unitId") as string) || "";
     const field = (form.get("field") as string) || "";
     const originalFileName = form.get("originalFileName") as string || file?.name || "";
-    
+
     if (!file) return NextResponse.json({ message: "file is required" }, { status: 400 });
 
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME!;
-    const apiKey = process.env.CLOUDINARY_API_KEY!;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET!;
-    if (!cloudName || !apiKey || !apiSecret) {
-      return NextResponse.json({ message: "Cloudinary env vars missing" }, { status: 500 });
+    const storageBucketEnv = process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY || !storageBucketEnv) {
+      return NextResponse.json({ message: "Firebase env vars missing" }, { status: 500 });
     }
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+        }),
+        storageBucket: storageBucketEnv,
+      });
+    }
+    const bucket = admin.storage().bucket(storageBucketEnv);
 
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
@@ -30,42 +39,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const timestamp = Math.floor(Date.now() / 1000);
-    
-    // Add access_mode=public for public access
-    const toSign = `access_mode=public&folder=${folder}&timestamp=${timestamp}&type=upload`;
-    const signature = crypto.createHash("sha1").update(toSign + apiSecret).digest("hex");
+    const cryptToken = crypto.randomUUID();
+    const filename = `${folder}/${unitId ? `${unitId}/` : ""}${field ? `${field}-` : ""}${Date.now()}-${originalFileName}`;
 
-    const uploadForm = new FormData();
-    uploadForm.append("file", file);
-    uploadForm.append("api_key", apiKey);
-    uploadForm.append("timestamp", String(timestamp));
-    uploadForm.append("signature", signature);
-    uploadForm.append("folder", folder);
-    uploadForm.append("type", "upload");
-    uploadForm.append("access_mode", "public"); // Add this for public access
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
-      method: "POST",
-      body: uploadForm,
+    await bucket.file(filename).save(buffer, {
+      metadata: {
+        contentType: file.type,
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
+      public: false,
     });
-    const json = await res.json();
-    
-    
-    if (!res.ok) return NextResponse.json({ message: json.error?.message || "Upload failed" }, { status: res.status });
+    const secure_url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filename)}?alt=media&token=${token}`;
 
     await connectDB();
 
     if (!unitId || !field) {
-      return NextResponse.json({ 
-        secure_url: json.secure_url, 
-        public_id: json.public_id,
-        originalFileName 
+      return NextResponse.json({
+        secure_url,
+        public_id: filename,
+        originalFileName
       }, { status: 200 });
     }
 
     // Store both URL and filename if it's a PDF
-    const updateFields: any = { [field]: json.secure_url };
+    const updateFields: any = { [field]: secure_url };
     if (field === 'dotFormPdfUrl' && originalFileName) {
       updateFields['dotFormPdfFileName'] = originalFileName;
     }
@@ -77,17 +77,17 @@ export async function POST(req: NextRequest) {
     );
 
     if (!updated) {
-      return NextResponse.json({ 
-        message: "Inspection not found", 
-        secure_url: json.secure_url, 
-        public_id: json.public_id,
+      return NextResponse.json({
+        message: "Inspection not found",
+        secure_url,
+        public_id: filename,
         originalFileName
       }, { status: 404 });
     }
 
-    return NextResponse.json({ 
-      secure_url: json.secure_url, 
-      public_id: json.public_id, 
+    return NextResponse.json({
+      secure_url,
+      public_id: filename,
       inspection: updated,
       originalFileName
     }, { status: 200 });
