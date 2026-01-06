@@ -79,7 +79,8 @@ const ReassignDepartmentModal: React.FC<Props> = ({
 
       const okCount = results.filter(r => r.status === 'fulfilled').length;
       if (okCount > 0) {
-        toast.success(`Reassigned ${okCount} inspection(s)`);
+        const deptName = departments.find(d => d._id === department)?.name || department;
+        toast.success(`Reassigned ${okCount} inspection(s) to ${deptName}`);
         if (onUpdated) onUpdated();
       }
 
@@ -126,7 +127,7 @@ const ReassignDepartmentModal: React.FC<Props> = ({
           <button
             onClick={handleReassign}
             disabled={loading || !department}
-            className="bg-[#8FADF5] text-white px-4 py-2 rounded-lg hover:bg-gray-400 transition flex gap-2 items-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[#447af9] text-white px-4 py-2 rounded-lg hover:bg-[#8FADF5] transition flex gap-2 items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowRight className="w-4 h-4" />
             Reassign
