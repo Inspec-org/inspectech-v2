@@ -76,6 +76,7 @@ const ReassignDepartmentModal: React.FC<Props> = ({
           })
         )
       );
+      
 
       const okCount = results.filter(r => r.status === 'fulfilled').length;
       if (okCount > 0) {
