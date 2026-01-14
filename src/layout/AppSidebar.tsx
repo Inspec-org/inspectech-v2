@@ -67,15 +67,15 @@ const AppSidebar: React.FC = () => {
     },
     currentRole === "vendor" || currentRole === "user"
       ? {
-          icon: <Mail />,
-          name: "Request Admin Review",
-          onClick: () => setIsRequestAdminReviewModalOpen(true),
-        }
+        icon: <Mail />,
+        name: "Request Admin Review",
+        onClick: () => setIsRequestAdminReviewModalOpen(true),
+      }
       : {
-          icon: <CircleQuestionMark />,
-          name: "Inspection Vendor Tracker",
-          path: currentRole ? `/${currentRole}/inspection-vendor-tracker` : undefined,
-        },
+        icon: <CircleQuestionMark />,
+        name: "Inspection Vendor Tracker",
+        path: currentRole ? `/${currentRole}/inspection-vendor-tracker` : undefined,
+      },
   ];
 
   const renderMenuItems = (
@@ -202,6 +202,7 @@ const AppSidebar: React.FC = () => {
 
   const isActive = useCallback(
     (path: string) => {
+      console.log("pathname", pathname,  "path", path)
       return pathname === path || pathname.startsWith(`${path}/`);
     },
     [pathname]

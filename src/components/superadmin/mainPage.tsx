@@ -1,10 +1,14 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Users, LayoutDashboard, Key, LogOut, Store, Shield, FileText, AlertCircle, Info, ChevronRight, AlertTriangle } from 'lucide-react';
 
 // Types
 import { AccountCardProps, ManagementCardProps, AlertBannerProps } from './types';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
+import Cookies from 'js-cookie';
+import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 
 // Header Component
 const Header: React.FC = () => {
@@ -134,16 +138,37 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; descriptio
 // Main Page Component
 const InspecTechOnboarding: React.FC = () => {
     const [selectedVendor, setSelectedVendor] = useState<string>('');
+    const [vendors, setVendors] = useState<{ _id: string; name: string }[]>([]);
     const router = useRouter();
 
-    const handleAccessDashboard = () => {
-        if (selectedVendor) {
-            console.log('Accessing dashboard for:', selectedVendor);
+    const getVendors = async () => {
+        try {
+            const res = await apiRequest('/api/vendors/get-vendors');
+            if (res.ok) {
+                const json = await res.json();
+                setVendors(json.vendors || []);
+                console.log(json.vendors)
+            }
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'An error occurred';
+            toast.error(msg);
+            setVendors([]);
         }
     };
 
+    useEffect(() => { getVendors(); }, []);
+
+    const handleAccessDashboard = () => {
+        if (!selectedVendor) return;
+        const v = vendors.find(v => String(v._id) === String(selectedVendor));
+        Cookies.set('selectedVendorId', selectedVendor);
+        if (v) Cookies.set('selectedVendor', v.name);
+        window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: selectedVendor }));
+        router.push('/superadmin/users');
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 lg:px-4 xl:px-0">
             <Header />
 
             <main className="max-w-7xl mx-auto py-8">
@@ -178,7 +203,7 @@ const InspecTechOnboarding: React.FC = () => {
                 {/* Advanced Management Tools Section */}
                 <div className="mb-1">
                     <SectionHeader
-                        icon={<Users size={24} color='#9CA3AF'/>}
+                        icon={<Users size={24} color='#9CA3AF' />}
                         title="Advanced Management Tools"
                         description="Access specialized management features to control vendor accounts, user access, and dashboard views"
                     />
@@ -197,16 +222,15 @@ const InspecTechOnboarding: React.FC = () => {
                             <p className="text-xs text-[#6B7280] mb-4">Select a vendor to directly access their dashboard</p>
 
                             <div className="flex gap-3">
-                                <select
-                                    value={selectedVendor}
-                                    onChange={(e) => setSelectedVendor(e.target.value)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                                >
-                                    <option value="">Select Vendor</option>
-                                    <option value="vendor1">Vendor 1</option>
-                                    <option value="vendor2">Vendor 2</option>
-                                    <option value="vendor3">Vendor 3</option>
-                                </select>
+                                <div className="flex-1 min-w-0">
+                                    <CustomDropdown
+                                        name="select-vendor"
+                                        options={vendors.map((v) => ({ value: String(v._id), label: v.name }))}
+                                        value={selectedVendor}
+                                        onChange={(val) => setSelectedVendor(val)}
+                                        placeholder="Select Vendor"
+                                    />
+                                </div>
 
                                 <button
                                     onClick={handleAccessDashboard}
@@ -272,7 +296,7 @@ const InspecTechOnboarding: React.FC = () => {
                 {/* Admin Access Control Section */}
                 <div className="">
                     <SectionHeader
-                        icon={<Key size={24} color='#7C3AED'/>}
+                        icon={<Key size={24} color='#7C3AED' />}
                         title="Admin Access Control"
                         description=""
                     />
