@@ -51,8 +51,13 @@ export default function SignInForm() {
         throw new Error(result?.message || result.error)
       }
       const role=result.user.role
-
-      router.push(`/${role}/departments`);
+      console.log(role)
+      if(role==="superadmin")
+      {
+        router.push(`/${role}`);
+      }
+      else
+        router.push(`/${role}/departments`);
       login(result.token)
 
       // const sessionId = result.data.data.session_id;

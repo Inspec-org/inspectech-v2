@@ -6,7 +6,6 @@ const PUBLIC_PATHS = new Set([
   "/forget-password",
   "/reset-password",
   "/accept-invitation",
-  "/superadmin"
 ]);
 
 export async function proxy(req: NextRequest) {
