@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Department from "@/lib/models/Departments";
+import Vendor from "@/lib/models/Vendor";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function GET(req: NextRequest) {
@@ -17,12 +18,25 @@ export async function GET(req: NextRequest) {
 
     let departments = [];
 
-    if (user.role === "admin") {
+    if (user.role === "superadmin" || user.role === "admin") {
       departments = await Department.find();
     } else if (user.role === "user") {
-      departments = await Department.find({
-        name: { $regex: "trailers", $options: "i" }
-      });
+      const vendorIds = [
+        ...(user.vendorAccess || []),
+        ...(user.vendorId ? [user.vendorId] : []),
+      ];
+      if (vendorIds.length === 0) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const vendors = await Vendor.find({ _id: { $in: vendorIds } }).select("departmentAccess");
+      const allowedDeptIds = Array.from(
+        new Set(
+          vendors.flatMap((v: any) => (v.departmentAccess || []).map((id: any) => id.toString()))
+        )
+      );
+
+      departments = await Department.find({ _id: { $in: allowedDeptIds } });
 
       departments.sort((a, b) => {
         const aIsUS = a.name.toLowerCase().includes("us");

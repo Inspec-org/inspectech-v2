@@ -437,7 +437,7 @@ const UserModule: React.FC = () => {
                 onUpdated={() => {
                     getInvites();
                 }}
-                role={user?.role === "user" ? "vendor" : "admin"}
+                role={user?.role === "superadmin" ? "vendor" : user?.role === "admin" ? "admin" : "vendor"}
                 vendorId={vendorId}
             />
         </Suspense>

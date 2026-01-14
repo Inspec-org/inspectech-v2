@@ -1,8 +1,10 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, FolderOpen, LogOut, AlertCircle, ChevronLeft, X, Check } from 'lucide-react';
 import { Department } from './types';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
 
 // Types
 
@@ -75,12 +77,34 @@ const SectionCard: React.FC<{
 const VendorOnboardingForm: React.FC = () => {
     const router = useRouter();
     const [vendorName, setVendorName] = useState('');
-    const [departments, setDepartments] = useState<Department[]>([
-        { id: '1', name: 'US Purchase Trailers', company: 'Amazon.com, Inc.', checked: false },
-        { id: '2', name: 'Canada Trailers', company: 'Amazon.com, Inc.', checked: false },
-        { id: '3', name: 'Maintenance', company: 'Amazon.com, Inc.', checked: false },
-        { id: '4', name: 'Campaign', company: 'Amazon.com, Inc.', checked: false },
-    ]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [submitting, setSubmitting] = useState(false);
+
+    const getDepartments = async () => {
+        try {
+            const res = await apiRequest("/api/departments/get-departments");
+            if (res.ok) {
+                const json = await res.json();
+                const mapped = (json.departments || []).map((d: any) => ({
+                    id: String(d._id),
+                    name: d.name,
+                    company: '',
+                    checked: false,
+                }));
+                setDepartments(mapped);
+            } else {
+                setDepartments([]);
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+            toast.error(errorMessage);
+            setDepartments([]);
+        }
+    };
+
+    useEffect(() => {
+        getDepartments();
+    }, []);
 
     const handleDepartmentToggle = (id: string) => {
         setDepartments(departments.map(dept =>
@@ -98,6 +122,35 @@ const VendorOnboardingForm: React.FC = () => {
 
     const selectedCount = departments.filter(d => d.checked).length;
     const hasError = selectedCount === 0;
+
+    const handleComplete = async () => {
+        if (!vendorName.trim()) return;
+        const selectedIds = departments.filter(d => d.checked).map(d => d.id);
+        if (!selectedIds.length) {
+            toast.error('Select at least one department');
+            return;
+        }
+        try {
+            setSubmitting(true);
+            const res = await apiRequest("/api/vendors/add_vendor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: vendorName.trim(), departmentAccess: selectedIds })
+            });
+            if (res.ok) {
+                const json = await res.json();
+                toast.success('Vendor created');
+            } else {
+                const data = await res.json().catch(() => ({}));
+                toast.error(data.error || 'Failed to create vendor');
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+            toast.error(errorMessage);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -169,7 +222,7 @@ const VendorOnboardingForm: React.FC = () => {
                                             type="checkbox"
                                             checked={dept.checked}
                                             onChange={() => handleDepartmentToggle(dept.id)}
-                                            className="mt-1 w-4 h-4 text-[#7C3AED] border-gray-300 rounded focus:ring-[#7C3AED]"
+                                            className="mt-1 w-4 h-4 text-[#7C3AED] border-gray-300 rounded focus:ring-[#7C3AED] circle-checkbox"
                                         />
                                         <div className="flex-1">
                                             <p className="text-sm font-medium text-gray-900">{dept.name}</p>
@@ -199,8 +252,9 @@ const VendorOnboardingForm: React.FC = () => {
                     </button>
 
                     <button
-                        disabled={!vendorName || hasError}
-                        className={`px-8 py-3 rounded-lg font-semibold transition-all ${!vendorName || hasError
+                        onClick={handleComplete}
+                        disabled={!vendorName || hasError || submitting}
+                        className={`px-8 py-3 rounded-lg font-semibold transition-all ${!vendorName || hasError || submitting
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-[#7C3AED] text-white hover:bg-purple-700 shadow-lg hover:shadow-xl'
                             }`}
