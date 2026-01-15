@@ -154,8 +154,6 @@ const VendorOnboardingForm: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <OnboardingHeader />
-
             <main className="max-w-7xl mx-auto pb-8">
                 <InfoBanner />
 
