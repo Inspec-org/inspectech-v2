@@ -9,34 +9,20 @@ import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
+import Header from './common/header';
 
-// Header Component
-const Header: React.FC = () => {
-    return (
-        <header className="bg-[#6B46C1] text-white py-8 px-8 shadow-lg">
-            <div className="max-w-7xl mx-auto flex justify-between items-center">
-                <div></div>
-                <div className='text-center'>
-                    <h1 className="text-xl font-bold">InspecTech Onboarding Console</h1>
-                    <p className="text-[#F3E8FF] text-xs font-light mt-1">Advanced Inventory Monitoring & Analytics Suite</p>
-                </div>
-                <button className="flex items-center gap-2 text-white hover:text-purple-200 transition-colors">
-                    <LogOut size={18} />
-                    <span className="text-sm">Logout</span>
-                </button>
-            </div>
-        </header>
-    );
-};
+
 
 // Welcome Banner Component
 const WelcomeBanner: React.FC<{ email: string }> = ({ email }) => {
     return (
-        <div className="mb-4">
-            <p className="text-gray-700 text-center text-xs">
-                Welcome, <span className="font-semibold">{email}</span>. Select the user type you want to onboard and test
+        <div className="mb-4 border shadow-sm p-4 text-gray-500 font-light text-sm">
+            <p className="">
+                Welcome, <span className="font-semibold">{email}</span>.
             </p>
-
+            <p>
+                Select the user type you want to onboard and test
+            </p>
         </div>
     );
 };
@@ -168,10 +154,8 @@ const InspecTechOnboarding: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 lg:px-4 xl:px-0">
-            <Header />
-
-            <main className="max-w-7xl mx-auto py-8">
+        <div className="min-h-screen bg-gray-50 ">
+            <main className="">
                 <WelcomeBanner email="vendor@inspectech.com" />
 
                 {/* Account Selection Section */}
@@ -183,7 +167,7 @@ const InspecTechOnboarding: React.FC = () => {
                         content="Access the vendor dashboard to view and manage inspection data"
                         buttonText="Onboard Vendor"
                         isActive={true}
-                        borderColor="border-[#22C55E]"
+                        borderColor="border-[#7C3AED]"
                         onButtonClick={() => router.push('/superadmin/vendorOnboarding')}
                     />
 
@@ -196,7 +180,7 @@ const InspecTechOnboarding: React.FC = () => {
                         buttonText="Onboard Admin"
                         buttonDisabled={true}
                         isActive={false}
-                        borderColor="border-[#E5E7EB]"
+                        borderColor="border-[#7C3AED]"
                     />
                 </div>
 
@@ -237,7 +221,7 @@ const InspecTechOnboarding: React.FC = () => {
                                     disabled={!selectedVendor}
                                     className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${selectedVendor
                                         ? 'bg-[#7C3AED] text-white hover:bg-purple-700'
-                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                        : 'bg-[#7C3AED] text-white opacity-60 cursor-not-allowed'
                                         }`}
                                 >
                                     Access Dashboard
@@ -283,7 +267,7 @@ const InspecTechOnboarding: React.FC = () => {
                                 message="Both Vendor Management and Company Management cards are now active. You can use either for managing accounts."
                             />
 
-                            <button className="w-full mt-4 bg-purple-50 text-?? py-3 px-4 rounded-lg font-medium hover:bg-purple-100 transition-colors flex items-center justify-center gap-2">
+                            <button className="w-full mt-4 bg-purple-50 text-[#7C3AED] py-3 px-4 rounded-lg font-medium hover:bg-purple-100 transition-colors flex items-center justify-center gap-2">
                                 <Users size={20} />
                                 Manage Vendors
                             </button>
@@ -302,7 +286,7 @@ const InspecTechOnboarding: React.FC = () => {
                     />
                 </div>
 
-                <div className={`bg-white border-t-4 border-[#9CA3AF] rounded-lg shadow-md p-6`}>
+                <div className={`bg-white border-t-4 border-[#7C3AED] rounded-lg shadow-md p-6`}>
                     <h4 className="text-xsfont-bold text-gray-900">Admin Dashboard Access</h4>
                     <p className="text-[10px] text-[#9CA3AF] mb-4">Access administrative dashboards for different departments</p>
 
