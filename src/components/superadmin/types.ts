@@ -41,6 +41,7 @@ export interface User {
 }
 
 export interface Vendor {
+  _id: string;
   name: string;
   status: 'Active' | 'Inactive';
 }
