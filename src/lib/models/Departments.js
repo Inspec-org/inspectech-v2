@@ -8,6 +8,8 @@ const DepartmentSchema = new mongoose.Schema({
     unique: true,
     required: true
   },
+}, {
+  timestamps: true
 })
 
 

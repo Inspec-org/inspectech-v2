@@ -18,7 +18,7 @@ export default function AdminLayout({
         <div className="min-h-screen ">
             <Header />
             {/* Page Content */}
-            <div className="py-4 mx-auto max-w-7xl lg:px-4 xl:px-0">
+            <div className="pt-4 mx-auto max-w-7xl lg:px-4 xl:px-0">
                 {children}
             </div>
         </div>

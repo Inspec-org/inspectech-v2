@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import User from "@/lib/models/User";
 import "@/lib/models/Vendor";
-
+import "@/lib/models/Departments"
+import { getUserFromToken } from "@/lib/getUserFromToken";
 
 
 export async function GET(req: Request) {
@@ -12,18 +13,82 @@ export async function GET(req: Request) {
     const role = url.searchParams.get("role");
     const page = parseInt(url.searchParams.get("page") || "1", 10);
     const limit = parseInt(url.searchParams.get("limit") || "10", 10);
-    if (!vendorId) {
-      return NextResponse.json(
-        { success: false, message: "vendorId is required" },
-        { status: 400 }
-      );
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.split(" ")[1];
+    if (!token) {
+      return NextResponse.json({ success: false, message: "No token provided" }, { status: 401 });
+    }
+    const actor = await getUserFromToken(token);
+    if (!actor) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+    await connectDB();
+    if (actor.role === 'superadmin') {
+      const totalUsers = await User.countDocuments({ role: "admin" });
+      console.log("totalUsers", totalUsers);
+
+      const records = await User.find({ role: "admin" })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("vendorId")
+        .populate("vendorAccess")
+        .populate("departmentAccess");
+
+      const users = records.map((u: any) => {
+        const obj = u.toObject();
+        const vnames: string[] = [];
+        if (obj.vendorId?.name) vnames.push(obj.vendorId.name);
+        if (Array.isArray(obj.vendorAccess)) {
+          for (const v of obj.vendorAccess) if (v?.name) vnames.push(v.name);
+        }
+        const vendorList = Array.from(new Set(vnames));
+        const deptNames = Array.isArray(obj.departmentAccess) ? obj.departmentAccess.map((d: any) => d?.name).filter(Boolean) : [];
+        return {
+          ...obj,
+          vendor: vendorList.length ? vendorList.join(", ") : null,
+          vendorNames: vendorList,
+          departmentName: deptNames.join(", "),
+          departmentNames: deptNames,
+          vendorId: undefined,
+          vendorAccess: undefined,
+          departmentAccess: undefined,
+        };
+      });
+
+
+
+      return NextResponse.json({
+        success: true,
+        users,
+        total: totalUsers,
+        page,
+        limit,
+        totalPages: Math.ceil(totalUsers / limit),
+      });
     }
 
-    await connectDB();
 
-    const filter: any = role === 'admin'
-      ? { role: 'admin', $or: [{ vendorId }, { vendorAccess: vendorId }] }
-      : { vendorId, ...(role ? { role } : {}) };
+    // Build filter based on actor role/access; vendorId query is optional
+
+    const isAdminRole = (role || 'admin') === 'admin';
+    let filter: any = {};
+    if (actor.role === 'admin') {
+      const accessible = [
+        actor.vendorId ? String(actor.vendorId) : null,
+        ...(Array.isArray(actor.vendorAccess) ? actor.vendorAccess.map((id: any) => String(id)) : [])
+      ].filter(Boolean);
+      filter = isAdminRole
+        ? { role: 'admin', $or: [{ vendorId: { $in: accessible } }, { vendorAccess: { $in: accessible } }] }
+        : { vendorId: { $in: accessible }, ...(role ? { role } : {}) };
+    } else {
+      const vId = actor.vendorId ? String(actor.vendorId) : null;
+      filter = isAdminRole
+        ? { role: 'admin', $or: [{ vendorId: vId }, { vendorAccess: vId }] }
+        : { vendorId: vId, ...(role ? { role } : {}) };
+    }
+
+    console.log("filter", filter);
 
     const totalUsers = await User.countDocuments(filter);
 
@@ -32,31 +97,28 @@ export async function GET(req: Request) {
       .skip((page - 1) * limit)
       .limit(limit)
       .populate("vendorId")
-      .populate("vendorAccess");
+      .populate("vendorAccess")
+      .populate("departmentAccess");
+
 
     const users = records.map((u: any) => {
       const obj = u.toObject();
-
-      let vendorName = null;
-
-      // Case 1: Direct vendorId match
-      if (obj.vendorId && String(obj.vendorId._id) === vendorId) {
-        vendorName = obj.vendorId.name;
+      const vnames: string[] = [];
+      if (obj.vendorId?.name) vnames.push(obj.vendorId.name);
+      if (Array.isArray(obj.vendorAccess)) {
+        for (const v of obj.vendorAccess) if (v?.name) vnames.push(v.name);
       }
-
-      // Case 2: Admin with vendorAccess array
-      if (!vendorName && Array.isArray(obj.vendorAccess)) {
-        const matchedVendor = obj.vendorAccess.find(
-          (v: any) => String(v._id) === vendorId
-        );
-        vendorName = matchedVendor?.name || null;
-      }
-
+      const vendorList = Array.from(new Set(vnames));
+      const deptNames = Array.isArray(obj.departmentAccess) ? obj.departmentAccess.map((d: any) => d?.name).filter(Boolean) : [];
       return {
         ...obj,
-        vendor: vendorName,
+        vendor: vendorList.length ? vendorList.join(", ") : null,
+        vendorNames: vendorList,
+        departmentName: deptNames.join(", "),
+        departmentNames: deptNames,
         vendorId: undefined,
-        vendorAccess: undefined, // optional cleanup
+        vendorAccess: undefined,
+        departmentAccess: undefined,
       };
     });
 

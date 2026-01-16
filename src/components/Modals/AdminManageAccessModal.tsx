@@ -1,0 +1,298 @@
+'use client'
+import React, { useEffect, useState } from 'react';
+import { Building2, Plus, UserCog, UserPlus, X, Check, Search } from 'lucide-react';
+import { Modal } from '../ui/modal';
+
+
+import { apiRequest } from '@/utils/apiWrapper';
+import { toast } from 'react-toastify';
+
+type Props = {
+    isOpen: boolean;
+    onClose: () => void;
+    onUpdated?: (payload?: { selectedVendors?: string[]; selectedDepartments?: string[]; vendorNames?: string[]; departmentNames?: string[] }) => void;
+    adminName?: string;
+    adminEmail?: string;
+    adminAvatarUrl?: string;
+    adminVendorNames?: string[];
+    adminDepartmentNames?: string[];
+};
+
+
+
+const AdminManageAccessModal: React.FC<Props> = ({
+    isOpen,
+    onClose,
+    onUpdated,
+    adminName,
+    adminEmail,
+    adminAvatarUrl,
+    adminVendorNames,
+    adminDepartmentNames,
+}) => {
+    const [activeTab, setActiveTab] = useState<'department' | 'vendor'>('department');
+    const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+    const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
+    const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([]);
+    const [vendors, setVendors] = useState<{ _id: string; name: string }[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [deptSearch, setDeptSearch] = useState('');
+    const [vendorSearch, setVendorSearch] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            (async () => {
+                try {
+                    const [vRes, dRes] = await Promise.all([
+                        apiRequest('/api/vendors/get-vendors'),
+                        apiRequest('/api/departments/get-departments'),
+                    ]);
+                    if (vRes.ok) {
+                        const vjson = await vRes.json().catch(() => ({}));
+                        setVendors(Array.isArray(vjson.vendors) ? vjson.vendors : []);
+                    } else {
+                        setVendors([]);
+                    }
+                    if (dRes.ok) {
+                        const djson = await dRes.json().catch(() => ({}));
+                        const mapped = Array.isArray(djson.departments)
+                            ? djson.departments.map((d: any) => ({ _id: String(d._id), name: d.name }))
+                            : [];
+                        setDepartments(mapped);
+                    } else {
+                        setDepartments([]);
+                    }
+                } catch {
+                    setVendors([]);
+                    setDepartments([]);
+                }
+            })();
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const vnames = (adminVendorNames || []).map((s) => String(s).toLowerCase());
+        const dnames = (adminDepartmentNames || []).map((s) => String(s).toLowerCase());
+
+        if (vendors && vendors.length) {
+            setSelectedVendors(
+                vendors
+                    .filter((v) => v.name && vnames.includes(String(v.name).toLowerCase()))
+                    .map((v) => String(v._id))
+            );
+        }
+        if (departments && departments.length) {
+            setSelectedDepartments(
+                departments
+                    .filter((d) => d.name && dnames.includes(String(d.name).toLowerCase()))
+                    .map((d) => String(d._id))
+            );
+        }
+    }, [isOpen, vendors, departments, adminVendorNames, adminDepartmentNames]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!adminEmail) {
+            toast.error('Missing admin email');
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await apiRequest('/api/users/update-access', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetEmail: adminEmail, vendorIds: selectedVendors, departmentIds: selectedDepartments })
+            });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok && json.success) {
+                const selectedVendorNames = vendors
+                    .filter((v: any) => selectedVendors.includes(String(v._id || v.id || v.value || '')))
+                    .map((v: any) => v.name || v.label || '');
+                const selectedDepartmentNames = departments
+                    .filter((d) => selectedDepartments.includes(String(d._id)))
+                    .map((d) => d.name);
+                toast.success('Access updated');
+                onUpdated?.({
+                    selectedVendors,
+                    selectedDepartments,
+                    vendorNames: selectedVendorNames,
+                    departmentNames: selectedDepartmentNames,
+                });
+                onClose();
+            } else {
+                toast.error(json.message || 'Failed to update access');
+            }
+        } catch (err: any) {
+            toast.error(err?.message || 'Update failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} showCloseButton={false} className="max-w-[700px] max-h-[90vh]">
+            {/* Purple Header */}
+            <div className="bg-gradient-to-b from-[#6D28D9] to-[#3730A3] px-6 py-4 rounded-t-lg relative">
+                <button
+                    onClick={onClose}
+                    className="absolute right-4 top-4 text-white hover:bg-white/20 rounded-full p-1 transition-colors"
+                >
+                    <X size={20} />
+                </button>
+                <div className="flex items-center gap-3 text-white">
+                    <div className="bg-white/20 p-2 rounded-lg">
+                        <UserCog size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-semibold">Manage Access</h2>
+                        <p className="text-sm text-white/90 mt-0.5">Add or remove department or vendor permissions</p>
+                    </div>
+                </div>
+            </div>
+            <div className="px-6 pt-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-semibold">
+                        {(adminName || '').trim().charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <div>
+                        <div className="text-sm font-medium text-gray-900">{adminName || '—'}</div>
+                        <div className="text-sm text-gray-500">{adminEmail || '—'}</div>
+                    </div>
+                </div>
+                <div className="mt-4 flex items-center gap-6 border-b w-full justify-around">
+                    <button
+                        className={`${activeTab === 'department' ? 'text-[#7C3AED] border-b-2 border-[#7C3AED] bg-[#7C3AED]/15' : 'text-gray-600'} py-3 text-sm font-medium w-full`}
+                        onClick={() => setActiveTab('department')}
+                    >
+                        Department
+                    </button>
+                    <button
+                        className={`${activeTab === 'vendor' ? 'text-[#7C3AED] border-b-2 border-[#7C3AED] bg-[#7C3AED]/15' : 'text-gray-600'} py-3 text-sm font-medium w-full`}
+                        onClick={() => setActiveTab('vendor')}
+                    >
+                        Vendor
+                    </button>
+                </div>
+                {activeTab === 'department' && (
+                    <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <div>
+                                <h3 className="text-sm text-gray-900">Department Access</h3>
+                                <p className="text-xs text-gray-500">Select departments this user can access</p>
+                            </div>
+                            <div className="text-xs text-gray-500">{selectedDepartments.length} of {departments.length} selected</div>
+                        </div>
+                        <div className="mb-3 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                value={deptSearch}
+                                onChange={(e) => setDeptSearch(e.target.value)}
+                                placeholder="Search departments..."
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+                            />
+                        </div>
+                        <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
+                            {departments
+                                .filter((d) => {
+                                    const q = deptSearch.trim().toLowerCase();
+                                    return !q || String(d.name).toLowerCase().includes(q);
+                                })
+                                .map((d) => {
+                                    const checked = selectedDepartments.includes(String(d._id));
+                                    return (
+                                        <label key={String(d._id)} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${checked ? 'border-[#7C3AED] bg-purple-50' : 'border-gray-200'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 rounded border-gray-300 circle-checkbox"
+                                                    checked={checked}
+                                                    onChange={(e) => {
+                                                        const id = String(d._id);
+                                                        setSelectedDepartments((prev) => e.target.checked ? [...prev, id] : prev.filter(x => x !== id));
+                                                    }}
+                                                />
+                                                <span className="text-sm text-gray-900">{d.name}</span>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                        </div>
+                    </div>
+                )}
+                {activeTab === 'vendor' && (
+                    <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <div>
+                                <h3 className="text-sm text-gray-900">Vendor Access</h3>
+                                <p className="text-xs text-gray-500">Select vendors this user can access</p>
+                            </div>
+                            <div className="text-xs text-gray-500">{selectedVendors.length} of {vendors.length} selected</div>
+                        </div>
+                        <div className="mb-3 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                value={vendorSearch}
+                                onChange={(e) => setVendorSearch(e.target.value)}
+                                placeholder="Search vendors..."
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+                            />
+                        </div>
+                        <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
+                            {vendors
+                                .filter((v: any) => {
+                                    const q = vendorSearch.trim().toLowerCase();
+                                    const name = (v.name || v.label || '').toLowerCase();
+                                    return !q || name.includes(q);
+                                })
+                                .map((v: any) => {
+                                    const id = String(v._id || v.id || v.value || '');
+                                    const name = v.name || v.label || '';
+                                    const checked = selectedVendors.includes(id);
+                                    return (
+                                        <label key={id} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${checked ? 'border-[#7C3AED] bg-purple-50' : 'border-gray-200'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 rounded border-gray-300 circle-checkbox"
+                                                    checked={checked}
+                                                    onChange={(e) => {
+                                                        setSelectedVendors((prev) => e.target.checked ? [...prev, id] : prev.filter(x => x !== id));
+                                                    }}
+                                                />
+                                                <span className="text-sm text-gray-900">{name}</span>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            
+
+            {/* Footer Actions */}
+            <div className="px-6 pb-6 flex items-center justify-end gap-3 mt-4">
+                <button
+                    onClick={onClose}
+                    className="px-6 py-2.5 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="px-6 py-2.5 bg-gradient-to-r from-[#6B46C1] to-[#8B5CF6] text-white font-medium rounded-lg hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+                >
+                    <Plus size={18} />
+                    Save Changes
+                </button>
+            </div>
+        </Modal>
+    );
+};
+
+export default AdminManageAccessModal;

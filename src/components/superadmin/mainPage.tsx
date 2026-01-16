@@ -10,6 +10,9 @@ import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import Header from './common/header';
+import AddAdminModal from '../Modals/addAdminModal';
+import AddVendorModal from '../Modals/AddVendorModal';
+import { useModal } from '@/hooks/useModal';
 
 
 
@@ -125,6 +128,8 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; descriptio
 const InspecTechOnboarding: React.FC = () => {
     const [selectedVendor, setSelectedVendor] = useState<string>('');
     const [vendors, setVendors] = useState<{ _id: string; name: string }[]>([]);
+    const { isOpen, openModal, closeModal } = useModal();
+    const { isOpen: isVendorOpen, openModal: openVendorModal, closeModal: closeVendorModal } = useModal();
     const router = useRouter();
 
     const getVendors = async () => {
@@ -154,7 +159,7 @@ const InspecTechOnboarding: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 ">
+        <div className=" bg-gray-50 ">
             <main className="">
                 <WelcomeBanner email="vendor@inspectech.com" />
 
@@ -168,7 +173,7 @@ const InspecTechOnboarding: React.FC = () => {
                         buttonText="Onboard Vendor"
                         isActive={true}
                         borderColor="border-[#7C3AED]"
-                        onButtonClick={() => router.push('/superadmin/vendorOnboarding')}
+                        onButtonClick={() => openVendorModal()}
                     />
 
                     <AccountCard
@@ -176,11 +181,11 @@ const InspecTechOnboarding: React.FC = () => {
                         description="Manage administrative controls"
                         icon={<Shield className="text-gray-400" size={24} />}
                         content="Access the department selection page and administrative features"
-                        warningText="Only available to admin account managers"
                         buttonText="Onboard Admin"
-                        buttonDisabled={true}
-                        isActive={false}
+                        buttonDisabled={false}
+                        isActive={true}
                         borderColor="border-[#7C3AED]"
+                        onButtonClick={() => openModal()}
                     />
                 </div>
 
@@ -251,7 +256,7 @@ const InspecTechOnboarding: React.FC = () => {
                 </div>
 
                 {/* Vendor Management Section */}
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                {/* <div className="grid md:grid-cols-2 gap-6 mb-8">
                     <ManagementCard
                         title="Vendor Management"
                         description="Maintain vendor accounts"
@@ -273,12 +278,12 @@ const InspecTechOnboarding: React.FC = () => {
                             </button>
                         </div>
                     </ManagementCard>
-                </div>
+                </div> */}
 
 
 
                 {/* Admin Access Control Section */}
-                <div className="">
+                {/* <div className="">
                     <SectionHeader
                         icon={<Key size={24} color='#7C3AED' />}
                         title="Admin Access Control"
@@ -294,7 +299,9 @@ const InspecTechOnboarding: React.FC = () => {
                         type="info"
                         message="This feature will be removed in the future. Please use the Company Management card instead, which provides enhanced functionality for managing all accounts and access."
                     />
-                </div>
+                </div> */}
+                <AddAdminModal isOpen={isOpen} onClose={closeModal} />
+                <AddVendorModal isOpen={isVendorOpen} onClose={closeVendorModal} onUpdated={getVendors} />
             </main>
         </div>
     );
