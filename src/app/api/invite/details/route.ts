@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import Invitation from "@/lib/models/Invitation";
+import Vendor from "@/lib/models/Vendor";
 
 export async function GET(req: NextRequest) {
     try {
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
 
         await connectDB();
 
-        const invitation = await Invitation.findOne({ token }).populate('vendorId');
+        const invitation = await Invitation.findOne({ token }).populate("vendorId");
 
         if (!invitation) {
             return NextResponse.json(
@@ -26,10 +27,23 @@ export async function GET(req: NextRequest) {
         }
 
         if (new Date() > invitation.expiresAt) {
-             return NextResponse.json(
+            return NextResponse.json(
                 { success: false, message: "Invitation has expired" },
                 { status: 410 }
             );
+        }
+
+        let vendorName: string | null = null;
+        let vendorIdStr: string | undefined = undefined;
+        if (invitation.role === "vendor" && invitation.vendorId) {
+            vendorName = invitation.vendorId?.name || null;
+            vendorIdStr = String(invitation.vendorId?._id || "");
+        } else if (invitation.role === "admin") {
+            const ids = Array.isArray((invitation as any).vendorAccess) ? (invitation as any).vendorAccess : [];
+            if (ids.length) {
+                const vendors = await Vendor.find({ _id: { $in: ids } }).select("name").lean();
+                vendorName = vendors.map(v => v.name).join(", ");
+            }
         }
 
         return NextResponse.json({
@@ -38,8 +52,8 @@ export async function GET(req: NextRequest) {
                 name: invitation.name,
                 email: invitation.email,
                 role: invitation.role,
-                vendorName: invitation.vendorId.name,
-                vendorId: invitation.vendorId._id
+                vendorName,
+                vendorId: vendorIdStr
             }
         });
 

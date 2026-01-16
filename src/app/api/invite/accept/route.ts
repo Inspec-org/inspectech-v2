@@ -41,16 +41,20 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Create User
         const [firstName = '', lastName = ''] = (invitation.name || '').split(' ');
-        const newUser = await User.create({
+        const payload: any = {
             email: invitation.email,
             password,
-            role: invitation.role==="vendor"?"user":"admin",
+            role: invitation.role === "vendor" ? "user" : "admin",
             vendorId: invitation.vendorId,
             firstName,
             lastName,
-        });
+        };
+        if (invitation.role === "admin") {
+            payload.vendorAccess = Array.isArray((invitation as any).vendorAccess) ? (invitation as any).vendorAccess : [];
+            payload.departmentAccess = Array.isArray((invitation as any).departmentAccess) ? (invitation as any).departmentAccess : [];
+        }
+        const newUser = await User.create(payload);
 
         // Delete invitation
         await Invitation.updateOne({ _id: invitation._id }, { status: "accepted" });

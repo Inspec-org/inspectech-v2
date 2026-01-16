@@ -21,7 +21,7 @@ export async function getUserFromToken(token: string | undefined) {
     await connectDB();
 
     const user = await User.findById(id).select(
-      "firstName lastName email avatar _id role vendorAccess vendorId" 
+      "firstName lastName email avatar _id role vendorAccess vendorId departmentAccess" 
     );
 
     if (!user) return null;

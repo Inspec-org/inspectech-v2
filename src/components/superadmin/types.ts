@@ -58,6 +58,15 @@ export interface AdminUser {
   name: string;
   email: string;
   secondaryEmail: string;
-  department: string;
+  vendor?: string;
+  vendorNames?: string[];
+  departments?: string[];
+  department?: string;
 }
 
+export type TablePaginationProps = {
+    currentPage: number;
+    totalCount: number;
+    pageSize: number;
+    onPageChange: (page: number) => void;
+};

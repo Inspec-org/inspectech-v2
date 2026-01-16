@@ -65,6 +65,12 @@ const UserSchema = new mongoose.Schema({
       ref: 'Vendor',
     }
   ],
+  departmentAccess: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
+    }
+  ],
   verificationOTPExpires: {
     type: Date,
     select: false
@@ -106,6 +112,9 @@ UserSchema.methods.comparePassword = async function (candidatePassword) {
 UserSchema.pre('save', function (next) {
   if (this.role === 'user' && !this.vendorId) {
     return next(new Error('vendorId is required for user role'));
+  }
+  if (this.departmentAccess && this.departmentAccess.length > 0 && this.role !== 'admin') {
+    return next(new Error('departmentAccess is allowed for admin role only'));
   }
   next();
 })

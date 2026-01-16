@@ -18,8 +18,22 @@ export async function GET(req: NextRequest) {
 
     let departments = [];
 
-    if (user.role === "superadmin" || user.role === "admin") {
-      departments = await Department.find();
+    if (user.role === "superadmin") {
+      departments = await Department.find().sort({ createdAt: -1 });
+    } else if (user.role === "admin") {
+      const allowedDeptIds = (user.departmentAccess || []).map((id: any) => id.toString());
+      if (allowedDeptIds.length === 0) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      departments = await Department.find({ _id: { $in: allowedDeptIds } });
+      departments.sort((a, b) => {
+        const aIsUS = a.name.toLowerCase().includes("us");
+        const bIsUS = b.name.toLowerCase().includes("us");
+
+        if (aIsUS && !bIsUS) return -1;
+        if (!aIsUS && bIsUS) return 1;
+        return a.name.localeCompare(b.name);
+      });
     } else if (user.role === "user") {
       const vendorIds = [
         ...(user.vendorAccess || []),
