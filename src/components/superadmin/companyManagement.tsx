@@ -11,44 +11,77 @@ import { AdminDepartmentsSection, AdminUserManagementSection, PageHeader, Vendor
 // Main Company Management Page Component
 const CompanyManagementPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<string>('admin-departments');
-    const [departments, setDepartments] = useState<Department[]>([]);
-    const [vendors, setVendors] = useState<Vendor[]>([]);
-    const [admins, setAdmins] = useState<AdminUser[]>([]);
     const [vendorId, setVendorId] = useState(() => Cookies.get('selectedVendorId') || '');
+    const [deptLoading, setDeptLoading] = useState(false);
+    const [vendorsLoading, setVendorsLoading] = useState(false);
+    const [adminsLoading, setAdminsLoading] = useState(false);
+
+    // Admin Departments pagination
+    const [deptPage, setDeptPage] = useState(1);
+    const deptPageSize = 5;
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [departmentsTotal, setDepartmentsTotal] = useState(0);
+
+    // Vendors pagination
+    const [vendorsPage, setVendorsPage] = useState(1);
+    const vendorsPageSize = 5;
+    const [vendors, setVendors] = useState<Vendor[]>([]);
+    const [vendorsTotal, setVendorsTotal] = useState(0);
+
+    // Admin Users pagination + search
+    const [adminPage, setAdminPage] = useState(1);
+    const adminPageSize = 5;
+    const [adminSearch, setAdminSearch] = useState('');
+    const [admins, setAdmins] = useState<AdminUser[]>([]);
+    const [adminsTotal, setAdminsTotal] = useState(0);
     // get departments api
     useEffect(() => {
         (async () => {
+            setDeptLoading(true);
             try {
-                const res = await apiRequest('/api/departments/get-departments');
+                const res = await apiRequest(`/api/departments/get-departments?page=${deptPage}&limit=${deptPageSize}`);
                 if (res.ok) {
                     const json = await res.json();
                     const mapped = (json.departments || []).map((d: any) => ({ id: String(d._id), name: d.name, status: 'Active' }));
                     setDepartments(mapped);
+                    setDepartmentsTotal(Number((json?.pagination?.total) ?? json.total ?? json.totalCount ?? mapped.length));
                 } else {
                     setDepartments([]);
+                    setDepartmentsTotal(0);
                 }
             } catch {
                 setDepartments([]);
+                setDepartmentsTotal(0);
+            } finally {
+                setDeptLoading(false);
             }
         })();
-    }, []);
+    }, [deptPage]);
     // get vendors api
     useEffect(() => {
         (async () => {
+            setVendorsLoading(true);
             try {
-                const res = await apiRequest('/api/vendors/get-vendors');
+                const res = await apiRequest(`/api/vendors/get-vendors?page=${vendorsPage}&limit=${vendorsPageSize}&role=admin`);
                 const json = await res.json();
+
                 if (res.ok) {
-                    const mapped: Vendor[] = (json.vendors || []).map((v: any) => ({ name: v.name, status: 'Active' }));
+                    const mapped: Vendor[] = (json.vendors || []).map((v: any) => ({ _id: String(v._id), name: v.name, status: v.status && String(v.status).toLowerCase() === 'inactive' ? 'Inactive' : 'Active' }));
                     setVendors(mapped);
+                    setVendorsTotal(Number((json?.pagination?.total) ?? json.total ?? json.totalCount ?? mapped.length));
                 } else {
                     setVendors([]);
+                    setVendorsTotal(0);
                 }
             } catch {
                 setVendors([]);
+                setVendorsTotal(0);
+            } finally {
+                setVendorsLoading(false);
             }
         })();
-    }, []);
+    }, [vendorsPage]);
+
     // handle selected vendor
     useEffect(() => {
         const handleVendorChange = () => {
@@ -63,8 +96,9 @@ const CompanyManagementPage: React.FC = () => {
 
     useEffect(() => {
         (async () => {
+            setAdminsLoading(true);
             try {
-                const res = await apiRequest(`/api/users/get-users?role=admin&page=1&limit=100`);
+                const res = await apiRequest(`/api/users/get-users?role=admin&page=${adminPage}&limit=${adminPageSize}&q=${encodeURIComponent(adminSearch)}`);
                 const json = await res.json();
                 if (res.ok) {
                     const mapped = (json.users || []).map((u: any, idx: number) => {
@@ -74,7 +108,7 @@ const CompanyManagementPage: React.FC = () => {
                                 ? u.vendor.split(',').map((s: string) => s.trim()).filter(Boolean)
                                 : [];
                         return {
-                            id: idx + 1,
+                            id: (adminPage - 1) * adminPageSize + idx + 1,
                             name: `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() || (u.name || ''),
                             email: u.email || '',
                             secondaryEmail: u.email || '',
@@ -85,18 +119,23 @@ const CompanyManagementPage: React.FC = () => {
                         };
                     });
                     setAdmins(mapped);
+                    setAdminsTotal(Number(json.total || json.totalCount || mapped.length));
                 } else {
                     setAdmins([]);
+                    setAdminsTotal(0);
                 }
             } catch {
                 setAdmins([]);
+                setAdminsTotal(0);
+            } finally {
+                setAdminsLoading(false);
             }
         })();
-    }, [vendorId]);
+    }, [adminPage, adminSearch, vendorId]);
     const tabs = [
         { id: 'admin-departments', label: 'Admin Departments', icon: <Building2 className="text-gray-400" size={18} /> },
         { id: 'admin-users', label: 'Admin Users', icon: <Users className="text-gray-400" size={18} /> },
-        { id: 'vendors', label: 'Vendors', icon: <Briefcase className="text-gray-400" size={18} /> },
+        { id: 'vendors', label: 'Vendors & Companies', icon: <Store className="text-gray-400" size={18} /> },
         { id: 'vendor-users', label: 'Vendor Users', icon: <UserCog2 className="text-gray-400" size={18} /> },
     ];
 
@@ -121,10 +160,41 @@ const CompanyManagementPage: React.FC = () => {
                         ))}
                     </div>
                     <div className="px-4 pt-4">
-                        {activeTab === 'admin-departments' && <AdminDepartmentsSection departments={departments} />}
-                        {activeTab === 'admin-users' && <AdminUserManagementSection adminUsers={admins} />}
-                        {activeTab === 'vendors' && <VendorsSection vendors={vendors} />}
-                        {activeTab === 'vendor-users' && <VendorUserManagementSection vendors={vendors} />}
+                        {activeTab === 'admin-departments' && (
+                            <AdminDepartmentsSection
+                                departments={departments}
+                                totalCount={departmentsTotal}
+                                currentPage={deptPage}
+                                pageSize={deptPageSize}
+                                onPageChange={setDeptPage}
+                                loading={deptLoading}
+                            />
+                        )}
+                        {activeTab === 'admin-users' && (
+                            <AdminUserManagementSection
+                                adminUsers={admins}
+                                totalCount={adminsTotal}
+                                currentPage={adminPage}
+                                pageSize={adminPageSize}
+                                onPageChange={setAdminPage}
+                                searchQuery={adminSearch}
+                                onSearchChange={setAdminSearch}
+                                loading={adminsLoading}
+                            />
+                        )}
+                        {activeTab === 'vendors' && (
+                            <VendorsSection
+                                vendors={vendors}
+                                totalCount={vendorsTotal}
+                                currentPage={vendorsPage}
+                                pageSize={vendorsPageSize}
+                                onPageChange={setVendorsPage}
+                                loading={vendorsLoading}
+                            />
+                        )}
+                        {activeTab === 'vendor-users' && (
+                            <VendorUserManagementSection vendors={vendors} />
+                        )}
                     </div>
                 </div>
             </main>

@@ -33,7 +33,7 @@ export default function DepartmentsPage() {
         setDepartments(departmentsWithImages);
       }
     } catch (error) {
-      console.error('Error fetching departments:', error);
+      ;
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       toast.error(errorMessage);
       setDepartments([]);
@@ -45,7 +45,7 @@ export default function DepartmentsPage() {
   }, []);
 
   const handleDepartmentSelect = (department: Department) => {
-    console.log('Selected department:', department);
+    ;
     router.push(`dashboard?department=${department.name}`);
     Cookies.set('selectedDepartment', department.name || '');
     Cookies.set('selectedDepartmentId', department._id || '');

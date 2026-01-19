@@ -30,7 +30,7 @@ function AcceptInvitationContent() {
             try {
                 const res = await fetch(`/api/invite/details?token=${token}`);
                 const data = await res.json();
-                console.log(data);
+                ;
                 if (data.success) {
                     setInvitation(data.invitation);
                 } else {

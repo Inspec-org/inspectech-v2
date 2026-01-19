@@ -15,7 +15,7 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
     // 🔹 handle form submission
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Form Submitted:", formData);
+        ;
         // You can now send `formData` to backend API here
     };
     useEffect(() => {

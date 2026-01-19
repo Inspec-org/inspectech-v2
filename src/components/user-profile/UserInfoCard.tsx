@@ -13,7 +13,7 @@ export default function UserInfoCard({ user }: Props) {
   const { isOpen, openModal, closeModal } = useModal();
 
   const handleSave = () => {
-    console.log("Saving changes...");
+    ;
     closeModal();
   };
   if (!user) return null;

@@ -235,7 +235,7 @@ const GeneratedReport = ({ close, selectedUnitIds }: { close: () => void; select
                 });
 
                 const json = (await res.json()) as GenerateReportResponse;
-                console.log(json);
+                ;
 
                 if (!res.ok || !json?.success) {
                     throw new Error(json?.message || 'Failed to generate report');

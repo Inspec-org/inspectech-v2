@@ -51,7 +51,7 @@ function Header({
                     <button
                       key={dept._id}
                       onClick={() => {
-                        console.log('Selected department:', dept);
+                        ;
                         setSelectedDepartment(dept);
                         setDepartmentOpen(false);
                         Cookies.set('selectedDepartment', dept.name || '');
@@ -99,10 +99,10 @@ function Header({
                     <button
                       key={vendor._id}
                       onClick={() => {
-                        console.log('Selected vendor:', vendor);
+                        ;
                         setSelectedVendor(vendor);
                         setVendorOpen(false);
-                        console.log('Vendor ID:', vendor._id);
+                        ;
                         Cookies.set('selectedVendor', vendor.name || '');
                         Cookies.set('selectedVendorId', vendor._id || '');
                         window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: vendor.name }));

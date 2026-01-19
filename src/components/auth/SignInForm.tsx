@@ -45,13 +45,13 @@ export default function SignInForm() {
       });
 
       const result = await response.json();
-      console.log(result)
+      
 
       if (!response.ok) {
         throw new Error(result?.message || result.error)
       }
       const role=result.user.role
-      console.log(role)
+      
       if(role==="superadmin")
       {
         router.push(`/${role}`);
@@ -72,15 +72,15 @@ export default function SignInForm() {
       //   // Redirect after successful login
       //   // router.push("/");
 
-      //   console.log("Login successful");
+      //   ;
       // } else {
-      //   console.error("No session_id found in response");
+      //   ;
       // }
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       toast.error(errorMessage);
-      console.error("Network Error:", error);
+      ;
     } finally {
       setIsLoading(false);
     }

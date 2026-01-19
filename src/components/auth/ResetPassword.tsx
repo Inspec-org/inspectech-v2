@@ -40,7 +40,7 @@ export default function ResetPassword() {
             const result = await response.json();
 
             if (!response.ok) {
-                console.error("Server Error:", result.message);
+                ;
                 return;
             }
             toast.success(result.message)
@@ -49,7 +49,7 @@ export default function ResetPassword() {
             // setCooldown(30);
 
         } catch (error) {
-            console.error("Network Error:", error);
+            ;
             const errorMessage = error instanceof Error ? error.message : String(error);
             toast.error(errorMessage);
         } finally {

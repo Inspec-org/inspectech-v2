@@ -21,6 +21,7 @@ import { BarChart, BarChart2, BarChart4, CircleQuestionMark, Clipboard, Clipboar
 import { UserContext } from "@/context/authContext";
 import RequestAdminReviewModal from "@/components/Modals/RequestAdminReviewModal";
 import Cookies from 'js-cookie';
+import Swal from 'sweetalert2';
 
 type NavItem = {
   name: string;
@@ -202,7 +203,7 @@ const AppSidebar: React.FC = () => {
 
   const isActive = useCallback(
     (path: string) => {
-      console.log("pathname", pathname,  "path", path)
+      
       return pathname === path || pathname.startsWith(`${path}/`);
     },
     [pathname]
@@ -465,7 +466,19 @@ const AppSidebar: React.FC = () => {
                 ? "justify-center"
                 : "justify-start"
                 }`}
-              onClick={logout}
+              onClick={async () => {
+                const result = await Swal.fire({
+                  title: 'Logout?',
+                  text: 'Are you sure you want to logout?',
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#EF4444',
+                  cancelButtonColor: '#6B7280',
+                  confirmButtonText: 'Logout',
+                  cancelButtonText: 'Cancel'
+                });
+                if (result.isConfirmed) logout();
+              }}
             >
               <svg
                 width="20"

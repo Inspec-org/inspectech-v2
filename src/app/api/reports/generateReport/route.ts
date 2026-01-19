@@ -347,7 +347,7 @@ export async function POST(req: NextRequest) {
             totalVendors: vendorIds.length
         });
     } catch (error: any) {
-        console.error("Error fetching analytics:", error);
+        ;
         return NextResponse.json(
             { success: false, message: error?.message || "Internal Server Error" },
             { status: 500 }

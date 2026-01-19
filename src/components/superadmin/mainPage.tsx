@@ -128,6 +128,7 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; descriptio
 const InspecTechOnboarding: React.FC = () => {
     const [selectedVendor, setSelectedVendor] = useState<string>('');
     const [vendors, setVendors] = useState<{ _id: string; name: string }[]>([]);
+    const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([]);
     const { isOpen, openModal, closeModal } = useModal();
     const { isOpen: isVendorOpen, openModal: openVendorModal, closeModal: closeVendorModal } = useModal();
     const router = useRouter();
@@ -138,7 +139,7 @@ const InspecTechOnboarding: React.FC = () => {
             if (res.ok) {
                 const json = await res.json();
                 setVendors(json.vendors || []);
-                console.log(json.vendors)
+                
             }
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'An error occurred';
@@ -147,7 +148,23 @@ const InspecTechOnboarding: React.FC = () => {
         }
     };
 
-    useEffect(() => { getVendors(); }, []);
+    const getDepartments = async () => {
+        try {
+            const res = await apiRequest('/api/departments/get-departments');
+            if (res.ok) {
+                const json = await res.json();
+                setDepartments(Array.isArray(json.departments) ? json.departments : []);
+            } else {
+                setDepartments([]);
+            }
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'An error occurred';
+            toast.error(msg);
+            setDepartments([]);
+        }
+    };
+
+    useEffect(() => { getVendors(); getDepartments(); }, []);
 
     const handleAccessDashboard = () => {
         if (!selectedVendor) return;
@@ -218,6 +235,9 @@ const InspecTechOnboarding: React.FC = () => {
                                         value={selectedVendor}
                                         onChange={(val) => setSelectedVendor(val)}
                                         placeholder="Select Vendor"
+                                        placement="top"
+                                        searchable
+                                        searchPlaceholder="Search vendors..."
                                     />
                                 </div>
 
@@ -300,8 +320,8 @@ const InspecTechOnboarding: React.FC = () => {
                         message="This feature will be removed in the future. Please use the Company Management card instead, which provides enhanced functionality for managing all accounts and access."
                     />
                 </div> */}
-                <AddAdminModal isOpen={isOpen} onClose={closeModal} />
-                <AddVendorModal isOpen={isVendorOpen} onClose={closeVendorModal} onUpdated={getVendors} />
+                <AddAdminModal isOpen={isOpen} onClose={closeModal} vendors={vendors} departments={departments} />
+                <AddVendorModal isOpen={isVendorOpen} onClose={closeVendorModal} onUpdated={getVendors} departments={departments} />
             </main>
         </div>
     );

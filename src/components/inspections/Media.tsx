@@ -199,7 +199,7 @@ const PDFUpload: React.FC<{
             toast.success("PDF Uploaded Successfully");
         } catch (e: any) {
             toast.error(e?.message || "PDF Upload Failed");
-            console.error('PDF upload error:', e);
+            ;
         } finally {
             setIsUploading(false);
             if (interval) {

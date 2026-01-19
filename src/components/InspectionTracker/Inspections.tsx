@@ -96,7 +96,7 @@ function TrackingInspections() {
                 filters: selectedFilters,
             };
 
-            console.log('📤 REQUEST PAYLOAD:', payload);
+            ;
 
             const res = await apiRequest('/api/reviews/get', {
                 method: 'POST',
@@ -251,7 +251,7 @@ function TrackingInspections() {
             try {
                 setSelectedFilters(JSON.parse(storedFilters));
             } catch (e) {
-                console.error('Invalid stored filters', e);
+                ;
             }
         }
         setFiltersReady(true);
@@ -421,7 +421,7 @@ function TrackingInspections() {
     };
 
     const handleRemoveFromHistory = () => {
-        console.log('Remove from history clicked');
+        ;
     };
     const handleClearSelection = () => {
         setSelectedRows([]);

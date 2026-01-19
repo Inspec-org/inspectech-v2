@@ -58,7 +58,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
     };
 
     const handleDropdownChange = (name: string, value: string) => {
-        console.log(name, value)
+        
         setFormData(prev => ({
             ...prev,
             [name]: value

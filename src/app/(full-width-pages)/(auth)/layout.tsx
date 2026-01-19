@@ -1,3 +1,4 @@
+"use client";
 import GridShape from "@/components/common/GridShape";
 import ThemeTogglerTwo from "@/components/common/ThemeTogglerTwo";
 
@@ -5,6 +6,8 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import { useRouter } from "next/navigation";
+import { UserContext } from "@/context/authContext";
 
 function Card({ content }: { content: string }) {
   return (
@@ -32,6 +35,24 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { user, loading } = React.useContext(UserContext);
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (loading) return;
+    if (user) {
+      const role = user.role || "user";
+      if (role === "superadmin") {
+        router.replace("/superadmin");
+      } else {
+        router.replace(`/${role}/departments`);
+      }
+    }
+  }, [user, loading, router]);
+
+  if (loading) return null;
+  if (user) return null;
+
   return (
     <div className="relative px-6 z-1  sm:p-0">
       <ThemeProvider>

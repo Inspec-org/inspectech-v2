@@ -11,6 +11,8 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onUpdated?: () => void;
+  vendors?: Vendor[];
+  departments?: Department[];
 };
 
 type Department = {
@@ -27,53 +29,19 @@ const AddAdminModal: React.FC<Props> = ({
   isOpen,
   onClose,
   onUpdated,
+  vendors = [],
+  departments = [],
 }) => {
   const [adminName, setAdminName] = useState('');
   const [email, setEmail] = useState('');
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      // Fetch vendors and departments
-      fetchVendorsAndDepartments();
-    }
-  }, [isOpen]);
 
-  const fetchVendorsAndDepartments = async () => {
-    try {
-      const [vendorsRes, departmentsRes] = await Promise.all([
-        apiRequest('/api/vendors/get-vendors'),
-        apiRequest('/api/departments/get-departments'),
-      ]);
-      if (vendorsRes.ok) {
-        const vjson = await vendorsRes.json().catch(() => ({}));
-        setVendors(Array.isArray(vjson.vendors) ? vjson.vendors : []);
-        // if (vendorId) {
-        //   setSelectedVendors((prev) => (prev.includes(vendorId) ? prev : [vendorId, ...prev]));
-        // }
-      } else {
-        setVendors([]);
-      }
-      if (departmentsRes.ok) {
-        const djson = await departmentsRes.json().catch(() => ({}));
-        const mapped = Array.isArray(djson.departments)
-          ? djson.departments.map((d: any) => ({ _id: String(d._id), name: d.name }))
-          : [];
-        setDepartments(mapped);
-      } else {
-        setDepartments([]);
-      }
-    } catch (error) {
-      setVendors([]);
-      setDepartments([]);
-      const message = error instanceof Error ? error.message : 'Failed to load data';
-      toast.error(message);
-    }
-  };
+
+
 
   const handleSubmit = async () => {
     if (!adminName.trim()) {
@@ -103,16 +71,20 @@ const AddAdminModal: React.FC<Props> = ({
         }),
       });
       const data = await res.json().catch(() => ({}));
-      console.log(data)
+      
       if (res.ok) {
-        toast.success('Admin onboarded successfully');
+        toast.success(`Invitation sent to email`);
         onUpdated?.();
+        setAdminName('');
+        setEmail('');
+        setSelectedVendors([]);
+        setSelectedDepartments([]);
         onClose();
       } else {
-        toast.error(data.error || 'Failed to onboard admin');
+        toast.error(data.message || 'Failed to send invitation');
       }
     } catch (error: any) {
-      const message = error?.message || 'Failed to onboard admin';
+      const message = error?.message || 'Failed to send invitation';
       toast.error(message);
     } finally {
       setLoading(false);
@@ -201,6 +173,9 @@ const AddAdminModal: React.FC<Props> = ({
                 </button>
               </>
             )}
+            searchable
+            searchPlaceholder="Search vendors..."
+            showDone
           />
           <p className="text-xs text-gray-500 mt-1.5">
             {selectedVendors.length} vendor{selectedVendors.length !== 1 ? 's' : ''} selected
@@ -238,6 +213,9 @@ const AddAdminModal: React.FC<Props> = ({
                 </button>
               </>
             )}
+            searchable
+            searchPlaceholder="Search departments..."
+            showDone
           />
           <p className="text-xs text-gray-500 mt-1.5">
             {selectedDepartments.length} department{selectedDepartments.length !== 1 ? 's' : ''} selected

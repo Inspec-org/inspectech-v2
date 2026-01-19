@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import User from "@/lib/models/User";
 import { getUserFromToken } from "@/lib/getUserFromToken";
+import Invitation from "@/lib/models/Invitation";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -28,11 +29,12 @@ export async function DELETE(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
     }
-    if (user.role !== "admin") {
-      return NextResponse.json({ success: false, message: "Only admin users can be deleted" }, { status: 400 });
-    }
+    // if (user.role !== "admin") {
+    //   return NextResponse.json({ success: false, message: "Only admin users can be deleted" }, { status: 400 });
+    // }
 
     await User.deleteOne({ _id: user._id });
+    await Invitation.deleteOne({ email: user.email });
     return NextResponse.json(
       { success: true, deletedUser: { id: String(user._id), email: user.email } },
       { status: 200 }

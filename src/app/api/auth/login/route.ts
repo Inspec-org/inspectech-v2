@@ -26,6 +26,13 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        if (user.status !== 'active') {
+            return NextResponse.json(
+                { success: false, message: "Your Account has been deactivated. Please contact Your Administrator." },
+                { status: 403 }
+            );
+        }
+
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             return NextResponse.json(
@@ -57,6 +64,8 @@ export async function POST(req: NextRequest) {
             maxAge: rememberMe ? 60 * 60 * 24 * 30 : undefined // 30 days or session cookie
         });
 
+        
+
         return NextResponse.json({
             success: true,
             message: "Login successful",
@@ -71,7 +80,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error("LOGIN ERROR:", error);
+        ;
         return NextResponse.json(
             { success: false, message: error.message || "Server error" },
             { status: 500 }

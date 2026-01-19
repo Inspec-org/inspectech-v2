@@ -470,7 +470,7 @@ function Inspections() {
             return;
         }
         try {
-            console.log("api running")
+            
             setLoading(true);
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
@@ -490,7 +490,7 @@ function Inspections() {
                     date: `${doc.dateDay || ''}-${doc.dateMonth || ''}-${doc.dateYear || ''}`,
                     delivered: doc.delivered === 'yes' ? 'Yes' : doc.delivered === 'no' ? 'No' : '',
                 }));
-                console.log(json)
+                
                 setTotalInspections(json.total);
                 setInspections(mapped);
             } else {
@@ -556,7 +556,7 @@ function Inspections() {
                 const parsedFilters = JSON.parse(storedFilters);
                 setSelectedFilters(parsedFilters);
             } catch (e) {
-                console.error('Failed to parse filters from sessionStorage', e);
+                ;
             }
         }
     }, []);

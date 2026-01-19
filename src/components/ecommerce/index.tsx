@@ -93,7 +93,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             toast.error(errorMessage);
-            console.log("error", err);
+            ;
         }
     }
 
@@ -116,7 +116,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             toast.error(errorMessage);
-            console.log("error", err);
+            ;
         }
     }
 
@@ -139,7 +139,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             toast.error(errorMessage);
-            console.log("error", err);
+            ;
         }
     }
 
@@ -162,7 +162,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             toast.error(errorMessage);
-            console.log("error", err);
+            ;
         }
     }
 
@@ -187,7 +187,7 @@ export default function Index({ sessionId }: { sessionId: string }) {
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             toast.error(errorMessage);
-            console.log("error", err);
+            ;
         }
     }
 

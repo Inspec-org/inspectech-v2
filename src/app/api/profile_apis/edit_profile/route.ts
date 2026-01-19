@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ message: "Profile updated successfully", data }, { status: 200 });
     } catch (error) {
-        console.error(error);
+        ;
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

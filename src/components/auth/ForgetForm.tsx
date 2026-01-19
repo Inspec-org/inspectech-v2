@@ -122,14 +122,14 @@ export default function ForgetForm() {
             const result = await response.json();
 
             if (!response.ok) {
-                console.error("Server Error:", result.message);
+                ;
                 throw new Error(result.message || result.error);
             }
             setIsApiSent(true)
             setCooldown(30);
 
         } catch (error) {
-            console.error("Network Error:", error);
+            ;
             const errorMessage = error instanceof Error ? error.message : String(error);
             toast.error(errorMessage);
         } finally {
@@ -153,7 +153,7 @@ export default function ForgetForm() {
             const result = await response.json();
 
             if (!response.ok) {
-                console.error("Server Error:", result.message);
+                ;
                 throw new Error(result.message || result.error);
             }
             sessionStorage.setItem("email", email)
@@ -162,7 +162,7 @@ export default function ForgetForm() {
 
 
         } catch (error) {
-            // console.error("Network Error:", error);            
+            // ;            
             const errorMessage = error instanceof Error ? error.message : String(error);
             toast.error(errorMessage);
         } finally {

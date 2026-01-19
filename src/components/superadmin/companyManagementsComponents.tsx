@@ -9,8 +9,11 @@ import { CustomDropdown } from "../ui/dropdown/CustomDropdown";
 import { useModal } from "@/hooks/useModal";
 import AddDepartmentModal from "../Modals/AddDepartmentModal";
 import AdminManageAccessModal from "../Modals/AdminManageAccessModal";
+import VendorManageAccessModal from "../Modals/VendorManageAccessModal";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
+import InvitationModal from "../Modals/invitationModal";
+import { ClipLoader } from "react-spinners";
 
 export const TablePagination: React.FC<TablePaginationProps> = ({
     currentPage,
@@ -99,25 +102,35 @@ export const PageHeader: React.FC = () => {
 };
 
 // Admin Departments Section Component
-export const AdminDepartmentsSection: React.FC<{ departments: Department[] }> = ({ departments }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(5);
+export const AdminDepartmentsSection: React.FC<{ departments: Department[]; totalCount?: number; currentPage?: number; pageSize?: number; onPageChange?: (page: number) => void; loading?: boolean }> = ({ departments, totalCount: extTotal, currentPage: extPage, pageSize: extSize, onPageChange, loading }) => {
+    const [currentPage, setCurrentPage] = useState(extPage ?? 1);
+    const [pageSize] = useState(extSize ?? 5);
     const { isOpen, openModal, closeModal } = useModal();
     const [items, setItems] = useState<Department[]>(departments);
-    const totalCount = items.length;
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalCount);
-    const displayed = items.slice(startIndex, startIndex + pageSize);
-    const getPageList = () => {
-        const pages: (number | string)[] = [];
-        if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); return pages; }
-        if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-        if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-        return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-    };
+    const [totalCount, setTotalCount] = useState<number>(extTotal ?? departments.length);
+    const startIndex = ((extPage ?? currentPage) - 1) * (extSize ?? pageSize);
+    const endIndex = Math.min(startIndex + (extSize ?? pageSize), totalCount);
+    const displayed = items;
 
-    useEffect(() => { setItems(departments); }, [departments]);
+    useEffect(() => {
+        setItems(departments);
+        setTotalCount(typeof extTotal === 'number' ? extTotal : departments.length);
+    }, [departments, extTotal]);
+
+    useEffect(() => {
+        if (typeof extPage === 'number') {
+            setCurrentPage(extPage);
+        }
+    }, [extPage]);
+    // const getPageList = () => {
+    //     const pages: (number | string)[] = [];
+    //     if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); return pages; }
+    //     if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    //     if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    //     return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+    // };
+
+    // Backend pagination: data loads per page; ignore incoming full list
     useEffect(() => {
         const handler = (e: Event) => {
             const detail = (e as CustomEvent<any>).detail;
@@ -181,36 +194,42 @@ export const AdminDepartmentsSection: React.FC<{ departments: Department[] }> = 
             </div>
 
             <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className="w-full ">
-                    <thead className='bg-gray-100'>
-                        <tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayed.map((dept, idx) => (
-                            <tr key={dept.id} className="border-b  hover:bg-gray-50">
-                                <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
-                                <td className="py-4 px-4 text-sm text-gray-900">{dept.name}</td>
-                                <td className="py-4 px-4">
-                                    <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
-                                        {dept.status}
-                                    </span>
-                                </td>
-                                <td className="py-4 px-4">
-                                    <button onClick={() => handleDelete(dept.id)} disabled={deleting === dept.id} className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </td>
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <ClipLoader color="#7C3AED" size={28} />
+                    </div>
+                ) : (
+                    <table className="w-full ">
+                        <thead className='bg-gray-100'>
+                            <tr className="border-b border-gray-200">
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {displayed.map((dept, idx) => (
+                                <tr key={dept.id} className="border-b  hover:bg-gray-50">
+                                    <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
+                                    <td className="py-4 px-4 text-sm text-gray-900">{dept.name}</td>
+                                    <td className="py-4 px-4">
+                                        <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
+                                            {dept.status}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                        <button onClick={() => handleDelete(dept.id)} disabled={deleting === dept.id} className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
-            <TablePagination currentPage={currentPage} totalCount={totalCount} pageSize={pageSize} onPageChange={setCurrentPage} />
+            <TablePagination currentPage={currentPage} totalCount={totalCount} pageSize={pageSize} onPageChange={(p) => { setCurrentPage(p); onPageChange && onPageChange(p); }} />
             <AddDepartmentModal isOpen={isOpen} onClose={closeModal} onUpdated={() => {
                 closeModal();
                 setCurrentPage(1);
@@ -220,41 +239,35 @@ export const AdminDepartmentsSection: React.FC<{ departments: Department[] }> = 
 };
 
 // Admin User Management Section Component
-export const AdminUserManagementSection: React.FC<{ adminUsers: AdminUser[] }> = ({ adminUsers }) => {
-    const [searchQuery, setSearchQuery] = useState('');
+export const AdminUserManagementSection: React.FC<{
+    adminUsers?: AdminUser[];
+    totalCount?: number;
+    currentPage?: number;
+    pageSize?: number;
+    onPageChange?: (page: number) => void;
+    searchQuery?: string;
+    onSearchChange?: (q: string) => void;
+    loading?: boolean;
+}> = ({ adminUsers = [], totalCount: extTotal, currentPage: extPage = 1, pageSize: extSize = 2, onPageChange, searchQuery, onSearchChange, loading }) => {
+    const [searchQueryLocal, setSearchQueryLocal] = useState(searchQuery ?? '');
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(5);
     const [accessModalOpen, setAccessModalOpen] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState<{ name?: string; email?: string; vendorNames?: string[]; departments?: string[] } | null>(null);
     const [tooltip, setTooltip] = useState<{ items: string[]; x: number; y: number } | null>(null);
     const hideTimerRef = useRef<number | null>(null);
     const [items, setItems] = useState<AdminUser[]>(adminUsers);
+    const [totalCount, setTotalCount] = useState<number>(extTotal ?? adminUsers.length);
+
     useEffect(() => { setItems(adminUsers); }, [adminUsers]);
+    useEffect(() => { setTotalCount(extTotal ?? adminUsers.length); }, [extTotal, adminUsers]);
+    useEffect(() => { setSearchQueryLocal(searchQuery ?? ''); }, [searchQuery]);
 
-    const filtered = items.filter((u) => {
-        const q = searchQuery.trim().toLowerCase();
-        if (!q) return true;
-        const vendorText = Array.isArray(u.vendorNames) && u.vendorNames.length
-            ? u.vendorNames.join(', ').toLowerCase()
-            : (u.vendor || u.department || '').toLowerCase();
-        const deptText = Array.isArray(u.departments) ? u.departments.join(', ').toLowerCase() : '';
-        return (
-            String(u.id).includes(q) ||
-            (u.name || '').toLowerCase().includes(q) ||
-            (u.email || '').toLowerCase().includes(q) ||
-            (u.secondaryEmail || '').toLowerCase().includes(q) ||
-            vendorText.includes(q) ||
-            deptText.includes(q)
-        );
-    });
-
-    const totalCount = filtered.length;
+    const pageSize = extSize;
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-    const safePage = Math.min(currentPage, totalPages);
+    const safePage = Math.min(extPage, totalPages);
     const startIndex = (safePage - 1) * pageSize;
     const endIndex = Math.min(startIndex + pageSize, totalCount);
-    const displayed = filtered.slice(startIndex, startIndex + pageSize);
+    const displayed = items;
 
     const getPageList = () => {
         const pages: (number | string)[] = [];
@@ -284,139 +297,145 @@ export const AdminUserManagementSection: React.FC<{ adminUsers: AdminUser[] }> =
                         <input
                             type="text"
                             placeholder="Search by name, email, or vendor ..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            value={searchQuery ?? searchQueryLocal}
+                            onChange={(e) => { setSearchQueryLocal(e.target.value); onSearchChange && onSearchChange(e.target.value); }}
                             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent outline-none bg-gray-50"
                         />
                     </div>
                 </div>
             </div>
             <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className="w-full">
-                    <thead>
-                        <tr className="border-b bg-gray-50">
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Admin Name</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Departments</th>
-                            <th className="text-left py-3 px-4 pl-8 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayed.map((user, idx) => (
-                            <tr key={user.id} className="border-b hover:bg-gray-50">
-                                <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
-                                <td className="py-4 px-4">
-                                    <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                    <div className="text-sm text-gray-500">{user.secondaryEmail}</div>
-                                </td>
-                                <td className="py-4 px-4 text-sm text-gray-900">{user.email}</td>
-                                <td className="py-4 px-4 text-sm text-gray-900">
-                                    <div className="inline-block">
-                                        {Array.isArray(user.vendorNames) && user.vendorNames.length > 0 ? (
-                                            <div
-                                                onMouseEnter={(e) => {
-                                                    if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
-                                                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                                    setTooltip({ items: user.vendorNames?.slice(1) || [], x: Math.min(rect.left, window.innerWidth - 360), y: rect.bottom + 6 });
-                                                }}
-                                                onMouseLeave={() => {
-                                                    hideTimerRef.current = window.setTimeout(() => setTooltip(null), 150);
-                                                }}>
-                                                <span>{user.vendorNames.slice(0, 1).join(', ')}</span>
-                                                {user.vendorNames.length > 1 && (
-                                                    <span className="ml-1 text-gray-500">
-                                                        +{user.vendorNames.length - 1} more
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <span>{user.vendor || user.department || '—'}</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="py-4 px-4 text-sm text-gray-900">
-                                    <div className="inline-block">
-                                        {Array.isArray(user.departments) && user.departments.length > 0 ? (
-                                            <div
-                                                onMouseEnter={(e) => {
-                                                    if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
-                                                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                                    setTooltip({ items: user.departments?.slice(1) || [], x: Math.min(rect.left, window.innerWidth - 360), y: rect.bottom + 6 });
-                                                }}
-                                                onMouseLeave={() => {
-                                                    hideTimerRef.current = window.setTimeout(() => setTooltip(null), 150);
-                                                }}>
-                                                <span>{user.departments.slice(0, 1).join(', ')}</span>
-                                                {user.departments.length > 1 && (
-                                                    <span className="ml-1 text-gray-500">
-                                                        +{user.departments.length - 1} more
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <span>—</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="py-4 px-4">
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            className="text-sm text-gray-600 hover:text-[#7C3AED] font-medium transition-colors border rounded-full px-3"
-                                            onClick={() => {
-                                                setSelectedAdmin({
-                                                    name: user.name,
-                                                    email: user.email,
-                                                    vendorNames: Array.isArray(user.vendorNames) ? user.vendorNames : [],
-                                                    departments: Array.isArray(user.departments) ? user.departments : [],
-                                                });
-                                                setAccessModalOpen(true);
-                                            }}
-                                        >
-                                            Manage Access
-                                        </button>
-                                        <button
-                                            className="text-red-500 hover:text-red-700 transition-colors"
-                                            onClick={async () => {
-                                                const result = await Swal.fire({
-                                                    title: 'Delete Admin?',
-                                                    text: 'This action cannot be undone.',
-                                                    icon: 'warning',
-                                                    showCancelButton: true,
-                                                    confirmButtonColor: '#EF4444',
-                                                    cancelButtonColor: '#6B7280',
-                                                    confirmButtonText: 'Delete',
-                                                    cancelButtonText: 'Cancel'
-                                                });
-                                                if (result.isConfirmed) {
-                                                    try {
-                                                        const res = await apiRequest('/api/users/delete-user', {
-                                                            method: 'DELETE',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ targetEmail: user.email })
-                                                        });
-                                                        const json = await res.json().catch(() => ({}));
-                                                        if (res.ok && json.success) {
-                                                            setItems((prev) => prev.filter((u) => u.email !== user.email));
-                                                            toast.success('Admin user removed.');
-                                                        } else {
-                                                            toast.error(json.message || 'Unable to delete user.');
-                                                        }
-                                                    } catch (err: any) {
-                                                        toast.error(err?.message || 'Unexpected error.');
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                </td>
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <ClipLoader color="#7C3AED" size={28} />
+                    </div>
+                ) : (
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b bg-gray-50">
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Admin Name</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Departments</th>
+                                <th className="text-left py-3 px-4 pl-8 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {displayed.map((user, idx) => (
+                                <tr key={user.id} className="border-b hover:bg-gray-50">
+                                    <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
+                                    <td className="py-4 px-4">
+                                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                        <div className="text-sm text-gray-500">{user.secondaryEmail}</div>
+                                    </td>
+                                    <td className="py-4 px-4 text-sm text-gray-900">{user.email}</td>
+                                    <td className="py-4 px-4 text-sm text-gray-900">
+                                        <div className="inline-block">
+                                            {Array.isArray(user.vendorNames) && user.vendorNames.length > 0 ? (
+                                                <div
+                                                    onMouseEnter={(e) => {
+                                                        if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
+                                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                                        setTooltip({ items: user.vendorNames?.slice(1) || [], x: Math.min(rect.left, window.innerWidth - 360), y: rect.bottom + 6 });
+                                                    }}
+                                                    onMouseLeave={() => {
+                                                        hideTimerRef.current = window.setTimeout(() => setTooltip(null), 150);
+                                                    }}>
+                                                    <span>{user.vendorNames.slice(0, 1).join(', ')}</span>
+                                                    {user.vendorNames.length > 1 && (
+                                                        <span className="ml-1 text-gray-500">
+                                                            +{user.vendorNames.length - 1} more
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span>{user.vendor || user.department || '—'}</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-4 text-sm text-gray-900">
+                                        <div className="inline-block">
+                                            {Array.isArray(user.departments) && user.departments.length > 0 ? (
+                                                <div
+                                                    onMouseEnter={(e) => {
+                                                        if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
+                                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                                        setTooltip({ items: user.departments?.slice(1) || [], x: Math.min(rect.left, window.innerWidth - 360), y: rect.bottom + 6 });
+                                                    }}
+                                                    onMouseLeave={() => {
+                                                        hideTimerRef.current = window.setTimeout(() => setTooltip(null), 150);
+                                                    }}>
+                                                    <span>{user.departments.slice(0, 1).join(', ')}</span>
+                                                    {user.departments.length > 1 && (
+                                                        <span className="ml-1 text-gray-500">
+                                                            +{user.departments.length - 1} more
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span>—</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                className="text-sm text-gray-600 hover:text-[#7C3AED] font-medium transition-colors border rounded-full px-3"
+                                                onClick={() => {
+                                                    setSelectedAdmin({
+                                                        name: user.name,
+                                                        email: user.email,
+                                                        vendorNames: Array.isArray(user.vendorNames) ? user.vendorNames : [],
+                                                        departments: Array.isArray(user.departments) ? user.departments : [],
+                                                    });
+                                                    setAccessModalOpen(true);
+                                                }}
+                                            >
+                                                Manage Access
+                                            </button>
+                                            <button
+                                                className="text-red-500 hover:text-red-700 transition-colors"
+                                                onClick={async () => {
+                                                    const result = await Swal.fire({
+                                                        title: 'Delete Admin?',
+                                                        text: 'This action cannot be undone.',
+                                                        icon: 'warning',
+                                                        showCancelButton: true,
+                                                        confirmButtonColor: '#EF4444',
+                                                        cancelButtonColor: '#6B7280',
+                                                        confirmButtonText: 'Delete',
+                                                        cancelButtonText: 'Cancel'
+                                                    });
+                                                    if (result.isConfirmed) {
+                                                        try {
+                                                            const res = await apiRequest('/api/users/delete-user', {
+                                                                method: 'DELETE',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ targetEmail: user.email })
+                                                            });
+                                                            const json = await res.json().catch(() => ({}));
+                                                            if (res.ok && json.success) {
+                                                                setItems((prev) => prev.filter((u) => u.email !== user.email));
+                                                                toast.success('Admin user removed.');
+                                                            } else {
+                                                                toast.error(json.message || 'Unable to delete user.');
+                                                            }
+                                                        } catch (err: any) {
+                                                            toast.error(err?.message || 'Unexpected error.');
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
             {tooltip && tooltip.items.length > 0 && (
                 <div
@@ -430,7 +449,7 @@ export const AdminUserManagementSection: React.FC<{ adminUsers: AdminUser[] }> =
                     ))}
                 </div>
             )}
-            <TablePagination currentPage={safePage} totalCount={totalCount} pageSize={pageSize} onPageChange={setCurrentPage} />
+            <TablePagination currentPage={extPage} totalCount={totalCount} pageSize={extSize} onPageChange={onPageChange || (() => { })} />
             <AdminManageAccessModal
                 isOpen={accessModalOpen}
                 onClose={() => setAccessModalOpen(false)}
@@ -455,158 +474,84 @@ export const AdminUserManagementSection: React.FC<{ adminUsers: AdminUser[] }> =
     );
 };
 
-// Admin Vendor Access Section Component
-export const AdminVendorAccessSection: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
-
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(5);
-    const totalCount = vendors.length;
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalCount);
-    const displayed = vendors.slice(startIndex, startIndex + pageSize);
-    const getPageList = () => {
-        const pages: (number | string)[] = [];
-        if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); return pages; }
-        if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-        if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-        return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-    };
-
-    return (
-        <div className="">
-            <div className="flex items-center justify-between py-4">
-                <div className="flex items-start gap-3 ">
-                    {/* <Shield className="text-gray-700 mt-1" size={20} /> */}
-                    <div>
-                        <h2 className="text-sm text-gray-900">Admin Vendor Access</h2>
-                        <p className="text-xs text-[#6A7282] mt-1">Manage vendor access for Margaret Harris</p>
-                    </div>
-                </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
-                    <UserPlus size={18} />
-                    Assign Vendor Access
-                </button>
-            </div>
-
-            {/* <div className="mb-4">
-                <h3 className="text-sm text-gray-900 mb-4">Assigned Vendors</h3>
-            </div> */}
-
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className="w-full">
-                    <thead>
-                        <tr className="border-b bg-gray-50">
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayed.map((vendor, index) => (
-                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                <td className="py-4 px-4 text-sm text-gray-900">{vendor.name}</td>
-                                <td className="py-4 px-4">
-                                    <div className="flex items-center gap-3">
-                                        <label className="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                                            <div className="w-11 h-6 bg-[#00C950] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                                        </label>
-                                        <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
-                                            <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
-                                            {vendor.status}
-                                        </span>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <TablePagination currentPage={currentPage} totalCount={totalCount} pageSize={pageSize} onPageChange={setCurrentPage} />
-        </div>
-    );
-};
-
-// Vendor Companies Section Component
-export const VendorCompaniesSection: React.FC = () => {
-    const [companies] = useState<VendorCompany[]>([
-        { id: 5, name: 'ABC vendor', vendorId: 5, status: 'Active' },
-        { id: 6, name: 'ABC vendor', vendorId: 5, status: 'Active' },
-        { id: 7, name: 'ABC vendor', vendorId: 5, status: 'Active' },
-        { id: 8, name: 'ABC vendor', vendorId: 5, status: 'Active' },
-        { id: 9, name: 'ABC vendor', vendorId: 5, status: 'Active' },
-    ]);
-
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(5);
-    const totalCount = companies.length;
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalCount);
-    const displayed = companies.slice(startIndex, startIndex + pageSize);
-    const getPageList = () => {
-        const pages: (number | string)[] = [];
-        if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); return pages; }
-        if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-        if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-        return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-    };
-
-    return (
-        <div className="">
-            <div className="flex items-start gap-3 py-4">
-                {/* <Building2 className="text-gray-700 mt-1" size={20} /> */}
-                <div>
-                    <h2 className="text-sm text-gray-900">Vendor Companies</h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage vendor companies in the system</p>
-                </div>
-            </div>
-
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className="w-full">
-                    <thead>
-                        <tr className="border-b bg-gray-50">
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor ID</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayed.map((company, idx) => (
-                            <tr key={company.id} className="border-b hover:bg-gray-50">
-                                <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
-                                <td className="py-4 px-4 text-sm text-gray-900">{company.name}</td>
-                                <td className="py-4 px-4 text-sm text-gray-900">{company.vendorId}</td>
-                                <td className="py-4 px-4">
-                                    <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
-                                        <span className="w-1.5 h-1.5 bg-[#00A63E] rounded-full"></span>
-                                        {company.status}
-                                    </span>
-                                </td>
-                                <td className="py-4 px-4">
-                                    <button className="text-red-500 hover:text-red-700 transition-colors">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <TablePagination currentPage={currentPage} totalCount={totalCount} pageSize={pageSize} onPageChange={setCurrentPage} />
-        </div>
-    );
-};
 
 // Vendors Section (Unified Table)
-export const VendorsSection: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(5);
-    const totalCount = vendors.length;
-    const startIndex = (currentPage - 1) * pageSize;
-    const displayed = vendors.slice(startIndex, startIndex + pageSize);
+export const VendorsSection: React.FC<{ vendors?: Vendor[]; totalCount?: number; currentPage?: number; pageSize?: number; onPageChange?: (page: number) => void; loading?: boolean }> = ({ vendors = [], totalCount: extTotal, currentPage: extPage, pageSize: extSize, onPageChange, loading }) => {
+    const [currentPage, setCurrentPage] = useState(extPage ?? 1);
+    const [pageSize] = useState(extSize ?? 5);
+    const [items, setItems] = useState<Vendor[]>(vendors);
+    const [totalCount, setTotalCount] = useState<number>(typeof extTotal === 'number' ? extTotal : vendors.length);
+
+    useEffect(() => {
+        setItems(vendors);
+        setTotalCount(typeof extTotal === 'number' ? extTotal : vendors.length);
+    }, [vendors, extTotal]);
+
+    useEffect(() => {
+        if (typeof extPage === 'number') {
+            setCurrentPage(extPage);
+        }
+    }, [extPage]);
+
+    const startIndex = ((extPage ?? currentPage) - 1) * (extSize ?? pageSize);
+    const displayed = items;
+
+    const [togglingId, setTogglingId] = useState<string | null>(null);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [accessModalOpen, setAccessModalOpen] = useState(false);
+    const [accessVendor, setAccessVendor] = useState<{ id: string; name: string } | null>(null);
+
+    const handleToggleStatus = async (vendor: Vendor, checked: boolean) => {
+        if (!vendor?._id) return;
+        try {
+            setTogglingId(vendor._id);
+            const res = await apiRequest('/api/vendors/update_vendor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vendorId: vendor._id, status: checked ? 'active' : 'inactive' }),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) { toast.error(json.error || 'Failed to update vendor status'); return; }
+            setItems(prev => prev.map(v => v._id === vendor._id ? { ...v, status: checked ? 'Active' : 'Inactive' } : v));
+            toast.success('Vendor status updated');
+        } catch (e: any) {
+            toast.error(e?.message || 'Failed to update vendor status');
+        } finally {
+            setTogglingId(null);
+        }
+    };
+
+    const handleDeleteVendor = async (vendor: Vendor) => {
+        if (!vendor?._id) return;
+        const { isConfirmed } = await Swal.fire({
+            title: 'Delete Vendor?',
+            text: 'This will remove the vendor, its inspections, and vendor access from users. This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete',
+        });
+        if (!isConfirmed) return;
+        try {
+            setDeletingId(vendor._id);
+            const res = await apiRequest('/api/vendors/delete_vendor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vendorId: vendor._id }),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) { toast.error(json.error || 'Failed to delete vendor'); return; }
+            setItems(prev => prev.filter(v => v._id !== vendor._id));
+            setTotalCount(prev => Math.max(0, prev - 1));
+            toast.success('Vendor deleted');
+        } catch (e: any) {
+            toast.error(e?.message || 'Failed to delete vendor');
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     return (
         <div className="">
@@ -617,52 +562,82 @@ export const VendorsSection: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => 
                         <p className="text-xs text-[#6A7282] mt-1">Manage vendor access and companies</p>
                     </div>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                {/* <button className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
                     <UserPlus size={18} />
                     Assign Vendor Access
-                </button>
+                </button> */}
             </div>
 
             <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className="w-full">
-                    <thead>
-                        <tr className="border-b bg-gray-50">
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Active / InActive</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Delete</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayed.map((vendor, idx) => (
-                            <tr key={`${vendor.name}-${idx}`} className="border-b border-gray-100 hover:bg-gray-50">
-                                <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
-                                <td className="py-4 px-4 text-sm text-gray-900">{vendor.name}</td>
-                                <td className="py-4 px-4">
-                                    <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
-                                        <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
-                                        {vendor.status}
-                                    </span>
-                                </td>
-                                <td className="py-4 px-4 pl-10">
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                                        <div className="w-11 h-6 bg-[#00C950] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                                    </label>
-                                </td>
-                                <td className="py-4 px-4">
-                                    <button className="text-red-500 hover:text-red-700 transition-colors">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </td>
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <ClipLoader color="#7C3AED" size={28} />
+                    </div>
+                ) : (
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b bg-gray-50">
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {displayed.map((vendor, idx) => (
+                                <tr key={vendor._id || `${vendor.name}-${idx}`} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
+                                    <td className="py-4 px-4 text-sm text-gray-900">{vendor.name}</td>
+                                    <td className="py-4 px-4 flex items-center gap-2">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={vendor.status === 'Active'}
+                                                onChange={(e) => handleToggleStatus(vendor, e.target.checked)}
+                                                disabled={togglingId === vendor._id}
+                                            />
+                                            <div className={`w-11 h-6 ${vendor.status === 'Active' ? 'bg-[#00C950]' : 'bg-[#D9D9D9]'} peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all`}></div>
+                                        </label>
+                                        <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
+                                            <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                                            {vendor.status}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                className="text-sm text-gray-600 hover:text-[#7C3AED] font-medium transition-colors border rounded-full px-3 whitespace-nowrap"
+                                                onClick={() => { setAccessVendor({ id: String(vendor._id), name: vendor.name }); setAccessModalOpen(true); }}
+                                            >
+                                                Manage Access
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteVendor(vendor)}
+                                                disabled={deletingId === vendor._id}
+                                                className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
-            <TablePagination currentPage={currentPage} totalCount={totalCount} pageSize={pageSize} onPageChange={setCurrentPage} />
+            <TablePagination currentPage={currentPage} totalCount={totalCount} pageSize={pageSize} onPageChange={(p) => { setCurrentPage(p); onPageChange && onPageChange(p); }} />
+            {accessVendor && (
+                <VendorManageAccessModal
+                    isOpen={accessModalOpen}
+                    onClose={() => setAccessModalOpen(false)}
+                    vendorId={accessVendor.id}
+                    vendorName={accessVendor.name}
+                    onUpdated={() => { setAccessModalOpen(false); }}
+                />
+            )}
         </div>
     );
 };
@@ -672,6 +647,16 @@ export const VendorUserManagementSection: React.FC<{ vendors: Vendor[] }> = ({ v
     const [selectedVendor, setSelectedVendor] = useState<string>(() => Cookies.get('selectedVendorId') || '');
     const [vendorOptions, setVendorOptions] = useState<{ value: string; label: string }[]>([]);
     const [users, setUsers] = useState<User[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(5);
+    const [totalCount, setTotalCount] = useState(0);
+    const [inviteOpen, setInviteOpen] = useState(false);
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalCount);
+    const displayed = users;
+    const [togglingId, setTogglingId] = useState<string | null>(null);
+    const [usersLoading, setUsersLoading] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -696,43 +681,64 @@ export const VendorUserManagementSection: React.FC<{ vendors: Vendor[] }> = ({ v
     useEffect(() => {
         if (!selectedVendor) {
             setUsers([]);
+            setTotalCount(0);
             return;
         }
         (async () => {
+            setUsersLoading(true);
             try {
-                const res = await apiRequest(`/api/users/get-users?vendorId=${selectedVendor}&page=1&limit=100`);
-                const json = await res.json();
+                const res = await apiRequest(`/api/users/get-users?vendorId=${selectedVendor}&page=${currentPage}&limit=${pageSize}&role=user`);
+                const json = await res.json().catch(() => ({}));
                 if (res.ok) {
                     const mapped: User[] = (json.users || []).map((u: any, idx: number) => ({
-                        id: idx + 1,
+                        id: (currentPage - 1) * pageSize + idx + 1,
                         name: `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() || (u.name || ''),
                         email: u.email || '',
                         added: u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US') : '',
                         status: u.isDeleted ? 'Inactive' : 'Active',
                     }));
                     setUsers(mapped);
+                    setTotalCount(Number(json.total || json.totalCount || mapped.length));
                 } else {
                     setUsers([]);
+                    setTotalCount(0);
                 }
             } catch {
                 setUsers([]);
+                setTotalCount(0);
+            } finally {
+                setUsersLoading(false);
             }
         })();
-    }, [selectedVendor]);
+    }, [selectedVendor, currentPage, pageSize]);
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(5);
-    const totalCount = users.length;
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalCount);
-    const displayed = users.slice(startIndex, startIndex + pageSize);
+
     const getPageList = () => {
         const pages: (number | string)[] = [];
         if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); return pages; }
         if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
         if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
         return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+    };
+
+    const handleToggleStatus = async (user: User, checked: boolean) => {
+        if (!user?.email) return;
+        try {
+            setTogglingId(user.id.toString());
+            const res = await apiRequest('/api/users/update-access', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetEmail: user.email, status: checked ? 'active' : 'inactive' })
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || !json.success) { toast.error(json.message || 'Failed to update user status'); return; }
+            setUsers(prev => prev.map(u => u.email === user.email ? { ...u, status: checked ? 'Active' : 'Inactive' } : u));
+            toast.success('User status updated');
+        } catch (err: any) {
+            toast.error(err?.message || 'Failed to update user status');
+        } finally {
+            setTogglingId(null);
+        }
     };
 
     return (
@@ -755,6 +761,8 @@ export const VendorUserManagementSection: React.FC<{ vendors: Vendor[] }> = ({ v
                             onChange={(val) => { setSelectedVendor(val); setCurrentPage(1); }}
                             placeholder="Select Vendor"
                             width='430px'
+                            searchable={true}
+                            searchPlaceholder="Search Vendor"
                         />
                         {/* <select
                             value={selectedVendor}
@@ -766,7 +774,7 @@ export const VendorUserManagementSection: React.FC<{ vendors: Vendor[] }> = ({ v
                             <option value="Phantom Temporal">Phantom Temporal</option>
                         </select> */}
 
-                        <button className="flex items-center gap-2 px-6 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium whitespace-nowrap">
+                        <button onClick={() => setInviteOpen(true)} disabled={!selectedVendor} className="flex items-center gap-2 px-6 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                             <UserPlus size={18} />
                             Add User to Vendor
                         </button>
@@ -774,38 +782,90 @@ export const VendorUserManagementSection: React.FC<{ vendors: Vendor[] }> = ({ v
                 </div>
             </div>
             <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className="w-full">
-                    <thead>
-                        <tr className="bg-gray-50">
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Added</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayed.map((user) => (
-                            <tr key={user.id} className="border-b hover:bg-gray-50">
-                                <td className="py-4 px-4">
-                                    <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                    <div className="text-sm text-gray-500">{user.email}</div>
-                                </td>
-                                <td className="py-4 px-4 text-sm text-gray-900">{user.email}</td>
-                                <td className="py-4 px-4 text-sm text-gray-900">{user.added}</td>
-                                <td className="py-4 px-4">
-                                    <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
-                                        <span className="w-1.5 h-1.5 bg-[#00A63E] rounded-full"></span>
-                                        {user.status}
-                                    </span>
-                                </td>
-                                <td className="py-4 px-4 text-sm text-gray-600">⋮ Actions</td>
+                {usersLoading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <ClipLoader color="#7C3AED" size={28} />
+                    </div>
+                ) : (
+                    <table className="w-full">
+                        <thead>
+                            <tr className="bg-gray-50">
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Added</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {displayed.map((user) => (
+                                <tr key={user.id} className="border-b hover:bg-gray-50">
+                                    <td className="py-4 px-4">
+                                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                    </td>
+                                    <td className="py-4 px-4 text-sm text-gray-900">{user.email}</td>
+                                    <td className="py-4 px-4 text-sm text-gray-900">{user.added}</td>
+                                    <td className="py-4 px-4 flex items-center gap-2">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={user.status === 'Active'}
+                                                onChange={(e) => handleToggleStatus(user, e.target.checked)}
+                                                disabled={togglingId === user.id.toString()}
+                                            />
+                                            <div className={`w-11 h-6 ${user.status === 'Active' ? 'bg-[#00C950]' : 'bg-[#D9D9D9]'} peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all`}></div>
+                                        </label>
+                                        <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
+                                            <span className="w-1.5 h-1.5 bg-[#00A63E] rounded-full"></span>
+                                            {user.status}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 px-4 text-sm text-gray-600">
+                                        <button
+                                            className="text-red-500 hover:text-red-700 transition-colors"
+                                            onClick={async () => {
+                                                const result = await Swal.fire({
+                                                    title: 'Delete User?',
+                                                    text: 'This action cannot be undone.',
+                                                    icon: 'warning',
+                                                    showCancelButton: true,
+                                                    confirmButtonColor: '#EF4444',
+                                                    cancelButtonColor: '#6B7280',
+                                                    confirmButtonText: 'Delete',
+                                                    cancelButtonText: 'Cancel'
+                                                });
+                                                if (result.isConfirmed) {
+                                                    try {
+                                                        const res = await apiRequest('/api/users/delete-user', {
+                                                            method: 'DELETE',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ targetEmail: user.email })
+                                                        });
+                                                        const json = await res.json().catch(() => ({}));
+                                                        if (res.ok && json.success) {
+                                                            setUsers((prev) => prev.filter((u) => u.email !== user.email));
+                                                            toast.success('User removed Successfully.');
+                                                        } else {
+                                                            toast.error(json.message || 'Unable to delete user.');
+                                                        }
+                                                    } catch (err: any) {
+                                                        toast.error(err?.message || 'Unexpected error.');
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
             <TablePagination currentPage={currentPage} totalCount={totalCount} pageSize={pageSize} onPageChange={setCurrentPage} />
+            <InvitationModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} role={"vendor"} vendorId={selectedVendor || ""} onUpdated={() => { setInviteOpen(false); setCurrentPage(1); }} />
         </div>
     );
 };
