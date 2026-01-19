@@ -16,10 +16,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const url = new URL(req.url);
+    const pageParam = url.searchParams.get("page");
+    const limitParam = url.searchParams.get("limit");
+    const page = pageParam && /^\d+$/.test(pageParam) ? Math.max(parseInt(pageParam, 10), 1) : 1;
+    const limit = limitParam && /^\d+$/.test(limitParam) ? Math.max(parseInt(limitParam, 10), 1) : 10;
     let departments = [];
+    let total = 0;
 
     if (user.role === "superadmin") {
-      departments = await Department.find().sort({ createdAt: -1 });
+      total = await Department.countDocuments();
+      departments = await Department.find()
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
     } else if (user.role === "admin") {
       const allowedDeptIds = (user.departmentAccess || []).map((id: any) => id.toString());
       if (allowedDeptIds.length === 0) {
@@ -74,7 +84,11 @@ export async function GET(req: NextRequest) {
 
       return { ...dept.toObject(), color };
     });
-    return NextResponse.json({ message: "success", departments: departmentsWithColor });
+    const payload: any = { message: "success", departments: departmentsWithColor };
+    if (user.role === "superadmin") {
+      payload.pagination = { page, limit, total, totalPages: Math.ceil(total / limit) };
+    }
+    return NextResponse.json(payload);
 
   } catch (error: any) {
     return NextResponse.json(

@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       warning,
     }, { status: 200 });
   } catch (error: any) {
-    console.error("DELETE DEPARTMENT ERROR:", error);
+    ;
     return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }

@@ -37,6 +37,6 @@ export async function connectDB() {
     cached.cronStarted = true;
   }
 
-  console.log("MongoDB Connected");
+  ;
   return cached.conn;
 }

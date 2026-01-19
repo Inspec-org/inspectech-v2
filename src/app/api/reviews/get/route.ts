@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
         // QUERY REVIEWS
         // --------------------------------------------------
         const total = await Review.countDocuments(query);
-        console.log("🔍 [QUERY]:", query);
+        ;
 
         const result = await Review.find(query)
             .sort({ createdAt: -1 })
@@ -267,7 +267,7 @@ export async function POST(req: NextRequest) {
             limit
         });
     } catch (error: any) {
-        console.error("❌ ERROR FETCHING REVIEWS:", error);
+        ;
         return NextResponse.json(
             { success: false, message: error?.message || "Internal Server Error" },
             { status: 500 }

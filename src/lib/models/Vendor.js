@@ -13,6 +13,11 @@ const VendorSchema = new mongoose.Schema({
       ref: 'Department',
     }
   ],
+  status: {
+    type: String,
+    default: 'active',
+    enum: ['active', 'inactive'],
+  },
 }, {
   timestamps: true,
 });

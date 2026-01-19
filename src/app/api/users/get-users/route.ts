@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import User from "@/lib/models/User";
-import "@/lib/models/Vendor";
+import Vendor from "@/lib/models/Vendor";
 import "@/lib/models/Departments"
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
@@ -13,6 +13,7 @@ export async function GET(req: Request) {
     const role = url.searchParams.get("role");
     const page = parseInt(url.searchParams.get("page") || "1", 10);
     const limit = parseInt(url.searchParams.get("limit") || "10", 10);
+    const q = (url.searchParams.get("q") || "").trim();
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
     if (!token) {
@@ -24,10 +25,33 @@ export async function GET(req: Request) {
     }
     await connectDB();
     if (actor.role === 'superadmin') {
-      const totalUsers = await User.countDocuments({ role: "admin" });
-      console.log("totalUsers", totalUsers);
+      const baseFilter: any = { role: role };
+      let filter: any = baseFilter;
+      if (role === "admin") {
+        if (q) {
+          const regex = new RegExp(q, 'i');
+          const vendorMatches = await Vendor.find({ name: { $regex: regex } }).select('_id');
+          const vendorIds = vendorMatches.map((v: any) => v._id);
+          filter = {
+            ...baseFilter,
+            $or: [
+              { firstName: { $regex: regex } },
+              { lastName: { $regex: regex } },
+              { name: { $regex: regex } },
+              { email: { $regex: regex } },
+              { vendorId: { $in: vendorIds } },
+              { vendorAccess: { $in: vendorIds } },
+            ],
+          };
+        }
+      }
+      else if (role === "user") {
+          filter = { role: 'user', vendorId: vendorId };
+      }
 
-      const records = await User.find({ role: "admin" })
+      const totalUsers = await User.countDocuments(filter);
+
+      const records = await User.find(filter)
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -53,10 +77,9 @@ export async function GET(req: Request) {
           vendorId: undefined,
           vendorAccess: undefined,
           departmentAccess: undefined,
+          status: obj?.status,
         };
       });
-
-
 
       return NextResponse.json({
         success: true,
@@ -87,8 +110,6 @@ export async function GET(req: Request) {
         ? { role: 'admin', $or: [{ vendorId: vId }, { vendorAccess: vId }] }
         : { vendorId: vId, ...(role ? { role } : {}) };
     }
-
-    console.log("filter", filter);
 
     const totalUsers = await User.countDocuments(filter);
 
@@ -133,7 +154,7 @@ export async function GET(req: Request) {
       totalPages: Math.ceil(totalUsers / limit),
     });
   } catch (error: any) {
-    console.error("USER LIST ERROR:", error);
+    ;
     return NextResponse.json(
       { success: false, message: error.message || "Server error" },
       { status: 500 }

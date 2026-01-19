@@ -181,7 +181,7 @@ const UserModule: React.FC = () => {
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch users')
             }
-            console.log('json.users', json.users || [])
+            
             setUsers(json.users || []);
             setTotalUsers(json.total || 0);
             const pagesArray = Array.from({ length: json.totalPages || 0 }, (_, i) => i + 1);

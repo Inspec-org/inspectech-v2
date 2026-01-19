@@ -8,6 +8,7 @@ import Link from "next/link";
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { UserContext } from "@/context/authContext";
 import { ArrowLeftToLine } from "lucide-react";
+import Swal from "sweetalert2";
 
 
 const AppHeader: React.FC = () => {
@@ -189,7 +190,19 @@ const AppHeader: React.FC = () => {
             </div>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 bg-[#F4EEFC]" onClick={logout}>
+          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 bg-[#F4EEFC]" onClick={async () => {
+            const result = await Swal.fire({
+              title: 'Logout?',
+              text: 'Are you sure you want to logout?',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#EF4444',
+              cancelButtonColor: '#6B7280',
+              confirmButtonText: 'Logout',
+              cancelButtonText: 'Cancel'
+            });
+            if (result.isConfirmed) logout();
+          }}>
             <ArrowLeftToLine className="w-4 h-4" />
             Logout
           </button>

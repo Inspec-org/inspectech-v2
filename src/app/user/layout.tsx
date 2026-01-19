@@ -5,8 +5,9 @@ import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import DashboardAppHeader from "@/layout/DashboardAppHeader";
-import { usePathname } from "next/navigation";
-import React from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useContext, useEffect } from "react";
+import { UserContext } from "@/context/authContext";
 export default function AdminLayout({
   children,
 }: {
@@ -14,6 +15,21 @@ export default function AdminLayout({
 }) {
   const { isExpanded, isHovered, isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useContext(UserContext);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.replace("/signin");
+      return;
+    }
+    if (user.role !== "user") {
+      router.replace(`/${user.role}`);
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user || user.role !== "user") return null;
 
   const isDepartmentsPage = (pathname === "/admin/departments" || pathname === "/user/departments");
 

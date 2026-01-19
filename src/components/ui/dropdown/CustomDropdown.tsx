@@ -17,6 +17,9 @@ interface CustomDropdownProps {
     width?: string
     icon?: React.ReactNode
     name?: string
+    placement?: 'top' | 'bottom'
+    searchable?: boolean
+    searchPlaceholder?: string
 }
 
 export const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -27,10 +30,14 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     disabled = false,
     width,
     icon,
-    name
+    name,
+    placement = 'bottom',
+    searchable = false,
+    searchPlaceholder = 'Search...'
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const selectedOption = options.find(opt => opt.value === value);
 
@@ -75,24 +82,43 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
             {isOpen && !disabled && (
                 <div
-                    className={`absolute z-50 mt-1 bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto ${width ? width : 'w-full'
+                    className={`absolute z-50 ${placement === 'top' ? 'bottom-full mb-1' : 'mt-1'} bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto ${width ? width : 'w-full'
                         }`}
                     style={width ? { width } : undefined}
                 >
-                    {options.map((option) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => handleSelect(option.value)}
-                            className={`w-full px-3 py-2 text-left  flex items-center  justify-between ${option.disabled ? 'cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 text-gray-700'}`}
-                            disabled={option.disabled}
-                        >
-                            <span className="">{option.label}</span>
-                            {value === option.value && (
-                                <Check size={16} className="text-purple-600" />
-                            )}
-                        </button>
-                    ))}
+                    {searchable && (
+                        <div className="sticky top-0 z-10 bg-[#FAF7FF] border-b border-gray-200 px-3 py-2">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder={searchPlaceholder || 'Search...'}
+                                className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+                            />
+                        </div>
+                    )}
+                    {options
+                        .filter((option) => {
+                            if (!searchable) return true;
+                            const q = searchQuery.trim().toLowerCase();
+                            if (!q) return true;
+                            const label = typeof option.label === 'string' ? option.label : '';
+                            return label.toLowerCase().includes(q);
+                        })
+                        .map((option) => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => handleSelect(option.value)}
+                                className={`w-full px-3 py-2 text-left  flex items-center  justify-between ${option.disabled ? 'cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 text-gray-700'}`}
+                                disabled={option.disabled}
+                            >
+                                <span className="">{option.label}</span>
+                                {value === option.value && (
+                                    <Check size={16} className="text-purple-600" />
+                                )}
+                            </button>
+                        ))}
                 </div>
             )}
         </div>

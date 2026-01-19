@@ -55,6 +55,11 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'admin', 'superadmin'],
     default: 'user',
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active',
+  },
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',

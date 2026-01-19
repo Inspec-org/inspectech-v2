@@ -54,11 +54,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
       });
 
-      console.log(response)
+      
 
       if (!response.ok) {
         // if ([401, 403].includes(response.status)) {
-        //   console.log("Unauthorized or Forbidden");
+        //   ;
         //   setUser(null);
         //   Cookies.remove("session_id");
         //   localStorage.removeItem("session_id");
@@ -68,10 +68,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      console.log(data)
+      
       setUser(data.user);
     } catch (err) {
-      console.error("User fetch failed:", err);
+      ;
       // Clear invalid session
       setUser(null);
       Cookies.remove("session_id");
@@ -93,7 +93,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       setUser(null);
       setLoading(false);
     }
-  }, [pathname]);
+  }, []);
 
   const login = (sessionId: string) => {
     Cookies.set("session_id", sessionId); 
@@ -102,7 +102,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     
     fetchUser(sessionId);
     
-    console.log("login", sessionId);
+    ;
   };
 
   const logout = () => {

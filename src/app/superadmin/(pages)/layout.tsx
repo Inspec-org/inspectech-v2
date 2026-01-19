@@ -6,18 +6,33 @@ import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import DashboardAppHeader from "@/layout/DashboardAppHeader";
-import { usePathname } from "next/navigation";
-import React from "react";
+import { useRouter } from "next/navigation";
+import React, { useContext, useEffect } from "react";
+import { UserContext } from "@/context/authContext";
 export default function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const router = useRouter();
+    const { user, loading } = useContext(UserContext);
+
+    useEffect(() => {
+        if (loading) return;
+        if (!user) {
+            router.replace("/signin");
+            return;
+        }
+        if (user.role !== "superadmin") {
+            router.replace(`/${user.role}/dashboard`);
+        }
+    }, [user, loading, router]);
+
+    if (loading || !user || user.role !== "superadmin") return null;
 
     return (
         <div className="min-h-screen ">
             <Header />
-            {/* Page Content */}
             <div className="pt-4 mx-auto max-w-7xl lg:px-4 xl:px-0">
                 {children}
             </div>

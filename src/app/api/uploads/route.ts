@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       originalFileName
     }, { status: 200 });
   } catch (e: any) {
-    console.error('Upload error:', e);
+    ;
     return NextResponse.json({ message: e.message || "Internal Server Error" }, { status: 500 });
   }
 }

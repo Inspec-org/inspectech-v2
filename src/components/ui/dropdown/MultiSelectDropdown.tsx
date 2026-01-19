@@ -20,6 +20,10 @@ interface MultiSelectDropdownProps {
   name?: string;
   menuHeader?: React.ReactNode;
   safeRefs?: React.RefObject<HTMLElement>[];
+  showDone?: boolean;
+  onDone?: () => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }
 
 export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
@@ -33,12 +37,17 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   name,
   menuHeader,
   safeRefs = [],
+  showDone = false,
+  onDone,
+  searchable = false,
+  searchPlaceholder,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, bottom: 0, placement: 'bottom' as 'top' | 'bottom' });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const selectedCount = selectedValues.length;
   const labelText = selectedCount === 0 ? placeholder : `${selectedCount} selected`;
@@ -121,36 +130,65 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             className="z-[100000] bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
             style={dropdownStyle}
           >
-            {menuHeader && (
-              <div className="sticky top-0 z-10 bg-[#FAF7FF] border-b border-gray-200 px-3 py-2 flex items-center justify-end gap-3">
-                {menuHeader}
+            {(menuHeader || showDone || searchable) && (
+              <div className="sticky top-0 z-10 bg-[#FAF7FF] border-b border-gray-200 px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  {searchable ? (
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={searchPlaceholder || 'Search...'}
+                      className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+                    />
+                  ) : <div className="flex-1" />}
+                  <div className="flex items-center gap-3 flex-shrink-0 whitespace-nowrap">
+                    {menuHeader}
+                    {showDone && (
+                      <button
+                        type="button"
+                        onClick={() => { onDone?.(); setIsOpen(false); }}
+                        className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                      >
+                        Done
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
-            {options.map((option) => {
-              const checked = selectedValues.includes(option.value);
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => toggleValue(option.value)}
-                  className={`w-full px-3 py-2 text-left flex items-center justify-between ${
-                    option.disabled ? 'cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 text-gray-700'
-                  }`}
-                  disabled={option.disabled}
-                >
-                  <span className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      readOnly
-                      className="w-4 h-4 text-[#7C3AED] border-gray-300 rounded circle-checkbox"
-                    />
-                    {option.label}
-                  </span>
-                  {/* {checked && <Check size={16} className="text-purple-600" />} */}
-                </button>
-              );
-            })}
+            {options
+              .filter((option) => {
+                if (!searchable) return true;
+                const q = searchQuery.trim().toLowerCase();
+                if (!q) return true;
+                const label = typeof option.label === 'string' ? option.label : '';
+                return label.toLowerCase().includes(q);
+              })
+              .map((option) => {
+                const checked = selectedValues.includes(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => toggleValue(option.value)}
+                    className={`w-full px-3 py-2 text-left flex items-center justify-between ${
+                      option.disabled ? 'cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 text-gray-700'
+                    }`}
+                    disabled={option.disabled}
+                  >
+                    <span className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        readOnly
+                        className="w-4 h-4 text-[#7C3AED] border-gray-300 rounded circle-checkbox"
+                      />
+                      {option.label}
+                    </span>
+                  </button>
+                );
+              })}
           </div>,
           document.body
         )}

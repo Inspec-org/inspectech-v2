@@ -230,7 +230,7 @@ export default function Edit({ type }: { type: string }) {
   }, [Router, user?.role, type]);
 
   useEffect(() => {
-    console.log("params", type)
+    
     if (type === "edit" && params?.inspection_id) {
       const unitId = params.inspection_id as string;
       setTimeout(() => {
@@ -242,7 +242,7 @@ export default function Edit({ type }: { type: string }) {
 
             if (res.ok && data.success && data.inspection) {
               const doc = data.inspection;
-              console.log("doc", doc)
+              
               const normalized: any = {
                 ...doc,
                 additionalAttachments: Array.isArray(doc.additionalAttachments) ? doc.additionalAttachments : [],
@@ -312,7 +312,7 @@ export default function Edit({ type }: { type: string }) {
       }
     } catch (error: any) {
       toast.error(error.message || 'Server error');
-      console.error(error.message);
+      ;
     }
     finally {
       setSaveLoading(false);
@@ -331,14 +331,14 @@ export default function Edit({ type }: { type: string }) {
       const res = await apiRequest('/api/uploads', { method: 'POST', body });
       const json = await res.json();
 
-      console.log('Upload response:', json);
+      ;
 
       if (!res.ok || !json.secure_url) {
         throw new Error(json.message || 'Upload failed');
       }
       const url: string = json.secure_url;
 
-      console.log(`Setting ${field} to:`, url);
+      ;
 
       setFormData(prev => {
         const updates: any = { [field]: url };
@@ -349,7 +349,7 @@ export default function Edit({ type }: { type: string }) {
         return { ...prev, ...updates };
       });
     } catch (e: any) {
-      console.error('Upload error:', e);
+      ;
       toast.error(e.message || 'Upload failed');
       throw e; // Re-throw to handle in PDFUpload component
     }

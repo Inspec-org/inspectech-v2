@@ -113,4 +113,4 @@ export default function QuickActions({ role }: { role: string }) {
 }
 
 // Example usage:
-// <QuickActions onActionClick={(id) => console.log('Clicked:', id)} />
+// <QuickActions onActionClick={(id) => } />

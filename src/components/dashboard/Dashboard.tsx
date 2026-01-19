@@ -108,9 +108,9 @@ function Dashboard() {
     useEffect(() => {
         const department = Cookies.get("selectedDepartment");
         if (departments.length > 0) {
-            console.log(department)
+            
             const dept = departments.find(d => d.name === department) ?? null;
-            console.log(dept);
+            ;
             setSelectedDepartment(dept);
 
         }
@@ -123,7 +123,7 @@ function Dashboard() {
                 setDepartments(json.departments);
             }
         } catch (error) {
-            console.error('Error fetching departments:', error);
+            ;
             const errorMessage = error instanceof Error ? error.message : 'An error occurred';
             toast.error(errorMessage);
             setDepartments([]);
@@ -135,11 +135,11 @@ function Dashboard() {
             const res = await apiRequest("/api/vendors/get-vendors");
             if (res.ok) {
                 const json = await res.json();
-                console.log(json)
+                
                 setVendors(json.vendors);
             }
         } catch (error) {
-            console.error('Error fetching departments:', error);
+            ;
             const errorMessage = error instanceof Error ? error.message : 'An error occurred';
             toast.error(errorMessage);
             setDepartments([]);
@@ -255,7 +255,7 @@ function Dashboard() {
                 setLoading(false)
             }
         }
-        console.log(selectedDepartment, selectedVendor)
+        
         if (selectedDepartment && selectedVendor) {
             getStats();
             getRecent();

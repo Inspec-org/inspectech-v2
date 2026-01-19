@@ -44,7 +44,7 @@ export async function GET(req: Request) {
       totalPages: Math.ceil(totalInvitations / limit),
     });
   } catch (error: any) {
-    console.error("INVITE LIST ERROR:", error);
+    ;
     return NextResponse.json(
       { success: false, message: error.message || "Server error" },
       { status: 500 }
