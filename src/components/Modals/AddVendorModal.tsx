@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react';
-import { UserPlus, X, Check } from 'lucide-react';
+import { UserPlus, X, Check, Store } from 'lucide-react';
 import { Modal } from '../ui/modal';
 import { MultiSelectDropdown } from '../ui/dropdown/MultiSelectDropdown';
 
@@ -84,7 +84,7 @@ const AddVendorModal: React.FC<Props> = ({
                 </button>
                 <div className="flex items-center gap-3 text-white">
                     <div className="bg-white/20 p-2 rounded-lg">
-                        <UserPlus size={24} />
+                        <Store size={24} />
                     </div>
                     <div>
                         <h2 className="text-xl font-semibold">Onboard Vendor Account</h2>

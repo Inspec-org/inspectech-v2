@@ -2,6 +2,7 @@ export interface AccountCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
+  iconbgColor: string;
   content: string;
   buttonText?: string;
   buttonDisabled?: boolean;

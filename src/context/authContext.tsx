@@ -96,13 +96,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   }, []);
 
   const login = (sessionId: string) => {
+    setLoading(true);
     Cookies.set("session_id", sessionId); 
     localStorage.setItem("session_id", sessionId);
     setSession_id(sessionId);
-    
     fetchUser(sessionId);
-    
-    ;
   };
 
   const logout = () => {

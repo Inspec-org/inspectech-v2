@@ -35,6 +35,7 @@ const AccountCard: React.FC<AccountCardProps> = ({
     title,
     description,
     icon,
+    iconbgColor,
     content,
     buttonText,
     buttonDisabled = false,
@@ -46,7 +47,7 @@ const AccountCard: React.FC<AccountCardProps> = ({
     return (
         <div className={`bg-white border-t-4 ${borderColor || 'border-[#16A34A]'} rounded-lg shadow-md p-6 ${!isActive ? 'opacity-60' : ''}`}>
             <div className="flex items-start gap-4 mb-4">
-                <div className={`p-3 rounded-lg ${isActive ? 'bg-green-100' : 'bg-gray-100'}`}>
+                <div className={`p-3 rounded-lg ${isActive ? `${iconbgColor}` : 'bg-gray-100'}`}>
                     {icon}
                 </div>
                 <div className="flex-1">
@@ -186,6 +187,7 @@ const InspecTechOnboarding: React.FC = () => {
                         title="Vendor Account"
                         description="Manage vendor-specific features"
                         icon={<Store className="text-[#16A34A]" size={24} />}
+                        iconbgColor="bg-green-100"
                         content="Access the vendor dashboard to view and manage inspection data"
                         buttonText="Onboard Vendor"
                         isActive={true}
@@ -196,7 +198,8 @@ const InspecTechOnboarding: React.FC = () => {
                     <AccountCard
                         title="Admin Account"
                         description="Manage administrative controls"
-                        icon={<Shield className="text-gray-400" size={24} />}
+                        icon={<Shield className="text-[#7C3AED]" size={24} />}
+                        iconbgColor='bg-purple-100'
                         content="Access the department selection page and administrative features"
                         buttonText="Onboard Admin"
                         buttonDisabled={false}

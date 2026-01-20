@@ -97,15 +97,22 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
                             />
                         </div>
                     )}
-                    {options
-                        .filter((option) => {
+                    {(() => {
+                        const filtered = options.filter((option) => {
                             if (!searchable) return true;
                             const q = searchQuery.trim().toLowerCase();
                             if (!q) return true;
                             const label = typeof option.label === 'string' ? option.label : '';
                             return label.toLowerCase().includes(q);
-                        })
-                        .map((option) => (
+                        });
+
+                        if (searchable && searchQuery.trim() && filtered.length === 0) {
+                            return (
+                                <div className="px-3 py-3 text-sm text-gray-500 text-center">No data</div>
+                            );
+                        }
+
+                        return filtered.map((option) => (
                             <button
                                 key={option.value}
                                 type="button"
@@ -118,7 +125,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
                                     <Check size={16} className="text-purple-600" />
                                 )}
                             </button>
-                        ))}
+                        ));
+                    })()}
                 </div>
             )}
         </div>
