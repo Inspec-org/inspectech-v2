@@ -114,7 +114,7 @@ function Inspections() {
         trailerHeightDecal: '',
     });
     // Count total selected filters
-    const totalFiltersCount = Object.values(selectedFilters).reduce((sum, arr) => sum + arr.length, 0);
+    const totalFiltersCount = Object.entries(selectedFilters).reduce((sum, [key, arr]) => sum + (key === 'date' ? (arr.length > 0 ? 1 : 0) : arr.length), 0);
     const [dept, setDept] = useState<string | null>(null);
     const [vendor, setVendor] = useState<string | null>(null);
     const [deptName, setDeptName] = useState<string | null>(null);
@@ -170,6 +170,25 @@ function Inspections() {
             [name]: value
         }));
     };
+    const buildServerFilter = (filters: { [key: string]: string[] }): any => {
+        const f: any = {};
+        if (filters.unitId?.length) f.unitIds = filters.unitId;
+        if (filters.inspectionStatus?.length) f.inspectionStatuses = filters.inspectionStatus.map(s => s.toLowerCase());
+        if (filters.type?.length) f.types = filters.type;
+        if (filters.inspector?.length) f.inspectors = filters.inspector;
+        if (filters.vendor?.length) f.vendors = filters.vendor;
+        if (filters.location?.length) f.locations = filters.location;
+        if (filters.delivered?.length) f.deliveredStatuses = filters.delivered.map(d => d.toLowerCase());
+        if (filters.duration?.length) f.duration = filters.duration;
+        if ((filters.date || []).length >= 2) {
+            const [s, e] = filters.date;
+            const sm = String(s).slice(0, 7);
+            const em = String(e).slice(0, 7);
+            f.dateMonthRange = [sm, em];
+            f.dateRange = [String(s), String(e)];
+        }
+        return f;
+    };
 
     const handleSelectAll = async () => {
         if (selectAll) {
@@ -185,7 +204,7 @@ function Inspections() {
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idsOnly: true, filter: selectedFilters, vendorId: vendor, department: dept }),
+                body: JSON.stringify({ idsOnly: true, filter: buildServerFilter(selectedFilters), vendorId: vendor, department: dept }),
             });
             const json = await res.json();
             if (res.ok && json.success) {
@@ -224,7 +243,7 @@ function Inspections() {
                 limit: totalInspections || 1000,
                 department: dept,
                 vendorId: vendor,
-                filter: selectedRows.length > 0 ? { unitIds: selectedRows } : selectedFilters,
+                filter: selectedRows.length > 0 ? { unitIds: selectedRows } : buildServerFilter(selectedFilters),
             };
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
@@ -475,7 +494,7 @@ function Inspections() {
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ page: currentPage, limit, filter: selectedFilters, department: dept, vendorId: vendor }),
+                body: JSON.stringify({ page: currentPage, limit, filter: buildServerFilter(selectedFilters), department: dept, vendorId: vendor }),
             });
             const json = await res.json();
             if (res.ok && json.success) {
@@ -487,7 +506,7 @@ function Inspections() {
                     vendor: doc.vendor || '',
                     location: doc.location || '',
                     duration: `${doc.durationMin || ''}m ${doc.durationSec || ''}s`,
-                    date: `${doc.dateDay || ''}-${doc.dateMonth || ''}-${doc.dateYear || ''}`,
+                    date: `${String(doc.dateMonth || '').padStart(2, '0')}/${String(doc.dateDay || '').padStart(2, '0')}/${doc.dateYear || ''}`,
                     delivered: doc.delivered === 'yes' ? 'Yes' : doc.delivered === 'no' ? 'No' : '',
                 }));
                 
@@ -756,8 +775,9 @@ function Inspections() {
                 {totalFiltersCount > 0 && (
                     <div className='flex items-center gap-2 mt-4 flex-wrap'>
                         {Object.entries(selectedFilters).map(([filterKey, valueIds]) =>
-                            valueIds.map(valueId => {
-                                const filterLabel = filterOptions.find(f => f.key === filterKey)?.label || filterKey;
+                            valueIds.map((valueId, idx) => {
+                                const isDate = filterKey === 'date';
+                                const filterLabel = isDate ? (idx === 0 ? 'From Date' : 'To Date') : (filterOptions.find(f => f.key === filterKey)?.label || filterKey);
                                 const filterOptionsMap: any = {
                                     unitId: unitIdOptions,
                                     inspectionStatus: inspectionStatusOptions,
@@ -769,7 +789,15 @@ function Inspections() {
                                     date: dateOptions,
                                     delivered: deliveredOptions
                                 };
-                                const valueLabel = filterOptionsMap[filterKey]?.find((opt: any) => opt.id === valueId)?.label || valueId;
+                                const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                                const formatPretty = (iso: string) => {
+                                    const [yy, mm, dd] = String(iso).split('-');
+                                    const mi = Math.max(0, parseInt(mm || '1', 10) - 1);
+                                    const name = monthNames[mi] || mm;
+                                    return yy && mm && dd ? `${name} ${dd}, ${yy}` : iso;
+                                };
+                                const rawLabel = filterOptionsMap[filterKey]?.find((opt: any) => opt.id === valueId)?.label || valueId;
+                                const valueLabel = isDate ? formatPretty(valueId) : rawLabel;
 
                                 return (
                                     <div key={`${filterKey}-${valueId}`} className='flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg'>
