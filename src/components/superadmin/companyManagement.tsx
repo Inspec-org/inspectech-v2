@@ -42,7 +42,7 @@ const CompanyManagementPage: React.FC = () => {
                 const res = await apiRequest(`/api/departments/get-departments?page=${deptPage}&limit=${deptPageSize}`);
                 if (res.ok) {
                     const json = await res.json();
-                    const mapped = (json.departments || []).map((d: any) => ({ id: String(d._id), name: d.name, status: 'Active' }));
+                    const mapped = (json.departments || []).map((d: any) => ({ id: String(d._id), name: d.name, status: String(d.status).toLowerCase() === 'inactive' ? 'Inactive' : 'Active' }));
                     setDepartments(mapped);
                     setDepartmentsTotal(Number((json?.pagination?.total) ?? json.total ?? json.totalCount ?? mapped.length));
                 } else {

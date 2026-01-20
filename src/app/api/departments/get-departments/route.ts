@@ -36,14 +36,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
       departments = await Department.find({ _id: { $in: allowedDeptIds } });
-      departments.sort((a, b) => {
-        const aIsUS = a.name.toLowerCase().includes("us");
-        const bIsUS = b.name.toLowerCase().includes("us");
+      // departments.sort((a, b) => {
+      //   const aIsUS = a.name.toLowerCase().includes("us");
+      //   const bIsUS = b.name.toLowerCase().includes("us");
 
-        if (aIsUS && !bIsUS) return -1;
-        if (!aIsUS && bIsUS) return 1;
-        return a.name.localeCompare(b.name);
-      });
+      //   if (aIsUS && !bIsUS) return -1;
+      //   if (!aIsUS && bIsUS) return 1;
+      //   return a.name.localeCompare(b.name);
+      // });
     } else if (user.role === "user") {
       const vendorIds = [
         ...(user.vendorAccess || []),
@@ -62,14 +62,14 @@ export async function GET(req: NextRequest) {
 
       departments = await Department.find({ _id: { $in: allowedDeptIds } });
 
-      departments.sort((a, b) => {
-        const aIsUS = a.name.toLowerCase().includes("us");
-        const bIsUS = b.name.toLowerCase().includes("us");
+      // departments.sort((a, b) => {
+      //   const aIsUS = a.name.toLowerCase().includes("us");
+      //   const bIsUS = b.name.toLowerCase().includes("us");
 
-        if (aIsUS && !bIsUS) return -1;
-        if (!aIsUS && bIsUS) return 1;
-        return a.name.localeCompare(b.name);
-      });
+      //   if (aIsUS && !bIsUS) return -1;
+      //   if (!aIsUS && bIsUS) return 1;
+      //   return a.name.localeCompare(b.name);
+      // });
     }
 
     // Add color field based on department name
