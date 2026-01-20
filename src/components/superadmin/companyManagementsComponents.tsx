@@ -2,7 +2,7 @@
 import { ChevronLeft, ChevronRight, Plus, Search, Trash2, UserPlus } from "lucide-react";
 import { AdminUser, Department, TablePaginationProps, User, Vendor, VendorCompany } from "./types";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Fragment } from "react";
 import Cookies from 'js-cookie';
 import { apiRequest } from "@/utils/apiWrapper";
 import { CustomDropdown } from "../ui/dropdown/CustomDropdown";
@@ -284,11 +284,9 @@ export const AdminUserManagementSection: React.FC<{
     loading?: boolean;
 }> = ({ adminUsers = [], totalCount: extTotal, currentPage: extPage = 1, pageSize: extSize = 2, onPageChange, searchQuery, onSearchChange, loading }) => {
     const [searchQueryLocal, setSearchQueryLocal] = useState(searchQuery ?? '');
-
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [accessModalOpen, setAccessModalOpen] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState<{ name?: string; email?: string; vendorNames?: string[]; departments?: string[] } | null>(null);
-    const [tooltip, setTooltip] = useState<{ items: string[]; x: number; y: number } | null>(null);
-    const hideTimerRef = useRef<number | null>(null);
     const [items, setItems] = useState<AdminUser[]>(adminUsers);
     const [totalCount, setTotalCount] = useState<number>(extTotal ?? adminUsers.length);
 
@@ -303,15 +301,16 @@ export const AdminUserManagementSection: React.FC<{
     const endIndex = Math.min(startIndex + pageSize, totalCount);
     const displayed = items;
 
-    const getPageList = () => {
-        const pages: (number | string)[] = [];
-        if (totalPages <= 7) {
-            for (let i = 1; i <= totalPages; i++) pages.push(i);
-            return pages;
-        }
-        if (safePage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-        if (safePage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-        return [1, '...', safePage - 1, safePage, safePage + 1, '...', totalPages];
+    const toggleRow = (userId: string) => {
+        setExpandedRows(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(userId)) {
+                newSet.delete(userId);
+            } else {
+                newSet.add(userId);
+            }
+            return newSet;
+        });
     };
 
     return (
@@ -356,133 +355,151 @@ export const AdminUserManagementSection: React.FC<{
                             </tr>
                         </thead>
                         <tbody>
-                            {displayed.map((user, idx) => (
-                                <tr key={user.id} className="border-b hover:bg-gray-50">
-                                    <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
-                                    <td className="py-4 px-4">
-                                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                        <div className="text-sm text-gray-500">{user.secondaryEmail}</div>
-                                    </td>
-                                    <td className="py-4 px-4 text-sm text-gray-900">{user.email}</td>
-                                    <td className="py-4 px-4 text-sm text-gray-900">
-                                        <div className="inline-block">
-                                            {Array.isArray(user.vendorNames) && user.vendorNames.length > 0 ? (
-                                                <div
-                                                    onMouseEnter={(e) => {
-                                                        if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
-                                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                                        setTooltip({ items: user.vendorNames?.slice(1) || [], x: Math.min(rect.left, window.innerWidth - 360), y: rect.bottom + 6 });
-                                                    }}
-                                                    onMouseLeave={() => {
-                                                        hideTimerRef.current = window.setTimeout(() => setTooltip(null), 150);
-                                                    }}>
-                                                    <span>{user.vendorNames.slice(0, 1).join(', ')}</span>
-                                                    {user.vendorNames.length > 1 && (
-                                                        <span className="ml-1 text-gray-500">
-                                                            +{user.vendorNames.length - 1} more
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span>{user.vendor || user.department || '—'}</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-4 text-sm text-gray-900">
-                                        <div className="inline-block">
-                                            {Array.isArray(user.departments) && user.departments.length > 0 ? (
-                                                <div
-                                                    onMouseEnter={(e) => {
-                                                        if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
-                                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                                        setTooltip({ items: user.departments?.slice(1) || [], x: Math.min(rect.left, window.innerWidth - 360), y: rect.bottom + 6 });
-                                                    }}
-                                                    onMouseLeave={() => {
-                                                        hideTimerRef.current = window.setTimeout(() => setTooltip(null), 150);
-                                                    }}>
-                                                    <span>{user.departments.slice(0, 1).join(', ')}</span>
-                                                    {user.departments.length > 1 && (
-                                                        <span className="ml-1 text-gray-500">
-                                                            +{user.departments.length - 1} more
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span>—</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-4">
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                className="text-sm text-gray-600 hover:text-[#7C3AED] font-medium transition-colors border rounded-full px-3"
-                                                onClick={() => {
-                                                    setSelectedAdmin({
-                                                        name: user.name,
-                                                        email: user.email,
-                                                        vendorNames: Array.isArray(user.vendorNames) ? user.vendorNames : [],
-                                                        departments: Array.isArray(user.departments) ? user.departments : [],
-                                                    });
-                                                    setAccessModalOpen(true);
-                                                }}
-                                            >
-                                                Manage Access
-                                            </button>
-                                            <button
-                                                className="text-red-500 hover:text-red-700 transition-colors"
-                                                onClick={async () => {
-                                                    const result = await Swal.fire({
-                                                        title: 'Delete Admin?',
-                                                        text: 'This action cannot be undone.',
-                                                        icon: 'warning',
-                                                        showCancelButton: true,
-                                                        confirmButtonColor: '#EF4444',
-                                                        cancelButtonColor: '#6B7280',
-                                                        confirmButtonText: 'Delete',
-                                                        cancelButtonText: 'Cancel'
-                                                    });
-                                                    if (result.isConfirmed) {
-                                                        try {
-                                                            const res = await apiRequest('/api/users/delete-user', {
-                                                                method: 'DELETE',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ targetEmail: user.email })
+                            {displayed.map((user, idx) => {
+                                const isExpanded = expandedRows.has(user.id.toString());
+                                const hasExtraVendors = Array.isArray(user.vendorNames) && user.vendorNames.length > 1;
+                                const hasExtraDepts = Array.isArray(user.departments) && user.departments.length > 1;
+                                const hasExpandableContent = hasExtraVendors || hasExtraDepts;
+
+                                return (
+                                    <Fragment key={user.id}>
+                                        <tr
+                                            className={`border-b hover:bg-gray-50 ${hasExpandableContent ? 'cursor-pointer' : ''}`}
+                                            onClick={(e) => {
+                                                // Don't toggle if clicking on buttons
+                                                if ((e.target as HTMLElement).closest('button')) return;
+                                                if (hasExpandableContent) toggleRow(user.id.toString());
+                                            }}
+                                        >
+                                            <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
+                                            <td className="py-4 px-4">
+                                                <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                                <div className="text-sm text-gray-500">{user.secondaryEmail}</div>
+                                            </td>
+                                            <td className="py-4 px-4 text-sm text-gray-900">{user.email}</td>
+                                            <td className="py-4 px-4 text-sm text-gray-900">
+                                                {Array.isArray(user.vendorNames) && user.vendorNames.length > 0 ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{user.vendorNames[0]}</span>
+                                                        {user.vendorNames.length > 1 && (
+                                                            <span className="text-xs text-gray-500 font-medium">
+                                                                +{user.vendorNames.length - 1} more
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span>{user.vendor || user.department || '—'}</span>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-4 text-sm text-gray-900">
+                                                {Array.isArray(user.departments) && user.departments.length > 0 ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{user.departments[0]}</span>
+                                                        {user.departments.length > 1 && (
+                                                            <span className="text-xs text-gray-500 font-medium">
+                                                                +{user.departments.length - 1} more
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span>—</span>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center gap-3">
+                                                    <button
+                                                        className="text-sm text-gray-600 hover:text-[#7C3AED] font-medium transition-colors border rounded-full px-3 py-1"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedAdmin({
+                                                                name: user.name,
+                                                                email: user.email,
+                                                                vendorNames: Array.isArray(user.vendorNames) ? user.vendorNames : [],
+                                                                departments: Array.isArray(user.departments) ? user.departments : [],
                                                             });
-                                                            const json = await res.json().catch(() => ({}));
-                                                            if (res.ok && json.success) {
-                                                                setItems((prev) => prev.filter((u) => u.email !== user.email));
-                                                                toast.success('Admin user removed.');
-                                                            } else {
-                                                                toast.error(json.message || 'Unable to delete user.');
+                                                            setAccessModalOpen(true);
+                                                        }}
+                                                    >
+                                                        Manage Access
+                                                    </button>
+                                                    <button
+                                                        className="text-red-500 hover:text-red-700 transition-colors"
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            const result = await Swal.fire({
+                                                                title: 'Delete Admin?',
+                                                                text: 'This action cannot be undone.',
+                                                                icon: 'warning',
+                                                                showCancelButton: true,
+                                                                confirmButtonColor: '#EF4444',
+                                                                cancelButtonColor: '#6B7280',
+                                                                confirmButtonText: 'Delete',
+                                                                cancelButtonText: 'Cancel'
+                                                            });
+                                                            if (result.isConfirmed) {
+                                                                try {
+                                                                    const res = await apiRequest('/api/users/delete-user', {
+                                                                        method: 'DELETE',
+                                                                        headers: { 'Content-Type': 'application/json' },
+                                                                        body: JSON.stringify({ targetEmail: user.email })
+                                                                    });
+                                                                    const json = await res.json().catch(() => ({}));
+                                                                    if (res.ok && json.success) {
+                                                                        setItems((prev) => prev.filter((u) => u.email !== user.email));
+                                                                        toast.success('Admin user removed.');
+                                                                    } else {
+                                                                        toast.error(json.message || 'Unable to delete user.');
+                                                                    }
+                                                                } catch (err: any) {
+                                                                    toast.error(err?.message || 'Unexpected error.');
+                                                                }
                                                             }
-                                                        } catch (err: any) {
-                                                            toast.error(err?.message || 'Unexpected error.');
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                                        }}
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {isExpanded && hasExpandableContent && (
+                                            <tr className="bg-gray-50/50 border-b">
+                                                <td colSpan={6} className="py-4 px-4">
+                                                    <div className="flex gap-8 pl-4">
+                                                        {hasExtraVendors && (
+                                                            <div className="flex-1">
+                                                                <p className="text-xs font-semibold text-gray-600 mb-3">ALL VENDORS</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {user.vendorNames?.map((vendor, i) => (
+                                                                        <span key={i} className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm text-gray-700">
+                                                                            {vendor}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {hasExtraDepts && (
+                                                            <div className="flex-1">
+                                                                <p className="text-xs font-semibold text-gray-600 mb-3">ALL DEPARTMENTS</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {user.departments?.map((dept, i) => (
+                                                                        <span key={i} className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm text-gray-700">
+                                                                            {dept}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
+                                );
+                            })}
                         </tbody>
                     </table>
                 )}
             </div>
-            {tooltip && tooltip.items.length > 0 && (
-                <div
-                    className="z-[9999] bg-white border border-gray-200 rounded-md shadow-lg p-2 text-base w-max max-w-sm"
-                    style={{ position: 'fixed', top: tooltip.y, left: tooltip.x }}
-                    onMouseEnter={() => { if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; } }}
-                    onMouseLeave={() => setTooltip(null)}
-                >
-                    {tooltip.items.map((t, i) => (
-                        <div key={i} className="text-gray-700">{t}</div>
-                    ))}
-                </div>
-            )}
             <TablePagination currentPage={extPage} totalCount={totalCount} pageSize={extSize} onPageChange={onPageChange || (() => { })} />
             <AdminManageAccessModal
                 isOpen={accessModalOpen}
