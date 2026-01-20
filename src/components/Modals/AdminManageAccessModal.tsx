@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Building2, Plus, UserCog, UserPlus, X, Check, Search } from 'lucide-react';
 import { Modal } from '../ui/modal';
-
+import { ClipLoader } from 'react-spinners';
 
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
@@ -36,11 +36,13 @@ const AdminManageAccessModal: React.FC<Props> = ({
     const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([]);
     const [vendors, setVendors] = useState<{ _id: string; name: string }[]>([]);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
     const [deptSearch, setDeptSearch] = useState('');
     const [vendorSearch, setVendorSearch] = useState('');
 
     useEffect(() => {
         if (isOpen) {
+            setFetching(true);
             (async () => {
                 try {
                     const [vRes, dRes] = await Promise.all([
@@ -49,7 +51,6 @@ const AdminManageAccessModal: React.FC<Props> = ({
                     ]);
                     if (vRes.ok) {
                         const vjson = await vRes.json().catch(() => ({}));
-                        
                         setVendors(Array.isArray(vjson.vendors) ? vjson.vendors : []);
                     } else {
                         setVendors([]);
@@ -66,6 +67,8 @@ const AdminManageAccessModal: React.FC<Props> = ({
                 } catch {
                     setVendors([]);
                     setDepartments([]);
+                } finally {
+                    setFetching(false);
                 }
             })();
         }
@@ -195,15 +198,22 @@ const AdminManageAccessModal: React.FC<Props> = ({
                             />
                         </div>
                         <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
-                            {departments
-                                .filter((d) => {
-                                    const q = deptSearch.trim().toLowerCase();
-                                    return !q || String(d.name).toLowerCase().includes(q);
-                                })
-                                .map((d) => {
+                            {(() => {
+                                if (fetching) {
+                                    return <div className="flex justify-center items-center py-10"><ClipLoader color="#7C3AED" size={24} /></div>;
+                                }
+                                const q = deptSearch.trim().toLowerCase();
+                                const filtered = (departments || []).filter(d => !q || String(d.name).toLowerCase().includes(q));
+                                if (!filtered.length) {
+                                    return <div className="text-center text-sm text-gray-500">No departments found</div>;
+                                }
+                                return filtered.map((d) => {
                                     const checked = selectedDepartments.includes(String(d._id));
                                     return (
-                                        <label key={String(d._id)} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${checked ? 'border-[#7C3AED] bg-purple-50' : 'border-gray-200'}`}>
+                                        <label
+                                            key={String(d._id)}
+                                            className={`flex items-center justify-between rounded-xl border px-4 py-3 ${checked ? 'border-[#7C3AED] bg-purple-50' : 'border-gray-200'}`}
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="checkbox"
@@ -211,14 +221,17 @@ const AdminManageAccessModal: React.FC<Props> = ({
                                                     checked={checked}
                                                     onChange={(e) => {
                                                         const id = String(d._id);
-                                                        setSelectedDepartments((prev) => e.target.checked ? [...prev, id] : prev.filter(x => x !== id));
+                                                        setSelectedDepartments((prev) =>
+                                                            e.target.checked ? [...prev, id] : prev.filter((x) => x !== id)
+                                                        );
                                                     }}
                                                 />
                                                 <span className="text-sm text-gray-900">{d.name}</span>
                                             </div>
                                         </label>
                                     );
-                                })}
+                                });
+                            })()}
                         </div>
                     </div>
                 )}
@@ -242,13 +255,19 @@ const AdminManageAccessModal: React.FC<Props> = ({
                             />
                         </div>
                         <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
-                            {vendors
-                                .filter((v: any) => {
-                                    const q = vendorSearch.trim().toLowerCase();
+                            {(() => {
+                                if (fetching) {
+                                    return <div className="flex justify-center items-center py-10"><ClipLoader color="#7C3AED" size={24} /></div>;
+                                }
+                                const q = vendorSearch.trim().toLowerCase();
+                                const filtered = (vendors || []).filter((v: any) => {
                                     const name = (v.name || v.label || '').toLowerCase();
                                     return !q || name.includes(q);
-                                })
-                                .map((v: any) => {
+                                });
+                                if (!filtered.length) {
+                                    return <div className="text-center text-sm text-gray-500">No vendors found</div>;
+                                }
+                                return filtered.map((v: any) => {
                                     const id = String(v._id || v.id || v.value || '');
                                     const name = v.name || v.label || '';
                                     const checked = selectedVendors.includes(id);
@@ -267,29 +286,30 @@ const AdminManageAccessModal: React.FC<Props> = ({
                                             </div>
                                         </label>
                                     );
-                                })}
+                                });
+                            })()}
                         </div>
                     </div>
                 )}
             </div>
 
-            
+
 
             {/* Footer Actions */}
-            <div className="px-6 pb-6 flex items-center justify-end gap-3 mt-4">
+            <div className="px-6 pb-6 flex items-center justify-between gap-3 mt-4 w-full">
                 <button
                     onClick={onClose}
-                    className="px-6 py-2.5 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                    className="px-6 py-2.5 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors w-full"
                 >
                     Cancel
                 </button>
                 <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="px-6 py-2.5 bg-gradient-to-r from-[#6B46C1] to-[#8B5CF6] text-white font-medium rounded-lg hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+                    className="px-6 py-2.5 bg-gradient-to-r from-[#6B46C1] to-[#8B5CF6] text-white font-medium rounded-lg hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 w-full text-center justify-center"
                 >
-                    <Plus size={18} />
-                    Save Changes
+                    {loading ? <ClipLoader color="#fff" size={16} /> : <Plus size={18} />}
+                    <span>Save Changes</span>
                 </button>
             </div>
         </Modal>

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Building2, Plus, UserCog, UserPlus, X, Check, Search } from 'lucide-react';
 import { Modal } from '../ui/modal';
-
+import { ClipLoader } from 'react-spinners';
 
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
@@ -27,10 +27,12 @@ const VendorManageAccessModal: React.FC<Props> = ({
     const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
     const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([]);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
     const [deptSearch, setDeptSearch] = useState('');
 
     useEffect(() => {
         if (isOpen && vendorId) {
+            setFetching(true);
             (async () => {
                 try {
                     const [dRes, vRes] = await Promise.all([
@@ -58,6 +60,8 @@ const VendorManageAccessModal: React.FC<Props> = ({
                 } catch {
                     setDepartments([]);
                     setSelectedDepartments([]);
+                } finally {
+                    setFetching(false);
                 }
             })();
         }
@@ -160,12 +164,16 @@ const VendorManageAccessModal: React.FC<Props> = ({
                             />
                         </div>
                         <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
-                            {departments
-                                .filter((d) => {
-                                    const q = deptSearch.trim().toLowerCase();
-                                    return !q || String(d.name).toLowerCase().includes(q);
-                                })
-                                .map((d) => {
+                            {(() => {
+                                if (fetching) {
+                                    return <div className="flex justify-center items-center py-10"><ClipLoader color="#7C3AED" size={24} /></div>;
+                                }
+                                const q = deptSearch.trim().toLowerCase();
+                                const filtered = (departments || []).filter(d => !q || String(d.name).toLowerCase().includes(q));
+                                if (!filtered.length) {
+                                    return <div className="text-center text-sm text-gray-500">No departments found</div>;
+                                }
+                                return filtered.map((d) => {
                                     const checked = selectedDepartments.includes(String(d._id));
                                     return (
                                         <label key={String(d._id)} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${checked ? 'border-[#7C3AED] bg-purple-50' : 'border-gray-200'}`}>
@@ -183,7 +191,8 @@ const VendorManageAccessModal: React.FC<Props> = ({
                                             </div>
                                         </label>
                                     );
-                                })}
+                                });
+                            })()}
                         </div>
                     </div>
             </div>
@@ -203,8 +212,8 @@ const VendorManageAccessModal: React.FC<Props> = ({
                     disabled={loading}
                     className="px-6 py-2.5 bg-gradient-to-r from-[#6B46C1] to-[#8B5CF6] text-white font-medium rounded-lg hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
                 >
-                    <Plus size={18} />
-                    Save Changes
+                    {loading ? <ClipLoader color="#fff" size={16} /> : <Plus size={18} />}
+                    <span>Save Changes</span>
                 </button>
             </div>
         </Modal>

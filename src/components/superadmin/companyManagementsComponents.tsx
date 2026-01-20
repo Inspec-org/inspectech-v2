@@ -592,8 +592,8 @@ export const VendorsSection: React.FC<{ vendors?: Vendor[]; totalCount?: number;
             <div className="flex items-center justify-between py-4">
                 <div className="flex items-start gap-3 ">
                     <div>
-                        <h2 className="text-sm text-gray-900">Vendors</h2>
-                        <p className="text-xs text-[#6A7282] mt-1">Manage vendor access and companies</p>
+                        <h2 className="text-sm text-gray-900">Vendors & Company Management</h2>
+                        <p className="text-xs text-[#6A7282] mt-1">Manage vendor access and companies information</p>
                     </div>
                 </div>
                 {/* <button className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
