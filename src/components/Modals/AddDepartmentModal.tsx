@@ -89,6 +89,9 @@ const AddDepartmentModal: React.FC<Props> = ({
                         placeholder="Enter department name"
                         className="w-full px-4 py-2.5 bg-[#FAF7FF] border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-gray-900 placeholder:text-gray-400"
                     />
+                    <p className="text-sm text-gray-400 mt-1">
+                        Enter a descriptive name for the department
+                    </p>
                 </div>
 
                 {/* Info Box */}
@@ -104,7 +107,7 @@ const AddDepartmentModal: React.FC<Props> = ({
                                 Department Configuration
                             </h4>
                             <p className="text-sm text-blue-800 lea">
-                                This department will be available for assignment to all users.
+                                This department will be available for assignment to admin users and can be managed after creation.
                             </p>
                         </div>
                     </div>

@@ -145,6 +145,27 @@ export const AdminDepartmentsSection: React.FC<{ departments: Department[]; tota
     }, []);
 
     const [deleting, setDeleting] = useState<string | null>(null);
+    const [updating, setUpdating] = useState<string | null>(null);
+    const handleStatusToggle = async (dept: Department) => {
+        if (!dept?.id) return;
+        const next = dept.status === 'Active' ? 'inactive' : 'active';
+        try {
+            setUpdating(dept.id);
+            const res = await apiRequest('/api/departments/update_department_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ departmentId: dept.id, status: next })
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) { toast.error(json.error || 'Failed to update status'); return; }
+            setItems(prev => prev.map(d => d.id === dept.id ? { ...d, status: next === 'active' ? 'Active' : 'Inactive' } : d));
+            toast.success(next === 'active' ? 'Department activated' : 'Department deactivated');
+        } catch (e: any) {
+            toast.error(e?.message || 'Failed to update status');
+        } finally {
+            setUpdating(null);
+        }
+    };
     const handleDelete = async (id: string) => {
         if (!id) return;
         const { isConfirmed } = await Swal.fire({
@@ -214,9 +235,22 @@ export const AdminDepartmentsSection: React.FC<{ departments: Department[]; tota
                                     <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
                                     <td className="py-4 px-4 text-sm text-gray-900">{dept.name}</td>
                                     <td className="py-4 px-4">
-                                        <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
-                                            {dept.status}
-                                        </span>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => handleStatusToggle(dept)}
+                                                disabled={updating === dept.id}
+                                                className={`${updating === dept.id ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                                aria-pressed={dept.status === 'Active'}
+                                                aria-label="Toggle status"
+                                            >
+                                                <div className={`relative inline-flex items-center h-6 w-11 rounded-full ${dept.status === 'Active' ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                                    <span className={`inline-block h-5 w-5 transform bg-white rounded-full transition ${dept.status === 'Active' ? 'translate-x-5' : 'translate-x-1'}`} />
+                                                </div>
+                                            </button>
+                                            <span className={`${dept.status === 'Active' ? 'text-[#00A63E] bg-[#dcfde6]' : 'text-gray-600 bg-gray-100'} text-sm font-medium px-3 py-1 rounded-2xl`}>
+                                                {dept.status}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td className="py-4 px-4">
                                         <button onClick={() => handleDelete(dept.id)} disabled={deleting === dept.id} className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
@@ -599,8 +633,8 @@ export const VendorsSection: React.FC<{ vendors?: Vendor[]; totalCount?: number;
                                             />
                                             <div className={`w-11 h-6 ${vendor.status === 'Active' ? 'bg-[#00C950]' : 'bg-[#D9D9D9]'} peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all`}></div>
                                         </label>
-                                        <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
-                                            <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                                        <span className={`inline-flex items-center gap-1 text-sm font-medium ${vendor.status === 'Active' ? 'text-[#00A63E] bg-[#dcfde6]' : 'bg-gray-300'} px-3 py-1 rounded-2xl`}>
+                                            <span className={`w-1.5 h-1.5 bg-green-600 rounded-full ${vendor.status === 'Active' ? 'block' : 'hidden'}`}></span>
                                             {vendor.status}
                                         </span>
                                     </td>
@@ -816,8 +850,8 @@ export const VendorUserManagementSection: React.FC<{ vendors: Vendor[] }> = ({ v
                                             />
                                             <div className={`w-11 h-6 ${user.status === 'Active' ? 'bg-[#00C950]' : 'bg-[#D9D9D9]'} peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all`}></div>
                                         </label>
-                                        <span className="inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl">
-                                            <span className="w-1.5 h-1.5 bg-[#00A63E] rounded-full"></span>
+                                        <span className={`inline-flex items-center gap-1 text-sm text-[#00A63E] font-medium bg-[#dcfde6] px-3 py-1 rounded-2xl ${user.status === 'Active' ? 'block' : 'hidden'}`}>
+                                            <span className={`w-1.5 h-1.5 bg-[#00A63E] rounded-full ${user.status === 'Active' ? 'block' : 'hidden'}`}></span>
                                             {user.status}
                                         </span>
                                     </td>

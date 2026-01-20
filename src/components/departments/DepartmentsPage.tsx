@@ -18,17 +18,31 @@ export default function DepartmentsPage() {
       const res = await apiRequest("/api/departments/get-departments");
       if (res.ok) {
         const json = await res.json();
-        // Map departments with images based on name
+        console.log(json);
+        // Map departments with images and assign unique colors per page
+        const palette = ['#7C3AED','#3B82F6','#059669','#E96513','#14B8A6','#F43F5E','#9333EA','#0EA5E9','#EF4444','#22C55E','#2563EB','#A855F7','#0EA5E9','#F59E0B'];
+        const namedMap: Record<string,string> = { purple:'#7C3AED', blue:'#3B82F6', red:'#E96513', green:'#059669' };
+        const cssColorRegex = /^(#([0-9a-f]{3}){1,2}|rgb[a]?\([\s\S]*\)|hsl[a]?\([\s\S]*\))$/i;
+        const hash = (key: string) => { let h=0; for (let i=0;i<key.length;i++){ h=(h*31+key.charCodeAt(i))>>>0; } return h; };
+        const used = new Set<number>();
+        const assignColor = (dept: Department): string => {
+          const raw = (dept.color || '').trim();
+          const named = raw ? namedMap[raw.toLowerCase()] : undefined;
+          if (named) return named;
+          if (raw && cssColorRegex.test(raw)) return raw;
+          let idx = hash(dept.id || dept.name || '') % palette.length;
+          if (!used.has(idx)) { used.add(idx); return palette[idx]; }
+          const step = 1 + (idx % (palette.length - 1));
+          for (let a=0; a<palette.length; a++) { const cand = (idx + a*step) % palette.length; if (!used.has(cand)) { used.add(cand); return palette[cand]; } }
+          return palette[idx];
+        };
         const departmentsWithImages = json.departments.map((dept: Department) => {
           const lowerName = dept.name.toLowerCase();
-          if (lowerName.includes('trailer')) {
-            return { ...dept, image: '/images/departments/van.svg', imageType: 'svg' };
-          } else if (lowerName.includes('maintenance')) {
-            return { ...dept, image: 'wrench', imageType: 'icon' };
-          } else if (lowerName.includes('campaign')) {
-            return { ...dept, image: 'bar-chart', imageType: 'icon' };
-          }
-          return { ...dept, image: '/images/departments/van.svg', imageType: 'svg' }; // default
+          const base = lowerName.includes('trailer') ? { image: '/images/departments/van.svg', imageType: 'svg' } :
+                       lowerName.includes('maintenance') ? { image: 'wrench', imageType: 'icon' } :
+                       lowerName.includes('campaign') ? { image: 'bar-chart', imageType: 'icon' } :
+                       { image: '/images/departments/van.svg', imageType: 'svg' };
+          return { ...dept, ...base, color: assignColor(dept) };
         });
         setDepartments(departmentsWithImages);
       }
