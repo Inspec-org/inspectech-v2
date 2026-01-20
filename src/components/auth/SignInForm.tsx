@@ -51,6 +51,7 @@ export default function SignInForm() {
         throw new Error(result?.message || result.error)
       }
       const role=result.user.role
+      login(result.token)
       
       if(role==="superadmin")
       {
@@ -58,7 +59,6 @@ export default function SignInForm() {
       }
       else
         router.push(`/${role}/departments`);
-      login(result.token)
 
       // const sessionId = result.data.data.session_id;
       // if (sessionId) {
