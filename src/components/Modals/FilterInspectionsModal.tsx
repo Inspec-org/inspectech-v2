@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Search, Filter } from 'lucide-react';
 import { Modal } from '../ui/modal';
+import DatePickerDropdown from '../ui/dropdown/DatePickerDropdown';
 
 // Types
 interface FilterOption {
@@ -134,15 +135,15 @@ const FilterSidebar: React.FC<{
 }> = ({ activeFilter, onFilterChange }) => {
     return (
         <div className="w-32 border-r border-gray-200 ">
-            <div className="py-4 px-3">
+            <div className="py-4">
                 <p className="text-sm font-medium text-gray-600 mb-3">Filter by</p>
                 <div className="space-y-1">
                     {filterOptions.map((option) => (
                         <button
                             key={option.key}
                             onClick={() => onFilterChange(option.key)}
-                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeFilter === option.key
-                                ? 'bg-blue-50 text-blue-600 font-medium'
+                            className={`w-full text-left py-2 text-sm rounded transition-colors ${activeFilter === option.key
+                                ? 'bg-blue-50 text-blue-600 font-medium pl-3'
                                 : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                         >
@@ -206,11 +207,17 @@ const FilterInspectionsModal: React.FC<{
     const [activeFilter, setActiveFilter] = useState('unitId');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: string[] }>(initialFilters);
+    const isDateFilter = activeFilter === 'date';
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
 
     useEffect(() => {
         if (isOpen) {
             setSelectedFilters(initialFilters);
+            const current = initialFilters['date'] || [];
+            setStartDate(current[0] || '');
+            setEndDate(current[1] || '');
         }
     }, [isOpen, initialFilters]);
 
@@ -219,7 +226,7 @@ const FilterInspectionsModal: React.FC<{
 
     const dynamicOptionsMap: { [key: string]: option[] } = useMemo(() => ({
         unitId: toOptions(inspections.map(i => i.id)),
-        inspectionStatus: toOptions(inspections.map(i => i.status)),
+        inspectionStatus: toOptions(inspections.map(i => i.status.toUpperCase())),
         type: toOptions(inspections.map(i => i.type)),
         inspector: toOptions(inspections.map(i => i.inspector)),
         vendor: toOptions(inspections.map(i => i.vendor)),
@@ -244,6 +251,13 @@ const FilterInspectionsModal: React.FC<{
     };
 
     const handleAddSelected = () => {
+        if (isDateFilter) {
+            if (!startDate || !endDate) return;
+            const next = { ...selectedFilters, date: [startDate, endDate] };
+            sessionStorage.setItem('inspectionFilters', JSON.stringify(next));
+            onApply(next);
+            return;
+        }
         sessionStorage.setItem('inspectionFilters', JSON.stringify(selectedFilters));
         onApply(selectedFilters);
     };
@@ -256,6 +270,7 @@ const FilterInspectionsModal: React.FC<{
 
     const filterLabel = filterOptions.find(f => f.key === activeFilter)?.label || '';
     const totalSelected = Object.values(selectedFilters).reduce((sum, arr) => sum + arr.length, 0);
+    const displaySelectedCount = isDateFilter ? ((startDate && endDate) ? 1 : 0) : totalSelected;
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-[600px] p-4 ">
             <div className="flex flex-col h-[90vh] max-h-[70vh]"> {/* give modal a bounded height */}
@@ -281,30 +296,46 @@ const FilterInspectionsModal: React.FC<{
                                 </h3>
                                 <button
                                     onClick={handleAddSelected}
-                                    disabled={totalSelected === 0}
+                                    disabled={isDateFilter ? !(startDate && endDate) : totalSelected === 0}
                                     className="px-4 py-2 bg-purple-500 text-white text-sm font-medium rounded-md hover:bg-purple-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                                 >
-                                    Add Selected ({totalSelected})
+                                    Add Selected ({displaySelectedCount})
                                 </button>
                             </div>
-                            <SearchInput
-                                value={searchQuery}
-                                onChange={setSearchQuery}
-                                placeholder={`Search ${filterLabel} values...`}
-                            />
+                            {!isDateFilter && (
+                                <SearchInput
+                                    value={searchQuery}
+                                    onChange={setSearchQuery}
+                                    placeholder={`Search ${filterLabel} values...`}
+                                />
+                            )}
                         </div>
 
-                        {/* Scrollable Options List */}
                         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-                            {filteredOptions.map((option) => (
-                                <CheckboxOption
-                                    key={option.id}
-                                    id={option.id}
-                                    label={option.label}
-                                    checked={currentSelectedIds.includes(option.id)}
-                                    onChange={handleToggleId}
-                                />
-                            ))}
+                            {isDateFilter ? (
+                                <div className="space-y-4 px-3 py-2">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700 mb-2">From</p>
+                                            <DatePickerDropdown value={startDate} onChange={(v) => setStartDate(v)} placeholder="Select date" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700 mb-2">To</p>
+                                            <DatePickerDropdown value={endDate} onChange={(v) => setEndDate(v)} placeholder="Select date" min={startDate || undefined} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                filteredOptions.map((option) => (
+                                    <CheckboxOption
+                                        key={option.id}
+                                        id={option.id}
+                                        label={option.label}
+                                        checked={currentSelectedIds.includes(option.id)}
+                                        onChange={handleToggleId}
+                                    />
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

@@ -41,6 +41,8 @@ export default function DatePickerDropdown({
 
   const [year, setYear] = useState(initial.y);
   const [month, setMonth] = useState(initial.m);
+  const [view, setView] = useState<'day' | 'month' | 'year'>('day');
+  const [yearRangeStart, setYearRangeStart] = useState<number>(initial.y - 11);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -84,7 +86,7 @@ export default function DatePickerDropdown({
     position: 'fixed',
     left: coords.left,
     width: width || coords.width,
-    zIndex: 9999,
+    zIndex: 100000,
     ...(coords.placement === 'top'
       ? { bottom: coords.bottom + 4, top: 'auto' }
       : { top: coords.top + 4, bottom: 'auto' }),
@@ -120,16 +122,28 @@ export default function DatePickerDropdown({
   const maxStr = max;
   const minStr = min;
 
-  const canGoPrev = (() => {
+  const canGoPrevMonth = (() => {
     if (!minStr) return true;
     const first = toStr(year, month, 1);
     return cmp(first, minStr) > 0;
   })();
 
-  const canGoNext = (() => {
+  const canGoNextMonth = (() => {
     if (!maxStr) return true;
-    const first = toStr(year, month + 1 > 12 ? year + 1 : year, month + 1 > 12 ? 1 : month + 1);
-    return cmp(first, maxStr) <= 0;
+    const nextFirst = toStr(month + 1 > 12 ? year + 1 : year, month + 1 > 12 ? 1 : month + 1, 1);
+    return cmp(nextFirst, maxStr) <= 0;
+  })();
+
+  const canGoPrevYear = (() => {
+    if (!minStr) return true;
+    const lastPrev = toStr(year - 1, 12, 31);
+    return cmp(lastPrev, minStr) >= 0;
+  })();
+
+  const canGoNextYear = (() => {
+    if (!maxStr) return true;
+    const firstNext = toStr(year + 1, 1, 1);
+    return cmp(firstNext, maxStr) <= 0;
   })();
 
   const handleSelectDay = (d: number) => {
@@ -140,9 +154,58 @@ export default function DatePickerDropdown({
     setIsOpen(false);
   };
 
-  const leading: (number | null)[] = Array(startDay).fill(null);
-  const days: number[] = Array.from({ length: daysInMonth(year, month) }, (_, i) => i + 1);
-  const grid: (number | null)[] = [...leading, ...days];
+  const handleSelectCell = (t: 'prev' | 'cur' | 'next', d: number) => {
+    let y = year;
+    let m = month;
+    if (t === 'prev') { if (month === 1) { y = year - 1; m = 12; } else { m = month - 1; } }
+    else if (t === 'next') { if (month === 12) { y = year + 1; m = 1; } else { m = month + 1; } }
+    const v = toStr(y, m, d);
+    if (minStr && cmp(v, minStr) < 0) return;
+    if (maxStr && cmp(v, maxStr) > 0) return;
+    onChange?.(v);
+    setIsOpen(false);
+  };
+
+  const isMonthDisabled = (y: number, m: number) => {
+    const first = toStr(y, m, 1);
+    const last = toStr(y, m, daysInMonth(y, m));
+    if (minStr && cmp(last, minStr) < 0) return true;
+    if (maxStr && cmp(first, maxStr) > 0) return true;
+    return false;
+  };
+
+  const isYearDisabled = (y: number) => {
+    const first = toStr(y, 1, 1);
+    const last = toStr(y, 12, 31);
+    if (minStr && cmp(last, minStr) < 0) return true;
+    if (maxStr && cmp(first, maxStr) > 0) return true;
+    return false;
+  };
+
+  const handleSelectMonth = (m: number) => {
+    if (isMonthDisabled(year, m)) return;
+    setMonth(m);
+    setView('day');
+  };
+
+  const handleSelectYear = (y: number) => {
+    if (isYearDisabled(y)) return;
+    setYear(y);
+    setView('month');
+  };
+
+  type Cell = { t: 'prev' | 'cur' | 'next'; d: number };
+  const prevMonth = month - 1 < 1 ? 12 : month - 1;
+  const prevYear = month - 1 < 1 ? year - 1 : year;
+  const nextMonth = month + 1 > 12 ? 1 : month + 1;
+  const nextYear = month + 1 > 12 ? year + 1 : year;
+  const prevDaysCount = daysInMonth(prevYear, prevMonth);
+  const leadingCells: Cell[] = Array.from({ length: startDay }, (_, i) => ({ t: 'prev', d: prevDaysCount - startDay + i + 1 }));
+  const currentCells: Cell[] = Array.from({ length: daysInMonth(year, month) }, (_, i) => ({ t: 'cur', d: i + 1 }));
+  const total = leadingCells.length + currentCells.length;
+  const trailingCount = 42 - total;
+  const trailingCells: Cell[] = Array.from({ length: trailingCount }, (_, i) => ({ t: 'next', d: i + 1 }));
+  const cells: Cell[] = [...leadingCells, ...currentCells, ...trailingCells];
 
   return (
     <div ref={dropdownRef} className="relative">
@@ -151,7 +214,7 @@ export default function DatePickerDropdown({
         disabled={disabled}
         onClick={toggleDropdown}
         style={width ? { width } : undefined}
-        className={`px-3 py-2 text-left rounded-lg flex items-center justify-between ${width ? '' : 'w-full'} ${
+        className={`px-3 py-2 text-left rounded-lg flex items-center justify-between border ${width ? '' : 'w-full'} ${
           disabled ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-not-allowed' : ' text-gray-700 hover:border-gray-400'
         }`}
       >
@@ -163,103 +226,133 @@ export default function DatePickerDropdown({
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-[9999] mt-1 bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg p-2 w-[260px]"
+            className="fixed z-[100000] mt-1 bg-[#FAF7FF] border border-gray-200 rounded-lg shadow-lg p-2 w-[260px]"
             style={dropdownStyle}
           >
             <div className="flex items-center justify-between mb-2">
               <button
                 type="button"
                 onClick={() => {
-                  if (!canGoPrev) return;
-                  const nm = month - 1 < 1 ? 12 : month - 1;
-                  const ny = month - 1 < 1 ? year - 1 : year;
-                  setMonth(nm);
-                  setYear(ny);
+                  if (view === 'day') {
+                    if (!canGoPrevMonth) return;
+                    const nm = month - 1 < 1 ? 12 : month - 1;
+                    const ny = month - 1 < 1 ? year - 1 : year;
+                    setMonth(nm);
+                    setYear(ny);
+                  } else if (view === 'month') {
+                    if (!canGoPrevYear) return;
+                    setYear(year - 1);
+                  } else {
+                    setYearRangeStart(yearRangeStart - 12);
+                  }
                 }}
-                className={`p-1 ${canGoPrev ? '' : 'opacity-40 cursor-not-allowed'}`}
+                className="p-1"
               >
                 <ChevronLeft size={16} className="text-gray-700" />
               </button>
               <div className="flex items-center gap-2">
-                <select
-                  value={String(year)}
-                  onChange={(e) => {
-                    const y = parseInt(e.target.value);
-                    setYear(y);
-                    const nextFirst = toStr(y, month + 1 > 12 ? y + 1 : y, month + 1 > 12 ? 1 : month + 1);
-                    if (maxStr && cmp(nextFirst, maxStr) > 0) {
-                      const m = parseInt((maxStr || '').split('-')[1] || '12');
-                      setMonth(m);
-                    }
-                  }}
-                  className="border rounded px-2 py-1"
+                <button
+                  type="button"
+                  onClick={() => setView(view === 'year' ? 'day' : 'year')}
+                  className="px-3 py-1 border rounded text-sm font-medium bg-white"
                 >
-                  {Array.from({ length: today.getFullYear() - 1950 + 1 }, (_, i) => String(today.getFullYear() - i)).map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={String(month).padStart(2, '0')}
-                  onChange={(e) => {
-                    const m = parseInt(e.target.value);
-                    setMonth(m);
-                  }}
-                  className="border rounded px-2 py-1"
+                  {year}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView(view === 'month' ? 'day' : 'month')}
+                  className="px-3 py-1 border rounded text-sm font-medium bg-white"
                 >
-                  {Array.from({ length: year === today.getFullYear() && maxStr ? Math.min(today.getMonth() + 1, 12) : 12 }, (_, i) =>
-                    String(i + 1).padStart(2, '0'),
-                  ).map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
+                  {String(month).padStart(2, '0')}
+                </button>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  if (!canGoNext) return;
-                  const nm = month + 1 > 12 ? 1 : month + 1;
-                  const ny = month + 1 > 12 ? year + 1 : year;
-                  setMonth(nm);
-                  setYear(ny);
+                  if (view === 'day') {
+                    if (!canGoNextMonth) return;
+                    const nm = month + 1 > 12 ? 1 : month + 1;
+                    const ny = month + 1 > 12 ? year + 1 : year;
+                    setMonth(nm);
+                    setYear(ny);
+                  } else if (view === 'month') {
+                    if (!canGoNextYear) return;
+                    setYear(year + 1);
+                  } else {
+                    setYearRangeStart(yearRangeStart + 12);
+                  }
                 }}
-                className={`p-1 ${canGoNext ? '' : 'opacity-40 cursor-not-allowed'}`}
+                className="p-1"
               >
                 <ChevronRight size={16} className="text-gray-700" />
               </button>
             </div>
-            <div className="grid grid-cols-7 gap-1 text-xs text-gray-600 mb-1">
-              <div className="text-center">Su</div>
-              <div className="text-center">Mo</div>
-              <div className="text-center">Tu</div>
-              <div className="text-center">We</div>
-              <div className="text-center">Th</div>
-              <div className="text-center">Fr</div>
-              <div className="text-center">Sa</div>
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {grid.map((d, idx) =>
-                d ? (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSelectDay(d)}
-                    className={`w-8 h-8 rounded text-sm font-light ${
-                      value === toStr(year, month, d) ? 'bg-purple-600 text-white' : 'hover:bg-gray-100'
-                    } ${
-                      maxStr && cmp(toStr(year, month, d), maxStr) > 0 ? 'opacity-40 cursor-not-allowed' : ''
-                    } ${minStr && cmp(toStr(year, month, d), minStr) < 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
-                  >
-                    {pad(d)}
-                  </button>
-                ) : (
-                  <div key={idx} className="w-8 h-8" />
-                ),
-              )}
-            </div>
+            {view === 'day' && (
+              <>
+                <div className="grid grid-cols-7 gap-1 text-xs text-gray-600 mb-1">
+                  {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d) => (
+                    <div key={d} className="w-6 h-6 flex items-center justify-center">{d}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {cells.map((c, idx) => {
+                    const y = c.t === 'prev' ? (month === 1 ? year - 1 : year) : c.t === 'next' ? (month === 12 ? year + 1 : year) : year;
+                    const m = c.t === 'prev' ? (month === 1 ? 12 : month - 1) : c.t === 'next' ? (month === 12 ? 1 : month + 1) : month;
+                    const v = toStr(y, m, c.d);
+                    const disabled = (minStr && cmp(v, minStr) < 0) || (maxStr && cmp(v, maxStr) > 0);
+                    const selected = value === v;
+                    const tint = c.t === 'cur' ? '' : 'text-gray-400';
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => !disabled && handleSelectCell(c.t, c.d)}
+                        className={`w-6 h-6 rounded text-sm font-light ${selected ? 'bg-purple-600 text-white' : 'hover:bg-gray-100'} ${disabled ? 'opacity-40 cursor-not-allowed' : ''} ${tint}`}
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        {pad(c.d)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {view === 'month' && (
+              <div className="grid grid-cols-3 gap-2">
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                  const disabled = isMonthDisabled(year, m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => handleSelectMonth(m)}
+                      disabled={disabled}
+                      className={`px-3 py-2 rounded border text-sm ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100'} ${String(month) === String(m) ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-400' : ''}`}
+                    >
+                      {String(m).padStart(2, '0')}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {view === 'year' && (
+              <div className="grid grid-cols-3 gap-2">
+                {Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((y) => {
+                  const disabled = isYearDisabled(y);
+                  return (
+                    <button
+                      key={y}
+                      type="button"
+                      onClick={() => handleSelectYear(y)}
+                      disabled={disabled}
+                      className={`px-1 py-2 rounded border text-sm ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100'} ${year === y ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-400' : ''}`}
+                    >
+                      {y}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>,
           document.body,
         )}
