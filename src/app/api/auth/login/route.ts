@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import User from "@/lib/models/User";
+import Vendor from "@/lib/models/Vendor";
+import Department from "@/lib/models/Departments";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
@@ -39,6 +41,52 @@ export async function POST(req: NextRequest) {
                 { success: false, message: "Invalid Credentials" },
                 { status: 401 }
             );
+        }
+
+        if (user.role !== 'superadmin') {
+            if (user.role === 'user') {
+                const vendorId = user.vendorId;
+                if (!vendorId) {
+                    return NextResponse.json({ success: false, message: 'No vendor assigned to your account' }, { status: 403 });
+                }
+                const vendor = await Vendor.findById(vendorId);
+                if (!vendor) {
+                    return NextResponse.json({ success: false, message: 'Vendor not found' }, { status: 403 });
+                }
+                if (String(vendor.status).toLowerCase() !== 'active') {
+                    return NextResponse.json({ success: false, message: 'Your vendor is inactive. Please contact your administrator.' }, { status: 403 });
+                }
+                const vDeptIds: string[] = (vendor.departmentAccess || []).map((id: any) => id.toString());
+                if (vDeptIds.length === 0) {
+                    return NextResponse.json({ success: false, message: 'No departments are configured for your vendor.' }, { status: 403 });
+                }
+                const vActiveDeptCount = await Department.countDocuments({ _id: { $in: vDeptIds }, status: 'active' });
+                if (vActiveDeptCount === 0) {
+                    return NextResponse.json({ success: false, message: 'No active departments are available for your vendor.' }, { status: 403 });
+                }
+            } else if (user.role === 'admin') {
+                const vendorIds: string[] = (user.vendorAccess || []).map((id: any) => id.toString());
+                if (vendorIds.length === 0) {
+                    return NextResponse.json({ success: false, message: 'No vendor access configured for this admin.' }, { status: 403 });
+                }
+                const activeVendors = await Vendor.find({ _id: { $in: vendorIds }, status: 'active' }).select('_id departmentAccess').lean();
+                if (!activeVendors || activeVendors.length === 0) {
+                    return NextResponse.json({ success: false, message: 'All vendors assigned to your account are inactive.' }, { status: 403 });
+                }
+                const adminDeptIds: string[] = (user.departmentAccess || []).map((id: any) => id.toString());
+                if (adminDeptIds.length === 0) {
+                    return NextResponse.json({ success: false, message: 'No departments assigned to your admin account.' }, { status: 403 });
+                }
+                const unionVendorDeptIds: string[] = Array.from(new Set(activeVendors.flatMap((v: any) => (v.departmentAccess || []).map((id: any) => id.toString()))));
+                const intersection = adminDeptIds.filter((id: string) => unionVendorDeptIds.includes(id));
+                if (intersection.length === 0) {
+                    return NextResponse.json({ success: false, message: 'No department access overlap with your active vendors.' }, { status: 403 });
+                }
+                const activeIntersectionCount = await Department.countDocuments({ _id: { $in: intersection }, status: 'active' });
+                if (activeIntersectionCount === 0) {
+                    return NextResponse.json({ success: false, message: 'You do not have any active departments for your active vendors.' }, { status: 403 });
+                }
+            }
         }
 
         const JWT_SECRET = process.env.JWT_SECRET!;

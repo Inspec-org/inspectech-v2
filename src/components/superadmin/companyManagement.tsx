@@ -168,6 +168,7 @@ const CompanyManagementPage: React.FC = () => {
                                 pageSize={deptPageSize}
                                 onPageChange={setDeptPage}
                                 loading={deptLoading}
+                                onStatusUpdated={(id, status) => setDepartments(prev => prev.map(d => d.id === id ? { ...d, status } : d))}
                             />
                         )}
                         {activeTab === 'admin-users' && (
@@ -190,6 +191,7 @@ const CompanyManagementPage: React.FC = () => {
                                 pageSize={vendorsPageSize}
                                 onPageChange={setVendorsPage}
                                 loading={vendorsLoading}
+                                onStatusUpdated={(id, status) => setVendors(prev => prev.map(v => v._id === id ? { ...v, status } : v))}
                             />
                         )}
                         {activeTab === 'vendor-users' && (
