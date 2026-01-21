@@ -243,17 +243,17 @@ const AddAdminModal: React.FC<Props> = ({
       </div>
 
       {/* Footer Actions */}
-      <div className="px-6 pb-6 flex items-center justify-end gap-3">
+      <div className="px-6 pb-6 flex items-center justify-end gap-3 w-full">
         <button
           onClick={onClose}
-          className="px-6 py-2.5 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+          className="px-6 py-2.5 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors w-full border"
         >
           Cancel
         </button>
         <button
           onClick={handleSubmit}
           disabled={loading || !adminName.trim() || !email.trim() || selectedVendors.length === 0 || selectedDepartments.length === 0}
-          className="px-6 py-2.5 bg-gradient-to-r from-[#6B46C1] to-[#8B5CF6] text-white font-medium rounded-lg hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+          className="px-6 py-2.5 bg-gradient-to-r from-[#6B46C1] to-[#8B5CF6] text-white font-medium rounded-lg hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 justify-center w-full" 
         >
           <UserPlus size={18} />
           Onboard Admin
