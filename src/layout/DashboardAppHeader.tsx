@@ -49,11 +49,13 @@ export default function DashboardAppHeader() {
 
   React.useEffect(() => {
     if (!departments.length) return;
+    const isActive = (d: Department) => String(d.status ?? (d.isActive ? 'active' : 'inactive')).toLowerCase() === 'active';
+    const active = departments.filter(isActive);
     const cookieId = Cookies.get('selectedDepartmentId');
     const cookieName = Cookies.get('selectedDepartment');
-    const byId = cookieId ? departments.find(d => String(d._id) === String(cookieId)) : undefined;
-    const byName = !byId && cookieName ? departments.find(d => d.name === cookieName) : undefined;
-    const next = byId || byName || departments[0] || null;
+    const byId = cookieId ? active.find(d => String(d._id) === String(cookieId)) : undefined;
+    const byName = !byId && cookieName ? active.find(d => d.name === cookieName) : undefined;
+    const next = byId || byName || active[0] || null;
     setSelectedDepartment(next);
     if (next) {
       Cookies.set('selectedDepartment', next.name || '');

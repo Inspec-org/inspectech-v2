@@ -50,15 +50,16 @@ function Header({
                   {departments.map((dept) => (
                     <button
                       key={dept._id}
+                      disabled={String(dept.status ?? (dept.isActive ? 'active' : 'inactive')).toLowerCase() !== 'active'}
                       onClick={() => {
-                        ;
+                        if (String(dept.status ?? (dept.isActive ? 'active' : 'inactive')).toLowerCase() !== 'active') return;
                         setSelectedDepartment(dept);
                         setDepartmentOpen(false);
                         Cookies.set('selectedDepartment', dept.name || '');
                         Cookies.set('selectedDepartmentId', dept._id || '');
                         window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: dept.name }));
                       }}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Folder className="w-4 h-4 text-purple-600" />
                       {dept.name}

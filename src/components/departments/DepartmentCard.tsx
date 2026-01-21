@@ -89,8 +89,8 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
   return (
     <div className="p-1"> {/* Add padding container */}
       <div
-        onClick={() => onClick?.(department)}
-        className={`group relative border rounded-xl px-6 py-10 transition-all transform hover:scale-[1.02] hover:shadow-lg cursor-pointer glow-border`}
+        onClick={() => { if (isActive) { onClick?.(department); } }}
+        className={`group relative border rounded-xl px-6 py-10 transition-all transform ${isActive ? 'hover:scale-[1.02] hover:shadow-lg cursor-pointer' : 'opacity-60 cursor-not-allowed'} glow-border`}
         style={{
           background: `linear-gradient(137deg, white 0%, #FAF5FF 100%)`,
           ['--glow-color' as any]: glow,

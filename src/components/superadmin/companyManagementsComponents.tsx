@@ -102,7 +102,7 @@ export const PageHeader: React.FC = () => {
 };
 
 // Admin Departments Section Component
-export const AdminDepartmentsSection: React.FC<{ departments: Department[]; totalCount?: number; currentPage?: number; pageSize?: number; onPageChange?: (page: number) => void; loading?: boolean }> = ({ departments, totalCount: extTotal, currentPage: extPage, pageSize: extSize, onPageChange, loading }) => {
+export const AdminDepartmentsSection: React.FC<{ departments: Department[]; totalCount?: number; currentPage?: number; pageSize?: number; onPageChange?: (page: number) => void; loading?: boolean; onStatusUpdated?: (id: string, status: 'Active' | 'Inactive') => void }> = ({ departments, totalCount: extTotal, currentPage: extPage, pageSize: extSize, onPageChange, loading, onStatusUpdated }) => {
     const [currentPage, setCurrentPage] = useState(extPage ?? 1);
     const [pageSize] = useState(extSize ?? 5);
     const { isOpen, openModal, closeModal } = useModal();
@@ -159,6 +159,7 @@ export const AdminDepartmentsSection: React.FC<{ departments: Department[]; tota
             const json = await res.json().catch(() => ({}));
             if (!res.ok) { toast.error(json.error || 'Failed to update status'); return; }
             setItems(prev => prev.map(d => d.id === dept.id ? { ...d, status: next === 'active' ? 'Active' : 'Inactive' } : d));
+            onStatusUpdated && onStatusUpdated(dept.id, next === 'active' ? 'Active' : 'Inactive');
             toast.success(next === 'active' ? 'Department activated' : 'Department deactivated');
         } catch (e: any) {
             toast.error(e?.message || 'Failed to update status');
@@ -527,7 +528,7 @@ export const AdminUserManagementSection: React.FC<{
 
 
 // Vendors Section (Unified Table)
-export const VendorsSection: React.FC<{ vendors?: Vendor[]; totalCount?: number; currentPage?: number; pageSize?: number; onPageChange?: (page: number) => void; loading?: boolean }> = ({ vendors = [], totalCount: extTotal, currentPage: extPage, pageSize: extSize, onPageChange, loading }) => {
+export const VendorsSection: React.FC<{ vendors?: Vendor[]; totalCount?: number; currentPage?: number; pageSize?: number; onPageChange?: (page: number) => void; loading?: boolean; onStatusUpdated?: (id: string, status: 'Active' | 'Inactive') => void }> = ({ vendors = [], totalCount: extTotal, currentPage: extPage, pageSize: extSize, onPageChange, loading, onStatusUpdated }) => {
     const [currentPage, setCurrentPage] = useState(extPage ?? 1);
     const [pageSize] = useState(extSize ?? 5);
     const [items, setItems] = useState<Vendor[]>(vendors);
@@ -565,6 +566,7 @@ export const VendorsSection: React.FC<{ vendors?: Vendor[]; totalCount?: number;
             const json = await res.json().catch(() => ({}));
             if (!res.ok) { toast.error(json.error || 'Failed to update vendor status'); return; }
             setItems(prev => prev.map(v => v._id === vendor._id ? { ...v, status: checked ? 'Active' : 'Inactive' } : v));
+            onStatusUpdated && onStatusUpdated(String(vendor._id), checked ? 'Active' : 'Inactive');
             toast.success('Vendor status updated');
         } catch (e: any) {
             toast.error(e?.message || 'Failed to update vendor status');
@@ -741,13 +743,17 @@ export const VendorUserManagementSection: React.FC<{ vendors: Vendor[] }> = ({ v
                 const res = await apiRequest(`/api/users/get-users?vendorId=${selectedVendor}&page=${currentPage}&limit=${pageSize}&role=user`);
                 const json = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    const mapped: User[] = (json.users || []).map((u: any, idx: number) => ({
-                        id: (currentPage - 1) * pageSize + idx + 1,
-                        name: `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() || (u.name || ''),
-                        email: u.email || '',
-                        added: u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US') : '',
-                        status: u.isDeleted ? 'Inactive' : 'Active',
-                    }));
+                    const mapped: User[] = (json.users || []).map((u: any, idx: number) => {
+                        const rawStatus = u.status ?? (u.isActive ?? (!u.isDeleted ? 'active' : 'inactive'));
+                        const status = String(rawStatus).toLowerCase() === 'inactive' ? 'Inactive' : 'Active';
+                        return {
+                            id: (currentPage - 1) * pageSize + idx + 1,
+                            name: `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() || (u.name || ''),
+                            email: u.email || '',
+                            added: u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US') : '',
+                            status,
+                        };
+                    });
                     setUsers(mapped);
                     setTotalCount(Number(json.total || json.totalCount || mapped.length));
                 } else {
