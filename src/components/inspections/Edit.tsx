@@ -8,6 +8,7 @@ import Media from './Media';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import { UserContext } from '@/context/authContext';
 import { ClipLoader } from 'react-spinners';
 import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
@@ -230,7 +231,7 @@ export default function Edit({ type }: { type: string }) {
   }, [Router, user?.role, type]);
 
   useEffect(() => {
-    
+
     if (type === "edit" && params?.inspection_id) {
       const unitId = params.inspection_id as string;
       setTimeout(() => {
@@ -242,7 +243,7 @@ export default function Edit({ type }: { type: string }) {
 
             if (res.ok && data.success && data.inspection) {
               const doc = data.inspection;
-              
+
               const normalized: any = {
                 ...doc,
                 additionalAttachments: Array.isArray(doc.additionalAttachments) ? doc.additionalAttachments : [],
@@ -316,6 +317,40 @@ export default function Edit({ type }: { type: string }) {
     }
     finally {
       setSaveLoading(false);
+    }
+  };
+
+  const handleDeleteInspection = async () => {
+    const unitId = formData.unitId || (params?.inspection_id as string) || '';
+    if (!unitId) { toast.error('Unit ID missing'); return; }
+    const result = await Swal.fire({
+      title: 'Delete Inspection',
+      text: 'Delete this inspection? This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Delete'
+    });
+    if (!result.isConfirmed) return;
+    try {
+      setLoading(true);
+      const res = await apiRequest('/api/inspections/delete-inspections', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unitId, vendorId: formData.vendorId, departmentId: formData.departmentId })
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        toast.success('Inspection deleted');
+        Router.push(`/${user?.role}/inspections`);
+      } else {
+        toast.error(json.message || 'Failed to delete inspection');
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Server error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -394,10 +429,12 @@ export default function Edit({ type }: { type: string }) {
                   <span>Reassign Department</span>
                 </button>
 
-                <button className="flex gap-2 items-center bg-[#F49595]  text-sm rounded-xl text-white w-full px-3 py-2 cursor-not-allowed" disabled>
-                  <Trash2 size={18} />
-                  <span>Delete Inspection</span>
-                </button>
+                {user?.role === "superadmin" && (
+                  <button className='flex gap-2 items-center bg-[#ff3434] hover:bg-[#ff3434]/70 px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap ' onClick={handleDeleteInspection}>
+                    <Trash2 size={18} />
+                    Delete Inspection
+                  </button>
+                )}
 
                 <button
                   className="group flex gap-2 items-center bg-white hover:bg-[#0075FF] border border-[#0075FF] text-sm rounded-xl text-[#0075FF] hover:text-white w-full px-3 py-2 disabled:opacity-60"
