@@ -17,6 +17,7 @@ import BatchEditInspectionsModal from '../Modals/BatchEditInspectionsModal';
 import ExportInspectionsModal from '../Modals/ExportInspectionsModal';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 
 export type InspectionData = {
     id: string;
@@ -230,6 +231,44 @@ function Inspections() {
         setSelectedRows([]);
         setSelectAll(false);
         getInspections();
+    };
+    const handleDeleteSelected = async () => {
+        if (!dept || !vendor) {
+            toast.error('Please select department and vendor first');
+            return;
+        }
+        if (selectedRows.length === 0) return;
+        const result = await Swal.fire({
+            title: 'Delete Inspections',
+            text: `Delete ${selectedRows.length} inspection(s)? This cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Delete'
+        });
+        if (!result.isConfirmed) return;
+        try {
+            setLoading(true);
+            const res = await apiRequest(`/api/inspections/delete-inspections`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ unitIds: selectedRows, vendorId: vendor, departmentId: dept }),
+            });
+            const json = await res.json();
+            if (res.ok && json.success) {
+                toast.success(`Deleted ${json.deleted?.inspections ?? selectedRows.length} inspection(s)`);
+                setSelectedRows([]);
+                setSelectAll(false);
+                getInspections();
+            } else {
+                toast.error(json.message || 'Failed to delete');
+            }
+        } catch (e: any) {
+            toast.error(e?.message || 'Server error');
+        } finally {
+            setLoading(false);
+        }
     };
     const handleExportInspections = async (format: string) => {
         try {
@@ -489,7 +528,7 @@ function Inspections() {
             return;
         }
         try {
-            
+
             setLoading(true);
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
@@ -509,7 +548,7 @@ function Inspections() {
                     date: `${String(doc.dateMonth || '').padStart(2, '0')}/${String(doc.dateDay || '').padStart(2, '0')}/${doc.dateYear || ''}`,
                     delivered: doc.delivered === 'yes' ? 'Yes' : doc.delivered === 'no' ? 'No' : '',
                 }));
-                
+
                 setTotalInspections(json.total);
                 setInspections(mapped);
             } else {
@@ -705,16 +744,16 @@ function Inspections() {
 
     return (
         <div>
-           
+
             <div className='bg-white p-4'>
                 <div className="flex items-center gap-3 p-2 border-b border-purple-100 bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#ded1eb] to-[100%] rounded-xl mb-4">
-                <div className="p-1.5 rounded-md ">
-                    <CheckSquare className="w-4 h-4 text-purple-600" />
+                    <div className="p-1.5 rounded-md ">
+                        <CheckSquare className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div>
+                        <h1 className="text-lg md:text-xl font-semibold text-gray-900">Inspections</h1>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-lg md:text-xl font-semibold text-gray-900">Inspections</h1>
-                </div>
-            </div>
                 {/* header */}
                 <div className='flex flex-col sm:flex-row gap-3 justify-between'>
                     <div className='flex flex-wrap gap-2'>
@@ -737,12 +776,12 @@ function Inspections() {
                                     <Briefcase className='w-4 h-4' />
                                     Reassign Department ({selectedRows.length})
                                 </button>
-                                <button className='flex gap-2 items-center bg-[#F49595] px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap cursor-not-allowed*' disabled>
-                                    <X className='w-4 h-4' />
-                                    Delete Inspection ({selectedRows.length})
-
-                                </button>
-
+                                {user?.role === "superadmin" && (
+                                    <button className='flex gap-2 items-center bg-[#ff3434] hover:bg-[#ff3434]/70 px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap ' onClick={handleDeleteSelected}>
+                                        <X className='w-4 h-4' />
+                                        Delete Inspection ({selectedRows.length})
+                                    </button>
+                                )}
                             </>
                         )}
                     </div>
@@ -789,7 +828,7 @@ function Inspections() {
                                     date: dateOptions,
                                     delivered: deliveredOptions
                                 };
-                                const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                                 const formatPretty = (iso: string) => {
                                     const [yy, mm, dd] = String(iso).split('-');
                                     const mi = Math.max(0, parseInt(mm || '1', 10) - 1);
