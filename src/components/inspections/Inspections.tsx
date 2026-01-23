@@ -17,7 +17,6 @@ import BatchEditInspectionsModal from '../Modals/BatchEditInspectionsModal';
 import ExportInspectionsModal from '../Modals/ExportInspectionsModal';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
-import Swal from 'sweetalert2';
 
 export type InspectionData = {
     id: string;
@@ -238,16 +237,8 @@ function Inspections() {
             return;
         }
         if (selectedRows.length === 0) return;
-        const result = await Swal.fire({
-            title: 'Delete Inspections',
-            text: `Delete ${selectedRows.length} inspection(s)? This cannot be undone.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Delete'
-        });
-        if (!result.isConfirmed) return;
+        const ok = typeof window !== 'undefined' ? window.confirm(`Delete ${selectedRows.length} inspection(s)? This cannot be undone.`) : true;
+        if (!ok) return;
         try {
             setLoading(true);
             const res = await apiRequest(`/api/inspections/delete-inspections`, {
