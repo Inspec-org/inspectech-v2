@@ -1,23 +1,29 @@
 'use client';
 
-import React from 'react';
+import React, { useContext } from 'react';
 import Header from '@/components/dashboard/Header';
 import { Department } from '@/components/departments/DepartmentCard';
 import { Vendor } from '@/components/dashboard/Dashboard';
 import { apiRequest } from '@/utils/apiWrapper';
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
+import { UserContext } from '@/context/authContext';
 
 export default function DashboardAppHeader() {
   const [departments, setDepartments] = React.useState<Department[]>([]);
   const [vendors, setVendors] = React.useState<Vendor[]>([]);
   const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
   const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(null);
-  
+  const { user } = useContext(UserContext)
+
 
   const getDepartments = async () => {
     try {
-      const res = await apiRequest('/api/departments/get-departments');
+      const selectedVendorId = Cookies.get('selectedVendorId') || '';
+      const endpoint = selectedVendorId && user?.role === 'superadmin'
+        ? `/api/departments/get-departments?vendorId=${encodeURIComponent(selectedVendorId)}`
+        : "/api/departments/get-departments";
+      const res = await apiRequest(endpoint);
       if (res.ok) {
         const json = await res.json();
         setDepartments(json.departments || []);
