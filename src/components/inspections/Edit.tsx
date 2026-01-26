@@ -421,9 +421,10 @@ export default function Edit({ type }: { type: string }) {
         <div className="flex xl:flex-row flex-col items-start xl:items-center justify-between mb-6 mt-2">
           {type === "edit" ? (
             <>
-              <h1 className="text-lg font-semibold text-purple-600 my-4 ">Edit Inspection - {formData.unitId}</h1>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+              <div>
+                <h1 className="text-lg font-semibold text-purple-600 my-4 ">Edit Inspection - {formData.unitId}</h1>
+              </div>
+              <div className={`grid grid-cols-2 sm:grid-cols-3 ${user?.role === "superadmin" ? "xl:grid-cols-4" : "xl:grid-cols-3"} gap-3`}>
                 <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' onClick={openModal}>
                   <Briefcase size={18} />
                   <span>Reassign Department</span>

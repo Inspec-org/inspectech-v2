@@ -18,6 +18,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const name = String(body?.name || "").trim();
+    const color = String(body?.color || "").trim();
+    const icon = String(body?.icon || "").trim();
     if (!name) {
       return NextResponse.json({ error: "Department name is required" }, { status: 400 });
     }
@@ -29,10 +31,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Department already exists" }, { status: 409 });
     }
 
-    const department = await Department.create({ name });
+    const department = await Department.create({ name, color, icon });
 
     return NextResponse.json(
-      { status: "success", department: { _id: department._id, name: department.name } },
+      { status: "success", department: { _id: department._id, name: department.name, color: department.color, icon: department.icon } },
       { status: 201 }
     );
   } catch (error: any) {

@@ -25,11 +25,25 @@ export async function GET(req: NextRequest) {
     let total = 0;
 
     if (user.role === "superadmin") {
-      total = await Department.countDocuments();
-      departments = await Department.find()
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit);
+      const vendorId = url.searchParams.get("vendorId");
+      if (vendorId) {
+        const vendor = await Vendor.findById(vendorId).select("departmentAccess").lean();
+        if (!vendor) {
+          return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+        }
+        const allowedDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => String(id));
+        total = await Department.countDocuments({ _id: { $in: allowedDeptIds } });
+        departments = await Department.find({ _id: { $in: allowedDeptIds } })
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+      } else {
+        total = await Department.countDocuments();
+        departments = await Department.find()
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+      }
     } else if (user.role === "admin") {
       const allowedDeptIds = (user.departmentAccess || []).map((id: any) => id.toString());
       if (allowedDeptIds.length === 0) {
@@ -72,19 +86,10 @@ export async function GET(req: NextRequest) {
       // });
     }
 
-    // Add color field based on department name
-    const departmentsWithColor = departments.map(dept => {
-      let color = "";
-      const nameLower = dept.name.toLowerCase();
-
-      if (nameLower.includes("us")) color = "purple";
-      else if (nameLower.includes("canada")) color = "blue";
-      else if (nameLower.includes("maintenance")) color = "red";
-      else if (nameLower.includes("campaign")) color = "green";
-
-      return { ...dept.toObject(), color };
-    });
-    const payload: any = { message: "success", departments: departmentsWithColor };
+    const plainDepartments = departments.map((dept: any) => (
+      (dept && typeof (dept as any).toObject === 'function') ? (dept as any).toObject() : dept
+    ));
+    const payload: any = { message: "success", departments: plainDepartments };
     if (user.role === "superadmin") {
       payload.pagination = { page, limit, total, totalPages: Math.ceil(total / limit) };
     }

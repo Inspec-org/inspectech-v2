@@ -101,7 +101,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                         </button>
 
                         {expandedSections.identification && (
-                            <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg w-full">
+                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">PO Number</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
@@ -159,12 +159,14 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                             value={formData.equipmentNumber}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm disabled:opacity-50"
+                                            disabled={prop === "batch"}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => handleSetNA("equipmentNumber")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
+                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50"
+                                            disabled={prop === "batch"}
                                         >
                                             N/A
                                         </button>
@@ -181,12 +183,14 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                             value={formData.vin}
                                             onChange={handleChange}
                                             placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm disabled:opacity-50"
+                                            disabled={prop === "batch"}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => handleSetNA("vin")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
+                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50"
+                                            disabled={prop === "batch"}
                                         >
                                             N/A
                                         </button>
@@ -353,7 +357,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                         </button>
 
                         {expandedSections.sensors && (
-                            <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg w-full">
+                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                                 <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">ABS Sensor</label>
                                     <div className="flex gap-4">
@@ -602,7 +606,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                     </button>
 
                     {expandedSections.dimensions && (
-                        <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg">
+                        <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Length</label>
                                 <CustomDropdown name="length"
@@ -749,7 +753,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                     </button>
 
                     {expandedSections.features && (
-                        <div className="px-6 py-6 space-y-4 border border-gray-300 rounded-lg">
+                        <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Aerokits</label>
                                 <div className="flex gap-4">

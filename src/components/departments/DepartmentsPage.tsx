@@ -15,34 +15,30 @@ export default function DepartmentsPage() {
 
   const getDepartments = async () => {
     try {
-      const res = await apiRequest("/api/departments/get-departments");
+      const selectedVendorId = Cookies.get('selectedVendorId') || '';
+      const endpoint = selectedVendorId && user?.role === 'superadmin'
+        ? `/api/departments/get-departments?vendorId=${encodeURIComponent(selectedVendorId)}`
+        : "/api/departments/get-departments";
+      const res = await apiRequest(endpoint);
       if (res.ok) {
         const json = await res.json();
         console.log(json);
-        // Map departments with images and assign unique colors per page
-        const palette = ['#7C3AED','#3B82F6','#059669','#E96513','#14B8A6','#F43F5E','#9333EA','#0EA5E9','#EF4444','#22C55E','#2563EB','#A855F7','#0EA5E9','#F59E0B'];
-        const namedMap: Record<string,string> = { purple:'#7C3AED', blue:'#3B82F6', red:'#E96513', green:'#059669' };
-        const cssColorRegex = /^(#([0-9a-f]{3}){1,2}|rgb[a]?\([\s\S]*\)|hsl[a]?\([\s\S]*\))$/i;
-        const hash = (key: string) => { let h=0; for (let i=0;i<key.length;i++){ h=(h*31+key.charCodeAt(i))>>>0; } return h; };
-        const used = new Set<number>();
-        const assignColor = (dept: Department): string => {
-          const raw = (dept.color || '').trim();
-          const named = raw ? namedMap[raw.toLowerCase()] : undefined;
-          if (named) return named;
-          if (raw && cssColorRegex.test(raw)) return raw;
-          let idx = hash(dept.id || dept.name || '') % palette.length;
-          if (!used.has(idx)) { used.add(idx); return palette[idx]; }
-          const step = 1 + (idx % (palette.length - 1));
-          for (let a=0; a<palette.length; a++) { const cand = (idx + a*step) % palette.length; if (!used.has(cand)) { used.add(cand); return palette[cand]; } }
-          return palette[idx];
-        };
-        const departmentsWithImages = json.departments.map((dept: Department) => {
-          const lowerName = dept.name.toLowerCase();
-          const base = lowerName.includes('trailer') ? { image: '/images/departments/van.svg', imageType: 'svg' } :
-                       lowerName.includes('maintenance') ? { image: 'wrench', imageType: 'icon' } :
-                       lowerName.includes('campaign') ? { image: 'bar-chart', imageType: 'icon' } :
-                       { image: '/images/departments/van.svg', imageType: 'svg' };
-          return { ...dept, ...base, color: assignColor(dept) };
+        // Use color and icon from DB; apply minimal fallback only if missing
+        const departmentsWithImages = json.departments.map((dept: any) => {
+          const icon = String(dept.icon || '');
+          const base = icon === 'wrench' ? { image: 'wrench', imageType: 'icon' }
+            : icon === 'bar-chart' ? { image: 'bar-chart', imageType: 'icon' }
+            : icon === 'truck' ? { image: 'truck', imageType: 'icon' }
+            : icon === 'building' ? { image: 'building', imageType: 'icon' }
+            : icon === 'clipboard-list' ? { image: 'clipboard-list', imageType: 'icon' }
+            : icon === 'cog' ? { image: 'cog', imageType: 'icon' }
+            : icon === 'camera' ? { image: 'camera', imageType: 'icon' }
+            : icon === 'package' ? { image: 'package', imageType: 'icon' }
+            : icon === 'shield' ? { image: 'shield', imageType: 'icon' }
+            : icon === 'layers' ? { image: 'layers', imageType: 'icon' }
+            : { image: '/images/departments/van.svg', imageType: 'svg' };
+          const color = String((dept.color || '').trim() || '#7C3AED');
+          return { ...dept, ...base, color };
         });
         setDepartments(departmentsWithImages);
       }

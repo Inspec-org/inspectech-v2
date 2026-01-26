@@ -51,38 +51,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "No valid payloads", failed: errors.length, errors }, { status: 400 });
     }
 
-    const groups = new Map<string, { vendorId: string; departmentId: string; unitIds: string[] }>();
-    for (const doc of cleanedDocs) {
-      const key = `${String(doc.vendorId)}|${String(doc.departmentId)}`;
-      const g = groups.get(key) || { vendorId: String(doc.vendorId), departmentId: String(doc.departmentId), unitIds: [] };
-      g.unitIds.push(String(doc.unitId));
-      groups.set(key, g);
-    }
+    const unitIds = cleanedDocs.map(d => String(d.unitId)).filter(Boolean);
+    const equipmentNumbers = cleanedDocs.map(d => String(d.equipmentNumber || '').trim()).filter(v => v);
+    const vins = cleanedDocs.map(d => String(d.vin || '').trim()).filter(v => v && v.toLowerCase() !== 'n/a');
 
-    const existingSet = new Set<string>();
-    for (const g of groups.values()) {
-      const existing = await Inspection.find({ vendorId: g.vendorId, departmentId: g.departmentId, unitId: { $in: g.unitIds } }).select("unitId").lean();
-      for (const e of existing) {
-        existingSet.add(`${g.vendorId}|${g.departmentId}|${String((e as any).unitId)}`);
-      }
-    }
+    const existingDocs = await Inspection.find({
+      $or: [
+        { unitId: { $in: unitIds } },
+        ...(equipmentNumbers.length ? [{ equipmentNumber: { $in: equipmentNumbers } }] : []),
+        ...(vins.length ? [{ vin: { $in: vins } }] : []),
+      ]
+    }).select('unitId equipmentNumber vin').lean();
 
-    const uniqueMap = new Map<string, any>();
-    const duplicates: Array<{ unitId: string; vendorId: string; departmentId: string }> = [];
+    const existingUnitIds = new Set(existingDocs.map((d: any) => String(d.unitId)).filter(Boolean));
+    const existingEquipNums = new Set(existingDocs.map((d: any) => String(d.equipmentNumber || '')).filter(Boolean));
+    const existingVins = new Set(existingDocs.map((d: any) => String(d.vin || '')).filter(Boolean));
+
+    const seenUnitIds = new Set<string>();
+    const seenEquipNums = new Set<string>();
+    const seenVins = new Set<string>();
+
+    const toInsert: any[] = [];
+    const duplicates: Array<{ unitId: string; vendorId: string; departmentId: string; field?: string; value?: string }> = [];
+
     for (const doc of cleanedDocs) {
-      const key = `${String(doc.vendorId)}|${String(doc.departmentId)}|${String(doc.unitId)}`;
-      if (existingSet.has(key)) {
-        duplicates.push({ unitId: String(doc.unitId), vendorId: String(doc.vendorId), departmentId: String(doc.departmentId) });
+      const uid = String(doc.unitId);
+      const eq = String(doc.equipmentNumber || '').trim();
+      const v = String(doc.vin || '').trim();
+
+      if (existingUnitIds.has(uid) || seenUnitIds.has(uid)) {
+        duplicates.push({ unitId: uid, vendorId: String(doc.vendorId), departmentId: String(doc.departmentId), field: 'unitId', value: uid });
         continue;
       }
-      if (uniqueMap.has(key)) {
-        duplicates.push({ unitId: String(doc.unitId), vendorId: String(doc.vendorId), departmentId: String(doc.departmentId) });
+      if (eq && (existingEquipNums.has(eq) || seenEquipNums.has(eq))) {
+        duplicates.push({ unitId: uid, vendorId: String(doc.vendorId), departmentId: String(doc.departmentId), field: 'equipmentNumber', value: eq });
         continue;
       }
-      uniqueMap.set(key, doc);
+      if (v && v.toLowerCase() !== 'n/a' && (existingVins.has(v) || seenVins.has(v))) {
+        duplicates.push({ unitId: uid, vendorId: String(doc.vendorId), departmentId: String(doc.departmentId), field: 'vin', value: v });
+        continue;
+      }
+
+      seenUnitIds.add(uid);
+      if (eq) seenEquipNums.add(eq);
+      if (v && v.toLowerCase() !== 'n/a') seenVins.add(v);
+
+      toInsert.push(doc);
     }
 
-    const toInsert = Array.from(uniqueMap.values());
     let insertedCount = 0;
     try {
       const inserted = await Inspection.insertMany(toInsert, { ordered: false });

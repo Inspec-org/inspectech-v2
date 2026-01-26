@@ -173,7 +173,7 @@ const InspecTechOnboarding: React.FC = () => {
         Cookies.set('selectedVendorId', selectedVendor);
         if (v) Cookies.set('selectedVendor', v.name);
         window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: selectedVendor }));
-        router.push('/superadmin/users');
+        router.push('/superadmin/departments');
     };
 
     return (

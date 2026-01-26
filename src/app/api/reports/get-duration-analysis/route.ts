@@ -58,8 +58,9 @@ export async function POST(req: NextRequest) {
       departmentId,
       vendorId,
       timeRange,
+      year,
       binSize
-    }: { departmentId?: string; vendorId?: string; timeRange?: TimeRange, binSize: number } =
+    }: { departmentId?: string; vendorId?: string; timeRange?: TimeRange; year?: number; binSize: number } =
       body;
 
     await connectDB();
@@ -69,16 +70,21 @@ export async function POST(req: NextRequest) {
     if (vendorId) query.vendorId = vendorId;
 
     const inspections = await Inspection.find(query);
-    const rangeStart = getRangeStart(timeRange);
-    const filtered = rangeStart
-      ? inspections.filter((i: any) => {
-        const day = parseInt(i.dateDay || "1");
-        const month = parseInt(i.dateMonth || "1") - 1; // JS months start from 0
-        const year = parseInt(i.dateYear || "1970");
-        const inspectionDate = new Date(year, month, day);
-        return inspectionDate >= rangeStart;
-      })
-      : inspections;
+    let filtered = inspections;
+    if (typeof year === 'number' && !Number.isNaN(year)) {
+      filtered = inspections.filter((i: any) => parseInt(i.dateYear || "0") === year);
+    } else {
+      const rangeStart = getRangeStart(timeRange);
+      filtered = rangeStart
+        ? inspections.filter((i: any) => {
+          const day = parseInt(i.dateDay || "1");
+          const month = parseInt(i.dateMonth || "1") - 1;
+          const yr = parseInt(i.dateYear || "1970");
+          const inspectionDate = new Date(yr, month, day);
+          return inspectionDate >= rangeStart;
+        })
+        : inspections;
+    }
 
 
     // -----------------------------------------

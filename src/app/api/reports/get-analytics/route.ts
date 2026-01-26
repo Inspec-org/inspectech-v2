@@ -103,7 +103,8 @@ export async function POST(req: NextRequest) {
       departmentId,
       vendorId,
       timeRange,
-    }: { departmentId?: string; vendorId?: string; timeRange?: TimeRange } =
+      year,
+    }: { departmentId?: string; vendorId?: string; timeRange?: TimeRange; year?: number } =
       body;
 
     await connectDB();
@@ -113,25 +114,23 @@ export async function POST(req: NextRequest) {
 
     const inspections = await Inspection.find(query).select("inspectionStatus dateDay dateMonth dateYear");
 
-    const rangeStart = getRangeStart(timeRange);
-    const rangeEnd = getRangeEnd(timeRange);
-    const nowDate = new Date();
-    nowDate.setHours(0, 0, 0, 0);
-    const filtered = inspections.filter((i: any) => {
-      const t = buildDate(i).getTime();
-      const startOk = rangeStart ? t >= rangeStart.getTime() : true;
-      const endOk = rangeEnd ? t <= rangeEnd.getTime() : true;
-      return startOk && endOk;
-    });
+    let dataToUse = inspections;
+if (typeof year === 'number' && !Number.isNaN(year)) {
+  dataToUse = inspections.filter((i: any) => parseInt(i.dateYear || "0") === year);
+} else {
+  const rangeStart = getRangeStart(timeRange);
+  const rangeEnd = getRangeEnd(timeRange);
+  dataToUse = inspections.filter((i: any) => {
+    const t = buildDate(i).getTime();
+    const startOk = rangeStart ? t >= rangeStart.getTime() : true;
+    const endOk = rangeEnd ? t <= rangeEnd.getTime() : true;
+    return startOk && endOk;
+  });
+}
 
-    // *** KEY CHANGE: Use filtered data for all calculations ***
-    const dataToUse = filtered;
-
-    const total = filtered.length;
-    const pass = filtered.filter((i: any) => i.inspectionStatus === "pass")
-      .length;
-    const fail = filtered.filter((i: any) => i.inspectionStatus === "fail")
-      .length;
+    const total = dataToUse.length;
+const pass = dataToUse.filter((i: any) => i.inspectionStatus === "pass").length;
+const fail = dataToUse.filter((i: any) => i.inspectionStatus === "fail").length;
 
     const passPct = total ? Number(((pass / total) * 100).toFixed(2)) : 0;
     const failPct = total ? Number(((fail / total) * 100).toFixed(2)) : 0;
@@ -157,16 +156,16 @@ export async function POST(req: NextRequest) {
     threeMonthsAgo.setMonth(now.getMonth() - 3);
 
     const breakdown = {
-      period: timeRange,
-      total: total,
-      pass: pass,
-      fail: fail,
+      period: typeof year === 'number' && !Number.isNaN(year) ? `Year ${year}` : timeRange,
+      total,
+      pass,
+      fail,
     };
 
     // -----------------------------------------
     // MONTHLY TRENDS (pass rate + volume)
     // -----------------------------------------
-    const year = now.getFullYear();
+    const selectedYear = (typeof year === 'number' && !Number.isNaN(year)) ? year : now.getFullYear();
     const monthNames = [
       "Jan",
       "Feb",
@@ -201,11 +200,11 @@ export async function POST(req: NextRequest) {
 
     const monthly = {
       passRate: monthlyCounts.map((m, idx) => ({
-        date: `${monthNames[idx]} '${String(year).slice(-2)}`,
+        date: `${monthNames[idx]} '${String(selectedYear).slice(-2)}`,
         passRate: m.total ? Number(((m.pass / m.total) * 100).toFixed(2)) : 0,
       })),
       volume: monthlyCounts.map((m, idx) => ({
-        date: `${monthNames[idx]} '${String(year).slice(-2)}`,
+        date: `${monthNames[idx]} '${String(selectedYear).slice(-2)}`,
         inspections: m.total,
         pass: m.pass,
         fail: m.fail,
@@ -234,11 +233,11 @@ export async function POST(req: NextRequest) {
 
     const quarterly = {
       passRate: quarterlyCounts.map((q, idx) => ({
-        date: `Q${idx + 1} '${String(year).slice(-2)}`,
+        date: `Q${idx + 1} '${String(selectedYear).slice(-2)}`,
         passRate: q.total ? Number(((q.pass / q.total) * 100).toFixed(2)) : 0,
       })),
       volume: quarterlyCounts.map((q, idx) => ({
-        date: `Q${idx + 1} '${String(year).slice(-2)}`,
+        date: `Q${idx + 1} '${String(selectedYear).slice(-2)}`,
         inspections: q.total,
         pass: q.pass,
         fail: q.fail,
@@ -249,7 +248,7 @@ export async function POST(req: NextRequest) {
     // -----------------------------------------
     // YEARLY TRENDS (pass rate + volume) – last 4 years
     // -----------------------------------------
-    const startYear = year - 3;
+    const startYear = selectedYear - 3;
     const yearlyCounts = Array.from({ length: 4 }, () => ({
       pass: 0,
       fail: 0,
