@@ -33,6 +33,12 @@ export async function POST(req: NextRequest) {
         delete cleaned[key];
       }
     });
+    ["equipmentNumber", "vin"].forEach((key) => {
+      const v = cleaned[key];
+      if (v === "" || v === null || v === undefined || String(v).trim().toUpperCase() === "N/A") {
+        delete cleaned[key];
+      }
+    });
     if (cleaned["delivered_status"] && !cleaned["delivered"]) {
       cleaned["delivered"] = cleaned["delivered_status"];
       delete cleaned["delivered_status"];
@@ -52,6 +58,7 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       );
     }
+    console.log(error);
     return NextResponse.json(
       { success: false, message: error?.message || "Internal Server Error" },
       { status: 500 }

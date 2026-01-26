@@ -83,13 +83,13 @@ const InspectionSchema = new mongoose.Schema({
 InspectionSchema.index({ unitId: 1 }, { unique: true });
 
 InspectionSchema.index(
-  { equipmentNumber: 1 },
-  { unique: true, partialFilterExpression: { equipmentNumber: { $exists: true, $ne: null } } }
+  { vendorId: 1, equipmentNumber: 1 },
+  { unique: true, partialFilterExpression: { equipmentNumber: { $exists: true, $type: 'string' } } }
 );
 
 InspectionSchema.index(
-  { vin: 1 },
-  { unique: true, partialFilterExpression: { vin: { $exists: true, $ne: null } } }
+  { vendorId: 1, vin: 1 },
+  { unique: true, partialFilterExpression: { vin: { $exists: true, $type: 'string' } } }
 );
 
 
