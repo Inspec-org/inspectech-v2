@@ -42,8 +42,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, inspection }, { status: 201 });
   } catch (error: any) {
     if (error?.code === 11000) {
+      const field =
+        (error?.keyPattern && Object.keys(error.keyPattern)[0]) ||
+        (error?.keyValue && Object.keys(error.keyValue)[0]) ||
+        (/dup key.*\{ (.+?):/.exec(String(error?.message || ''))?.[1]) ||
+        'unique field';
       return NextResponse.json(
-        { success: false, message: "unitId already exists" },
+        { success: false, message: `${field} already exists` },
         { status: 409 }
       );
     }

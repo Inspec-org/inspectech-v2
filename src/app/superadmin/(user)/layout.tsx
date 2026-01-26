@@ -31,7 +31,7 @@ export default function AdminLayout({
 
   if (loading || !user || user.role !== "superadmin") return null;
 
-  const isDepartmentsPage = (pathname === "/admin/departments" || pathname === "/user/departments");
+  const isDepartmentsPage = (pathname === "/admin/departments" || pathname === "/user/departments" || pathname === "/superadmin/departments");
 
   const handleToggle = () => {
     if (typeof window !== "undefined" && window.innerWidth >= 1024) {

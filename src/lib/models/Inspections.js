@@ -80,9 +80,16 @@ const InspectionSchema = new mongoose.Schema({
   timestamps: true,
 })
 
+InspectionSchema.index({ unitId: 1 }, { unique: true });
+
 InspectionSchema.index(
-  { unitId: 1, departmentId: 1, vendorId: 1 },
-  { unique: true }
+  { equipmentNumber: 1 },
+  { unique: true, partialFilterExpression: { equipmentNumber: { $exists: true, $ne: null } } }
+);
+
+InspectionSchema.index(
+  { vin: 1 },
+  { unique: true, partialFilterExpression: { vin: { $exists: true, $ne: null } } }
 );
 
 

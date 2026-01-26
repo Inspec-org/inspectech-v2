@@ -1,5 +1,5 @@
 'use client';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { ChevronDown, Folder, Building2 } from 'lucide-react';
 import { Department } from '../departments/DepartmentCard';
 import { Vendor } from './Dashboard';
@@ -24,6 +24,17 @@ function Header({
   const [departmentOpen, setDepartmentOpen] = useState(false);
   const [vendorOpen, setVendorOpen] = useState(false);
   const { user } = useContext(UserContext);
+  const deptRef = React.useRef<HTMLDivElement>(null);
+  const vendorRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (departmentOpen && deptRef.current && !deptRef.current.contains(t)) setDepartmentOpen(false);
+      if (vendorOpen && vendorRef.current && !vendorRef.current.contains(t)) setVendorOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => { document.removeEventListener('mousedown', handle); };
+  }, [departmentOpen, vendorOpen]);
 
   return (
     <div className="w-full bg-gradient-to-br from-purple-700 to-purple-800 px-6 py-3 border-b border-purple-100">
@@ -33,7 +44,7 @@ function Header({
           <span className="text-sm font-semibold text-white tracking-wide">
             DEPARTMENT
           </span>
-          <div className="relative">
+          <div className="relative" ref={deptRef}>
             <button
               onClick={() => setDepartmentOpen(!departmentOpen)}
               className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[220px]"
@@ -79,7 +90,7 @@ function Header({
           <span className="text-sm font-semibold text-white tracking-wide">
             VENDOR
           </span>
-          <div className="relative">
+          <div className="relative" ref={vendorRef}>
             <button
               onClick={() => user?.role === 'admin' && setVendorOpen(!vendorOpen)}
               className={`flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[200px] ${user?.role === 'admin' ? 'cursor-pointer' : 'cursor-auto'}`}

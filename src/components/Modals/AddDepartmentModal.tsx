@@ -1,8 +1,9 @@
 'use client'
 import React, { useEffect, useState } from 'react';
-import { Building2, Plus, UserPlus, X } from 'lucide-react';
+import { Building2, Plus, X, Wrench, BarChart3, Truck, ClipboardList, Cog, Camera, Package, Shield, Layers } from 'lucide-react';
 import { Modal } from '../ui/modal';
-import { MultiSelectDropdown } from '../ui/dropdown/MultiSelectDropdown';
+import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
+import Image from 'next/image';
 
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
@@ -21,7 +22,72 @@ const AddDepartmentModal: React.FC<Props> = ({
     onUpdated,
 }) => {
     const [deparmentName, setDeparmentName] = useState('');
+    const [color, setColor] = useState('');
+    const [icon, setIcon] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const COLOR_HEX_MAP: Record<string, string> = {
+        purple: '#7C3AED',
+        blue: '#3B82F6',
+        red: '#E96513',
+        green: '#059669',
+        teal: '#14B8A6',
+        orange: '#FB923C',
+        pink: '#F43F5E',
+        indigo: '#6366F1',
+        cyan: '#06B6D4',
+        amber: '#F59E0B',
+    };
+    const renderColorLabel = (name: string, text: string) => (
+        <span className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded-full border border-gray-300" style={{ backgroundColor: name ? (COLOR_HEX_MAP[name] || name) : 'transparent' }} />
+            {text}
+        </span>
+    );
+    const colorOptions = [
+        { value: 'purple', label: renderColorLabel('purple', 'Purple') },
+        { value: 'blue', label: renderColorLabel('blue', 'Blue') },
+        { value: 'red', label: renderColorLabel('red', 'Red') },
+        { value: 'green', label: renderColorLabel('green', 'Green') },
+        { value: 'teal', label: renderColorLabel('teal', 'Teal') },
+        { value: 'orange', label: renderColorLabel('orange', 'Orange') },
+        { value: 'pink', label: renderColorLabel('pink', 'Pink') },
+        { value: 'indigo', label: renderColorLabel('indigo', 'Indigo') },
+        { value: 'cyan', label: renderColorLabel('cyan', 'Cyan') },
+        { value: 'amber', label: renderColorLabel('amber', 'Amber') },
+    ];
+
+    const renderIconLabel = (key: string, text: string) => (
+        <span className="flex items-center gap-2">
+            {key === '' ? (
+                <Image src="/images/departments/van.svg" alt="Van" width={16} height={16} />
+            ) : key === 'wrench' ? <Wrench className="w-4 h-4" />
+            : key === 'bar-chart' ? <BarChart3 className="w-4 h-4" />
+            : key === 'truck' ? <Truck className="w-4 h-4" />
+            : key === 'building' ? <Building2 className="w-4 h-4" />
+            : key === 'clipboard-list' ? <ClipboardList className="w-4 h-4" />
+            : key === 'cog' ? <Cog className="w-4 h-4" />
+            : key === 'camera' ? <Camera className="w-4 h-4" />
+            : key === 'package' ? <Package className="w-4 h-4" />
+            : key === 'shield' ? <Shield className="w-4 h-4" />
+            : key === 'layers' ? <Layers className="w-4 h-4" />
+            : null}
+            {text}
+        </span>
+    );
+    const iconOptions = [
+        { value: 'wrench', label: renderIconLabel('wrench', 'Wrench') },
+        { value: 'bar-chart', label: renderIconLabel('bar-chart', 'Bar Chart') },
+        { value: 'truck', label: renderIconLabel('truck', 'Truck') },
+        { value: 'building', label: renderIconLabel('building', 'Building') },
+        { value: 'clipboard-list', label: renderIconLabel('clipboard-list', 'Clipboard') },
+        { value: 'cog', label: renderIconLabel('cog', 'Cog') },
+        { value: 'camera', label: renderIconLabel('camera', 'Camera') },
+        { value: 'package', label: renderIconLabel('package', 'Package') },
+        { value: 'shield', label: renderIconLabel('shield', 'Shield') },
+        { value: 'layers', label: renderIconLabel('layers', 'Layers') },
+    ];
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const name = deparmentName.trim();
@@ -34,7 +100,7 @@ const AddDepartmentModal: React.FC<Props> = ({
             const res = await apiRequest('/api/departments/add_department', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name })
+                body: JSON.stringify({ name, color, icon })
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok) {
@@ -44,6 +110,8 @@ const AddDepartmentModal: React.FC<Props> = ({
                 onUpdated?.(newDept);
                 onClose();
                 setDeparmentName('');
+                setColor('');
+                setIcon('');
             } else {
                 toast.error(data.error || 'Failed to add department');
             }
@@ -92,6 +160,29 @@ const AddDepartmentModal: React.FC<Props> = ({
                     <p className="text-sm text-gray-400 mt-1">
                         Enter a descriptive name for the department
                     </p>
+                </div>
+
+                {/* Color Dropdown */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">Color</label>
+                    <CustomDropdown
+                        options={colorOptions}
+                        value={color}
+                        onChange={(v) => setColor(v)}
+                        placeholder="Select color"
+                    />
+                </div>
+
+                {/* Icon Dropdown */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">Icon</label>
+                    <CustomDropdown
+                        options={iconOptions}
+                        value={icon}
+                        onChange={(v) => setIcon(v)}
+                        placeholder="Select icon"
+                        placement="top"
+                    />
                 </div>
 
                 {/* Info Box */}

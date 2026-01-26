@@ -1,5 +1,5 @@
 // components/DepartmentCard.tsx
-import { ArrowRight, BarChart3, Wrench } from 'lucide-react';
+import { ArrowRight, BarChart3, Wrench, Truck, Building2, ClipboardList, Cog, Camera, Package, Shield, Layers } from 'lucide-react';
 import Image from 'next/image';
 import React, { ReactNode } from 'react';
 
@@ -31,6 +31,12 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
     blue: '#3B82F6',
     red: '#E96513',
     green: '#059669',
+    teal: '#14B8A6',
+    orange: '#FB923C',
+    pink: '#F43F5E',
+    indigo: '#6366F1',
+    cyan: '#06B6D4',
+    amber: '#F59E0B',
   };
   const PALETTE = ['#7C3AED', '#3B82F6', '#059669', '#E96513', '#14B8A6', '#F43F5E', '#9333EA', '#0EA5E9'];
   const pickFromPalette = (key: string): string => {
@@ -70,6 +76,22 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
           return <Wrench {...iconProps} />;
         case 'bar-chart':
           return <BarChart3 {...iconProps} />;
+        case 'truck':
+          return <Truck {...iconProps} />;
+        case 'building':
+          return <Building2 {...iconProps} />;
+        case 'clipboard-list':
+          return <ClipboardList {...iconProps} />;
+        case 'cog':
+          return <Cog {...iconProps} />;
+        case 'camera':
+          return <Camera {...iconProps} />;
+        case 'package':
+          return <Package {...iconProps} />;
+        case 'shield':
+          return <Shield {...iconProps} />;
+        case 'layers':
+          return <Layers {...iconProps} />;
         default:
           return null;
       }
