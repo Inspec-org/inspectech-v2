@@ -573,7 +573,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                     <div className="mt-4 flex flex-wrap items-center gap-4">
 
                                         {overlayUrl && (
-                                            <button type="button" className="text-xs text-gray-600 hover:text-gray-800" onClick={() => { setOverlayUrl(null); setAlignmentScore(null); }}>
+                                            <button type="button" className="text-xs text-purple-500 hover:text-purple-700" onClick={() => { setOverlayUrl(null); setAlignmentScore(null); }}>
                                                 Clear
                                             </button>
                                         )}

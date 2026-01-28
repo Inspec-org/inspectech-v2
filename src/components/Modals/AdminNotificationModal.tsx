@@ -60,8 +60,27 @@ const AdminNotificationModal: React.FC<Props> = ({
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['NEED REVIEW', 'COMPLETE', 'FAIL', 'INCOMPLETE', 'OUT OF CYCLE (DELIVERED)']);
     const [isSavingConfig, setIsSavingConfig] = useState(false);
-
-
+    const [initialConfigPayload, setInitialConfigPayload] = useState<any | null>(null);
+    const currentConfigPayload = React.useMemo(() => ({
+        name: configName || '',
+        isAutoEnabled,
+        frequency,
+        timesPerDay,
+        times: timesPerDay === 'Once per day'
+            ? [{ hour: firstSendHour, minute: firstSendMinute, period: firstSendPeriod }]
+            : [
+                { hour: firstSendHour, minute: firstSendMinute, period: firstSendPeriod },
+                { hour: secondSendHour, minute: secondSendMinute, period: secondSendPeriod },
+            ],
+        recipients: autoEmailRecipients.split(',').map(s => s.trim()).filter(Boolean),
+        vendors: selectedVendors,
+        statuses: selectedStatuses,
+    }), [configName, isAutoEnabled, frequency, timesPerDay, firstSendHour, firstSendMinute, firstSendPeriod, secondSendHour, secondSendMinute, secondSendPeriod, autoEmailRecipients, selectedVendors, selectedStatuses]);
+    const isDirty = React.useMemo(() => {
+        if (!selectedConfig) return true;
+        if (!initialConfigPayload) return false;
+        return JSON.stringify(currentConfigPayload) !== JSON.stringify(initialConfigPayload);
+    }, [selectedConfig, currentConfigPayload, initialConfigPayload]);
 
     const startResult = (currentPage - 1) * rowsPerPage + 1;
 
@@ -196,6 +215,21 @@ const AdminNotificationModal: React.FC<Props> = ({
         setAutoEmailRecipients((cfg.recipients || []).join(','));
         setSelectedVendors(cfg.vendors || []);
         setSelectedStatuses(cfg.statuses || []);
+        setInitialConfigPayload({
+            name: cfg.name || '',
+            isAutoEnabled: !!cfg.isAutoEnabled,
+            frequency: cfg.frequency || 'Daily',
+            timesPerDay: cfg.timesPerDay || 'Once per day',
+            times: (cfg.timesPerDay || 'Once per day') === 'Once per day'
+                ? [{ hour: f.hour || firstSendHour, minute: f.minute || firstSendMinute, period: f.period || firstSendPeriod }]
+                : [
+                    { hour: f.hour || firstSendHour, minute: f.minute || firstSendMinute, period: f.period || firstSendPeriod },
+                    { hour: s.hour || secondSendHour, minute: s.minute || secondSendMinute, period: s.period || secondSendPeriod },
+                ],
+            recipients: (cfg.recipients || []).map((x: any) => String(x).trim()).filter(Boolean),
+            vendors: cfg.vendors || [],
+            statuses: cfg.statuses || [],
+        });
     }, [selectedConfig, configurations]);
 
     const handleSaveConfig = async () => {
@@ -745,7 +779,7 @@ const AdminNotificationModal: React.FC<Props> = ({
 
                             {/* Update Configuration Button */}
                             <div className="flex justify-end pb-4">
-                                <button onClick={handleSaveConfig} disabled={isSavingConfig} className={`px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium ${isSavingConfig ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                <button onClick={handleSaveConfig} disabled={isSavingConfig || (selectedConfig ? !isDirty : false)} className={`px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium ${(isSavingConfig || (selectedConfig ? !isDirty : false)) ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                     {isSavingConfig
                                         ? (selectedConfig ? 'Updating...' : 'Saving...')
                                         : (selectedConfig ? 'Update Configuration' : 'Save Configuration')

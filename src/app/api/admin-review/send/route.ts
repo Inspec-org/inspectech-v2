@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
             reviewRequestedAt: new Date(),
             missingData: "none",
             reviewCompletedAt: null,
-            emailNotification: "yes"
+            emailNotification: "no"
           }
         },
         { upsert: true }
