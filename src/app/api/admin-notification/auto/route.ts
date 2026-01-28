@@ -19,6 +19,35 @@ const to12Hour = (d: Date) => {
     };
 };
 
+const to12HourPacific = (d: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+    }).formatToParts(d);
+    const hour24 = Number(parts.find(p => p.type === 'hour')?.value ?? '0');
+    const minute = Number(parts.find(p => p.type === 'minute')?.value ?? '0');
+    return {
+        hour: pad2(hour24 % 12 === 0 ? 12 : hour24 % 12),
+        minute: pad2(minute),
+        period: hour24 >= 12 ? 'PM' : 'AM',
+    };
+};
+
+const getPacificDowDom = (d: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        weekday: 'short',
+        day: '2-digit',
+    }).formatToParts(d);
+    const wd = parts.find(p => p.type === 'weekday')?.value ?? 'Sun';
+    const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const dow = dayMap[wd] ?? 0;
+    const dom = Number(parts.find(p => p.type === 'day')?.value ?? '0');
+    return { dow, dom };
+};
+
 const normalizeStatus = (s?: string) => {
     const t = String(s || "").trim().toLowerCase();
     if (["need review", "needs review"].includes(t)) return "needs review";
@@ -62,29 +91,28 @@ const isTimeMatch = (cfgTimes: any[], now: ReturnType<typeof to12Hour>) => {
 const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 
 const isFrequencyMatch = (cfg: any, now: Date) => {
+  const { dow, dom } = getPacificDowDom(now);
   const freq = String(cfg?.frequency || 'Daily');
   if (freq === 'Daily') return true;
   if (freq === 'Weekly') {
-    const match = now.getDay() === 1;
-    console.log('📅 [AUTO][FREQ] Weekly check', { targetDow: 1, nowDow: now.getDay(), match });
+    const match = dow === 1;
+    console.log('📅 [AUTO][FREQ] Weekly check (Pacific)', { targetDow: 1, nowDow: dow, match });
     return match;
   }
   if (freq === 'Monthly') {
-    const match = now.getDate() === 1;
-    console.log('📅 [AUTO][FREQ] Monthly check', { targetDom: 1, nowDom: now.getDate(), match });
+    const match = dom === 1;
+    console.log('📅 [AUTO][FREQ] Monthly check (Pacific)', { targetDom: 1, nowDom: dom, match });
     return match;
   }
   return true;
 };
 
 const runAuto = async () => {
-  console.log("⏱️ [AUTO] Job started");
 
   await connectDB();
-  console.log("✅ [AUTO] DB connected");
 
   const now = new Date();
-  const time = to12Hour(now);
+  const time = to12HourPacific(now);
 
   const configs = await Configuration.find({ isAutoEnabled: true }).lean();
   console.log(`📦 [AUTO] Enabled configs found: ${configs.length}`);
@@ -93,25 +121,16 @@ const runAuto = async () => {
   let emailsSent = 0;
 
   for (const cfg of configs) {
-    console.log(`⚙️ [AUTO] Checking config: ${cfg._id}`);
-    console.log(`🕒 [AUTO] Config times: ${cfg.times || "none"} time: ${time}`);
-    console.log(`📅 [AUTO] Config frequency: ${cfg.frequency}`);
     if (!isFrequencyMatch(cfg, now)) {
-      console.log("⏭️ [AUTO] Frequency does not match – skipping config");
       continue;
     }
     if (!isTimeMatch(cfg.times ?? [], time)) {
-      console.log("⏭️ [AUTO] Time does not match – skipping config");
       continue;
     }
 
     const recipients = (cfg.recipients ?? []).filter(Boolean);
     const vendorIds = (cfg.vendors ?? []).filter(Boolean);
     const statuses = (cfg.statuses ?? []).map(normalizeStatus).filter(Boolean);
-
-    console.log("📨 [AUTO] Recipients:", recipients);
-    console.log("🏷️ [AUTO] Vendors:", vendorIds);
-    console.log("📌 [AUTO] Status filter:", statuses);
 
     if (!recipients.length || !vendorIds.length) {
       console.log("⚠️ [AUTO] Missing recipients or vendors – skipping config");
@@ -121,7 +140,6 @@ const runAuto = async () => {
     triggered++;
 
     for (const vendorId of vendorIds) {
-      console.log(`🏭 [AUTO] Processing vendor: ${vendorId}`);
 
       const pendingReviews = await Review.find({
         vendorId,
@@ -149,9 +167,6 @@ const runAuto = async () => {
       const unitIds = pendingPairs.map(p => p.unitId);
       const departmentIds = [...new Set(pendingPairs.map(p => p.departmentId))];
 
-      console.log("🧩 [AUTO] Units:", unitIds.slice(0, 5));
-      console.log("🏢 [AUTO] Departments:", departmentIds);
-
       const inspectionsQuery: any = {
         vendorId,
         unitId: { $in: unitIds },
@@ -166,7 +181,6 @@ const runAuto = async () => {
         .select("_id unitId vendorId departmentId inspectionStatus")
         .lean();
 
-      console.log(`🔍 [AUTO] Inspections matched: ${inspections.length}`);
 
       const toNotify = inspections.filter(i =>
         pendingPairs.some(
@@ -175,8 +189,6 @@ const runAuto = async () => {
             p.departmentId === String(i.departmentId)
         )
       );
-
-      console.log(`📢 [AUTO] Inspections to notify: ${toNotify.length}`);
 
       if (!toNotify.length) {
         console.log("⏭️ [AUTO] Nothing to notify – skipping vendor");
@@ -212,11 +224,8 @@ const runAuto = async () => {
 
       const isoDate = now.toISOString().slice(0, 10);
       const fileName = `${vendorName.replace(/[^A-Za-z0-9._-]+/g, "-")}-${isoDate}.csv`;
-      console.log(`📎 [AUTO] CSV file: ${fileName}`);
 
       /* -------------------------------- email -------------------------------- */
-
-      console.log("✉️ [AUTO] Sending email...");
 
       const emailHtml = buildEmailHtml({
         vendorName,
@@ -232,8 +241,6 @@ const runAuto = async () => {
         emailHtml,
         [{ filename: fileName, content: `unitId\n${toNotify.map(i => i.unitId).join("\n")}`, contentType: "text/csv" }]
       );
-
-      console.log("✅ [AUTO] Email sent successfully");
 
       /* ----------------------------- mark notified ---------------------------- */
 
@@ -252,23 +259,15 @@ const runAuto = async () => {
         )
       );
 
-      console.log(`📝 [AUTO] Marked ${toNotify.length} reviews as notified`);
-
       emailsSent++;
     }
   }
-
-  console.log("🏁 [AUTO] Job completed", {
-    triggered,
-    emailsSent,
-    time: `${time.hour}:${time.minute} ${time.period}`,
-  });
 
   return {
     success: true,
     triggered,
     emailsSent,
-    time: `${time.hour}:${time.minute} ${time.period}`,
+    time: `${time.hour}:${time.minute} ${time.period} PT`,
   };
 };
 

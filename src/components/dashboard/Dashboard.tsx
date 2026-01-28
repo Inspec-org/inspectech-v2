@@ -229,6 +229,7 @@ function Dashboard() {
             const departmentId = Cookies.get('selectedDepartmentId') || ''
             const key = `stats:${vendorId}:${departmentId}`;
             const cached = readCache(key);
+            console.log(cached);
             if (cached) {
                 setDashboardData(cached);
                 setLoading(false);
@@ -255,6 +256,7 @@ function Dashboard() {
                 setLoading(false)
             }
         }
+        console.log("selectedDepartment, selectedVendor", selectedDepartment, selectedVendor);
         
         if (selectedDepartment && selectedVendor) {
             getStats();

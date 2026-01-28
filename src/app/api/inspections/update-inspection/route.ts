@@ -41,6 +41,14 @@ export async function PUT(req: NextRequest) {
         delete cleaned[key];
       }
     });
+    const unsetDoc: any = {};
+    ["equipmentNumber", "vin"].forEach((key) => {
+      const v = cleaned[key];
+      if (v === "" || v === null || v === undefined || String(v).trim().toUpperCase() === "N/A") {
+        delete cleaned[key];
+        unsetDoc[key] = "";
+      }
+    });
 
     if (cleaned["delivered_status"] && !cleaned["delivered"]) {
       cleaned["delivered"] = cleaned["delivered_status"];
@@ -49,9 +57,12 @@ export async function PUT(req: NextRequest) {
 
     const existing = await Inspection.findOne({ unitId: cleaned.unitId }).select("inspectionStatus");
 
+    const updateOps: any = { $set: cleaned };
+    if (Object.keys(unsetDoc).length) updateOps.$unset = unsetDoc;
+
     const updated = await Inspection.findOneAndUpdate(
       { unitId: cleaned.unitId },
-      { $set: cleaned },
+      updateOps,
       { new: true }
     );
 
@@ -95,6 +106,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, inspection: updated }, { status: 200 });
   } catch (error: any) {
+    console.error("Error updating inspection:", error);
     return NextResponse.json(
       { success: false, message: error?.message || "Internal Server Error" },
       { status: 500 }
