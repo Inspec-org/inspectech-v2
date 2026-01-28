@@ -104,7 +104,7 @@ export default function Edit({ type }: { type: string }) {
   const [department, setDepartment] = useState("");
   const [processResult, setProcessResult] = useState<ProcessResult | null>(null);
   const [showProcessDetails, setShowProcessDetails] = useState(false);
-
+  const params = useParams<{ inspection_id: string }>();
   const [formData, setFormData] = useState<FormData>({
     unitId: '',
     departmentId: '',
@@ -177,26 +177,12 @@ export default function Edit({ type }: { type: string }) {
     additionalAttachment3: '',
   });
 
-  const params = useParams<{ inspection_id: string }>();
   useEffect(() => {
     const deptName = Cookies.get('selectedDepartment') || '';
     const deptId = Cookies.get('selectedDepartmentId') || '';
     setDepartment(deptId || '');
-    (async () => {
-      try {
-        const res = await apiRequest('/api/departments/get-departments');
-        const json = await res.json();
-        if (res.ok) {
-          const dept = (json.departments || []).find((d: any) => d.name === deptName);
-          if (dept?._id) {
-            setFormData(prev => ({ ...prev, departmentId: dept._id }));
-          }
-        }
-      } catch (e: any) { }
-    })();
+    setFormData(prev => ({ ...prev, departmentId: deptId }));
   }, []);
-
-
 
   useEffect(() => {
     const vendorName = Cookies.get('selectedVendor') || '';
@@ -231,7 +217,6 @@ export default function Edit({ type }: { type: string }) {
   }, [Router, user?.role, type]);
 
   useEffect(() => {
-
     if (type === "edit" && params?.inspection_id) {
       const unitId = params.inspection_id as string;
       setTimeout(() => {
@@ -277,6 +262,8 @@ export default function Edit({ type }: { type: string }) {
 
 
   const saveInspection = async () => {
+    console.log("formData", formData);
+    console.log("departmentId", department);
     if (!formData.unitId || formData.unitId.trim() === '') return;
     try {
       setSaveLoading(true);

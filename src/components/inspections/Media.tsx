@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, Check, Image, ImageIcon, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload, X, ZoomIn } from 'lucide-react';
+import { Upload, Check, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload, X, ZoomIn } from 'lucide-react';
 import { FormData } from './Edit';
 import { toast } from 'react-toastify';
 interface UploadCardProps {
@@ -108,7 +108,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                                 className="absolute bottom-2 left-2 bg-white/90 hover:bg-white rounded-full px-2 py-1 text-xs "
                                 aria-label="Zoom slideshow"
                             >
-                                <ZoomIn size={20}/>
+                                <ZoomIn size={20} />
                             </button>
                         )}
                     </>
@@ -237,7 +237,6 @@ const PDFUpload: React.FC<{
             window.open(previewUrl, '_blank', 'noopener,noreferrer');
         }
     };
-
     return (
         <div className="">
             <div className="border border-gray-300 rounded-lg p-4 bg-white h-full flex flex-col">
@@ -307,7 +306,7 @@ const PDFUpload: React.FC<{
     );
 };
 
-const ImageAlignmentGuide: React.FC = () => {
+const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file: File) => Promise<void> }> = ({ onUploadToCloudinary }) => {
     const [showGuide, setShowGuide] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('Front Left Side');
 
@@ -319,6 +318,119 @@ const ImageAlignmentGuide: React.FC = () => {
         'Inside Trailer Image',
         'Door Details Image'
     ];
+
+    const referenceImages: Record<TabType, string> = {
+        'Front Left Side': '/images/reference_images/front_left_reference.jpg',
+        'Front Right Side': '/images/reference_images/front_right_reference.jpg',
+        'Rare Left Side': '/images/reference_images/rear_left_reference.jpg',
+        'Rare Right Side': '/images/reference_images/rear_right_reference.jpg',
+        'Inside Trailer Image': '/images/reference_images/inside_trailer_reference.jpg',
+        'Door Details Image': '/images/reference_images/door_details_reference.jpg',
+    };
+
+    const silhouetteImages: Record<TabType, string> = {
+        'Front Left Side': '/images/reference_images/front_left_silhouette.svg',
+        'Front Right Side': '/images/reference_images/front_right_silhouette.svg',
+        'Rare Left Side': '/images/reference_images/rear_left_silhouette.svg',
+        'Rare Right Side': '/images/reference_images/rear_right_silhouette.svg',
+        'Inside Trailer Image': '/images/reference_images/inside_trailer_silhouette.svg',
+        'Door Details Image': '/images/reference_images/door_details_silhouette.svg',
+    };
+
+    const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
+    const [overlayFile, setOverlayFile] = useState<File | null>(null);
+    const [alignmentScore, setAlignmentScore] = useState<number | null>(null);
+    const [computing, setComputing] = useState(false);
+    const overlayInputRef = useRef<HTMLInputElement>(null);
+    const handleOverlayFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        setOverlayFile(file);
+        setOverlayUrl(url);
+        setAlignmentScore(null);
+        e.target.value = '';
+    };
+
+    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new window.Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+    });
+
+    const drawContain = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, size: number) => {
+        const cw = size, ch = size;
+        ctx.clearRect(0, 0, cw, ch);
+        const ratio = Math.min(cw / img.width, ch / img.height);
+        const nw = img.width * ratio;
+        const nh = img.height * ratio;
+        const dx = (cw - nw) / 2;
+        const dy = (ch - nh) / 2;
+        ctx.drawImage(img, dx, dy, nw, nh);
+    };
+
+    const computeAlignment = async () => {
+        if (!overlayUrl) return;
+        setComputing(true);
+        setAlignmentScore(null);
+        try {
+            const [userImg, silImg] = await Promise.all([
+                loadImage(overlayUrl),
+                loadImage(silhouetteImages[activeTab])
+            ]);
+            const size = 256;
+            const c1 = document.createElement('canvas'); c1.width = size; c1.height = size;
+            const ctx1 = c1.getContext('2d')!; drawContain(ctx1, silImg, size);
+            const mdata = ctx1.getImageData(0, 0, size, size).data;
+            const c2 = document.createElement('canvas'); c2.width = size; c2.height = size;
+            const ctx2 = c2.getContext('2d')!; drawContain(ctx2, userImg, size);
+            const idata = ctx2.getImageData(0, 0, size, size).data;
+            let mask = 0, match = 0;
+            for (let y = 0; y < size; y += 2) {
+                for (let x = 0; x < size; x += 2) {
+                    const i = (y * size + x) * 4;
+                    const br = 0.299 * mdata[i] + 0.587 * mdata[i + 1] + 0.114 * mdata[i + 2];
+                    if (br < 140) {
+                        mask++;
+                        const br2 = 0.299 * idata[i] + 0.587 * idata[i + 1] + 0.114 * idata[i + 2];
+                        if (br2 < 150) match++;
+                    }
+                }
+            }
+            setAlignmentScore(mask ? Math.round((match / mask) * 100) : 0);
+        } catch {
+            setAlignmentScore(null);
+        } finally {
+            setComputing(false);
+        }
+    };
+
+    const tabFieldMap: Record<TabType, string> = {
+        'Front Left Side': 'frontLeftSideUrl',
+        'Front Right Side': 'frontRightSideUrl',
+        'Rare Left Side': 'rearLeftSideUrl',
+        'Rare Right Side': 'rearRightSideUrl',
+        'Inside Trailer Image': 'insideTrailerImageUrl',
+        'Door Details Image': 'doorDetailsImageUrl',
+    };
+
+    const handleSendToUploadArea = async () => {
+        if (!overlayFile) return;
+        try {
+            await onUploadToCloudinary(tabFieldMap[activeTab], overlayFile);
+            toast.success('Sent to upload area');
+        } catch {
+            toast.error('Failed to send to upload area');
+        }
+    };
+
+    useEffect(() => {
+        if (overlayUrl) {
+            void computeAlignment();
+        }
+    }, [overlayUrl, activeTab]);
 
     return (
         <div className="">
@@ -355,18 +467,18 @@ const ImageAlignmentGuide: React.FC = () => {
                 </div>
 
                 {showGuide && (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 h-[600px] overflow-auto">
                         <div className="bg-purple-600 text-white rounded-lg p-8 text-center mb-6">
                             <h2 className="text-2xl font-semibold mb-2">Image Alignment Guide</h2>
                             <p className="text-sm">Upload your image and align it with the reference template</p>
                         </div>
 
                         <div className="bg-gray-100 rounded-lg p-4 mb-6">
-                            <div className="flex justify-between gap-2 overflow-x-auto pb-2">
+                            <div className="grid grid-cols-3 gap-2 overflow-x-auto pb-2">
                                 {tabs.map((tab) => (
                                     <button
                                         key={tab}
-                                        onClick={() => setActiveTab(tab)}
+                                        onClick={() => { setActiveTab(tab); setOverlayUrl(null); }}
                                         className={`px-6 2xl:px-14 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeTab === tab
                                             ? 'bg-purple-600 text-white'
                                             : 'bg-white text-gray-700 hover:bg-gray-200'
@@ -380,17 +492,18 @@ const ImageAlignmentGuide: React.FC = () => {
 
                         <div className="bg-white rounded-lg p-6 mb-6">
                             <h3 className="text-xl font-semibold text-center mb-2">
-                                Get Your Front Left Trailer Image
+                                {`Get Your ${activeTab}`}
                             </h3>
                             <p className="text-sm text-gray-600 text-center mb-6">
                                 Choose to upload from files or take a photo directly
                             </p>
 
                             <div className="flex justify-center gap-3 mb-6">
-                                <button className="bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700 flex items-center gap-2">
+                                <div className="bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700 flex items-center gap-2 cursor-pointer" onClick={() => overlayInputRef.current?.click()}>
+                                    <input type="file" accept=".jpg,.jpeg,.png" ref={overlayInputRef} onChange={handleOverlayFileSelect} className="hidden" />
                                     {/* <Upload size={18} /> */}
                                     Upload Image
-                                </button>
+                                </div>
                                 <button className="bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700 flex items-center gap-2">
                                     {/* <Camera size={18} /> */}
                                     Take a Photo
@@ -402,10 +515,38 @@ const ImageAlignmentGuide: React.FC = () => {
                                     Alignment Scoring
                                 </h4>
                                 <div className="bg-white rounded-lg p-6 border border-gray-200">
-                                    <p className="text-xl font-semibold mb-1">Ready</p>
-                                    <p className="text-sm text-gray-600">
-                                        Position your image to match the reference guide
-                                    </p>
+                                    {!overlayUrl ? (
+                                        <>
+                                            <p className="text-xl font-semibold mb-1">Ready</p>
+                                            <p className="text-sm text-gray-600">Position your image to match the reference guide</p>
+                                        </>
+                                    ) : alignmentScore !== null ? (
+                                        alignmentScore < 70 ? (
+                                            <>
+                                                <p className="text-xl font-semibold mb-1 text-yellow-600 flex items-center justify-center gap-2">
+                                                    <span>⚠️</span> Need Improvement
+                                                </p>
+                                                <p className="text-sm text-gray-600">Position your image to match the reference guide</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <p className="text-xl font-semibold mb-1 text-green-700">PASS</p>
+                                                <p className="text-sm text-gray-600">Position your image to match the reference guide</p>
+                                                <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                                                    <p className="text-sm text-green-800 mb-3">Great alignment! Quality image ready!</p>
+                                                    <button type="button" className="bg-purple-600 text-white px-5 py-2 rounded-full font-medium hover:bg-purple-700" onClick={handleSendToUploadArea}>
+                                                        Send to Upload Area
+                                                    </button>
+                                                    <p className="text-xs text-gray-600 mt-2">Click "Send to Upload Area" to automatically transfer this image to your upload section</p>
+                                                </div>
+                                            </>
+                                        )
+                                    ) : (
+                                        <>
+                                            <p className="text-xl font-semibold mb-1">Evaluating...</p>
+                                            <p className="text-sm text-gray-600">Analyzing alignment with the guide</p>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -415,14 +556,29 @@ const ImageAlignmentGuide: React.FC = () => {
                                 <div className="bg-purple-600 text-white p-4 text-center">
                                     <h3 className="font-semibold">Your Image+ Reference Overlay</h3>
                                 </div>
-                                <div className="p-6 min-h-[400px] flex flex-col items-center justify-center text-center">
-                                    <p className="text-sm text-gray-600 mb-2">
-                                        Upload, drag & drop image or take photo to start
-                                    </p>
-                                    <p className="text-xs text-gray-500 mb-1">
-                                        Supported formats - JPG, PNG
-                                    </p>
-                                    <p className="text-xs text-gray-500">Maximum file size:5MB</p>
+                                <div className="p-6 min-h-[400px]">
+                                    <div className="relative bg-white border border-gray-200 rounded-lg min-h-[400px] flex items-center justify-center">
+                                        {overlayUrl ? (
+                                            <>
+                                                <img src={overlayUrl} alt="Uploaded" className="w-full h-full object-contain" />
+                                                <img src={silhouetteImages[activeTab]} alt="Silhouette" className="absolute inset-0 w-full h-full object-contain pointer-events-none" style={{ opacity: 0.6 }} />
+                                            </>
+                                        ) : (
+                                            <div className="text-center text-sm text-gray-500">
+                                                <p className="mb-1">Upload an image to preview overlay</p>
+                                                <p className="text-xs">Supported formats - JPG, PNG. Max size 5MB</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-4 flex flex-wrap items-center gap-4">
+
+                                        {overlayUrl && (
+                                            <button type="button" className="text-xs text-gray-600 hover:text-gray-800" onClick={() => { setOverlayUrl(null); setAlignmentScore(null); }}>
+                                                Clear
+                                            </button>
+                                        )}
+
+                                    </div>
                                 </div>
                             </div>
 
@@ -430,15 +586,15 @@ const ImageAlignmentGuide: React.FC = () => {
                                 <div className="bg-purple-600 text-white p-4 text-center">
                                     <h3 className="font-semibold">Ideal Reference Template</h3>
                                 </div>
-                                <div className="p-6 min-h-[400px] bg-gray-50">
-                                    {/* Reference template placeholder */}
+                                <div className="p-6 min-h-[400px] bg-gray-50 flex items-center justify-center">
+                                    <img src={referenceImages[activeTab]} alt="Reference template" className=" w-full object-contain rounded-md border border-gray-200 bg-white" />
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 
@@ -463,7 +619,7 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
         try {
             localStorage.setItem('inspections_slideshow', JSON.stringify(slides));
             localStorage.setItem('inspections_slideshow_start', String(Math.max(0, startIndex)));
-        } catch {}
+        } catch { }
         window.open('/slide_show', '_blank');
     };
 
@@ -478,7 +634,7 @@ const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.Se
         <div className="bg-white p-4">
             <div className="border-b pb-2">
                 <div className="">
-                    <ImageAlignmentGuide />
+                    <ImageAlignmentGuide onUploadToCloudinary={onUploadToCloudinary} />
                 </div>
 
                 <div className="mb-8">

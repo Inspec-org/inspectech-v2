@@ -6,6 +6,7 @@ import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
+import { ClipLoader } from 'react-spinners';
 import { useSearchParams } from 'next/navigation';
 import { evaluateInspectionData } from '../inspections/processing';
 
@@ -189,37 +190,44 @@ const RequestAdminReviewModal: React.FC<Props> = ({
 
                 {/* Inspections List */}
                 <div className="border border-gray-200 rounded-lg mb-4 max-h-[30vh] overflow-y-auto">
-                    {inspections.map((inspection, index) => (
-                        <div
-                            key={`${inspection.unitId}-${index}`}
-                            className={`flex items-center px-4 py-4 ${index !== inspections.length - 1 ? "border-b border-gray-200" : ""
-                                } hover:bg-gray-50 transition-colors`}
-                        >
-                            {/* LEFT */}
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedInspections.includes(inspection.unitId)}
-                                    onChange={() => toggleInspection(inspection.unitId)}
-                                    className="circle-checkbox"
-                                />
-
-                                <span className="text-sm font-medium truncate">
-                                    {inspection.unitId}
-                                </span>
-                            </div>
-
-                            {/* CENTER (LOCKED CENTER) */}
-                            <div className="flex justify-center w-32">
-                                <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                                    {(inspection.inspectionStatus || "complete").toUpperCase()}
-                                </span>
-                            </div>
-
-                            {/* RIGHT (SPACER TO BALANCE CENTER) */}
-                            <div className="flex-1" />
+                    {tableLoading ? (
+                        <div className="flex items-center justify-center py-10">
+                            <ClipLoader color="#9333EA" size={28} />
                         </div>
-                    ))}
+                    ) : inspections.length === 0 ? (
+                        <div className="flex items-center justify-center py-10">
+                            <p className="text-sm text-gray-500">No Completed Inspections</p>
+                        </div>
+                    ) : (
+                        inspections.map((inspection, index) => (
+                            <div
+                                key={`${inspection.unitId}-${index}`}
+                                className={`flex items-center px-4 py-4 ${index !== inspections.length - 1 ? "border-b border-gray-200" : ""}
+                                    hover:bg-gray-50 transition-colors`}
+                            >
+                                {/* LEFT */}
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedInspections.includes(inspection.unitId)}
+                                        onChange={() => toggleInspection(inspection.unitId)}
+                                        className="circle-checkbox"
+                                    />
+                                    <span className="text-sm font-medium truncate">
+                                        {inspection.unitId}
+                                    </span>
+                                </div>
+                                {/* CENTER (LOCKED CENTER) */}
+                                <div className="flex justify-center w-32">
+                                    <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                                        {(inspection.inspectionStatus || "complete").toUpperCase()}
+                                    </span>
+                                </div>
+                                {/* RIGHT (SPACER TO BALANCE CENTER) */}
+                                <div className="flex-1" />
+                            </div>
+                        ))
+                    )}
                 </div>
 
 

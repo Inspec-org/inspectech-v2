@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
@@ -17,7 +17,7 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
-import { BarChart, BarChart2, BarChart4, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
+import { ArrowLeft, BarChart, BarChart2, BarChart4, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
 import { UserContext } from "@/context/authContext";
 import RequestAdminReviewModal from "@/components/Modals/RequestAdminReviewModal";
 import Cookies from 'js-cookie';
@@ -35,6 +35,7 @@ type NavItem = {
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
   const pathname = usePathname();
+  const Router = useRouter();
   const { logout, user, session_id, setUser, loading } = useContext(UserContext);
   const roleFromPath = React.useMemo(() => {
     const seg = (pathname || "").split("/")[1];
@@ -66,18 +67,34 @@ const AppSidebar: React.FC = () => {
       name: "Users",
       path: currentRole ? `/${currentRole}/users` : undefined,
     },
-    currentRole === "vendor" || currentRole === "user"
-      ? {
-        icon: <Mail />,
-        name: "Request Admin Review",
-        onClick: () => setIsRequestAdminReviewModalOpen(true),
-      }
-      : {
-        icon: <CircleQuestionMark />,
-        name: "Inspection Vendor Tracker",
-        path: currentRole ? `/${currentRole}/inspection-vendor-tracker` : undefined,
-      },
+
+    // Request Admin Review → vendor, user, superadmin
+    ...(currentRole === "vendor" ||
+      currentRole === "user" ||
+      currentRole === "superadmin"
+      ? [
+        {
+          icon: <Mail />,
+          name: "Request Admin Review",
+          onClick: () => setIsRequestAdminReviewModalOpen(true),
+        },
+      ]
+      : []),
+
+    // Inspection Vendor Tracker → admin + superadmin
+    ...(currentRole === "admin" || currentRole === "superadmin"
+      ? [
+        {
+          icon: <CircleQuestionMark />,
+          name: "Inspection Vendor Tracker",
+          path: currentRole
+            ? `/${currentRole}/inspection-vendor-tracker`
+            : undefined,
+        },
+      ]
+      : []),
   ];
+
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -203,7 +220,7 @@ const AppSidebar: React.FC = () => {
 
   const isActive = useCallback(
     (path: string) => {
-      
+
       return pathname === path || pathname.startsWith(`${path}/`);
     },
     [pathname]
@@ -424,7 +441,7 @@ const AppSidebar: React.FC = () => {
                 )}
 
               </div>
-              <button
+              {/* <button
                 onClick={() => {
                   setIsHovered(false);
                   setHoverSuspended(true);
@@ -442,7 +459,7 @@ const AppSidebar: React.FC = () => {
                 >
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
-              </button>
+              </button> */}
             </div>
           ) : (
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
@@ -461,6 +478,22 @@ const AppSidebar: React.FC = () => {
 
           {/* Logout Button */}
           <div className="mt-auto pt-4">
+            {currentRole === "superadmin" && (
+              <button
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#92400e] hover:bg-[#b45309] text-white transition-colors mb-4 ${!isExpanded && !isHovered && !isMobileOpen
+                  ? "justify-center"
+                  : "justify-start"
+                  }`}
+                onClick={() => {
+                  Router.push("/superadmin");
+                }}
+              >
+                <ArrowLeft width={20} height={20} />
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <span className="font-medium">Go Back</span>
+                )}
+              </button>
+            )}
             <button
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#92400e] hover:bg-[#b45309] text-white transition-colors ${!isExpanded && !isHovered && !isMobileOpen
                 ? "justify-center"

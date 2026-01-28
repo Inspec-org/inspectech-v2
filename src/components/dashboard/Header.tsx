@@ -5,6 +5,8 @@ import { Department } from '../departments/DepartmentCard';
 import { Vendor } from './Dashboard';
 import { UserContext } from '@/context/authContext';
 import Cookies from 'js-cookie';
+import { useSidebar } from '@/context/SidebarContext';
+import { Menu } from 'lucide-react';
 
 function Header({
   departments,
@@ -26,6 +28,7 @@ function Header({
   const { user } = useContext(UserContext);
   const deptRef = React.useRef<HTMLDivElement>(null);
   const vendorRef = React.useRef<HTMLDivElement>(null);
+  const { toggleSidebar, toggleMobileSidebar } = useSidebar();
   React.useEffect(() => {
     const handle = (e: MouseEvent) => {
       const t = e.target as Node;
@@ -37,7 +40,14 @@ function Header({
   }, [departmentOpen, vendorOpen]);
 
   return (
-    <div className="w-full bg-gradient-to-br from-purple-700 to-purple-800 px-6 py-3 border-b border-purple-100">
+    <div className="w-full bg-gradient-to-br from-purple-700 to-purple-800 px-6 py-3 border-b border-purple-100 flex">
+      <button
+        onClick={() => { if (typeof window !== 'undefined' && window.innerWidth < 1024) { toggleMobileSidebar(); } else { toggleSidebar(); } }}
+        className="p-2 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+        aria-label="Toggle sidebar"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
       {/* Department Section */}
       <div className='mx-auto max-w-6xl w-full md:px-6 flex flex-col md:flex-row flex-wrap md:items-center gap-6'>
         <div className="flex xl:flex-row flex-col xl:items-center gap-3">
