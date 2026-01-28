@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
       configuration = await Configuration.create({
         userId: user._id,
         name,
-        isAutoEnabled: !!isAutoEnabled,
         frequency,
         timesPerDay,
         times: Array.isArray(times) ? times : [],
@@ -66,7 +65,26 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, configuration });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || "Internal Server Error" }, { status: 500 });
+    // Duplicate key error (unique index violation)
+    if (error?.code === 11000) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Configuration with this name already exists",
+          field: "name",
+        },
+        { status: 409 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: error?.message || "Internal Server Error",
+      },
+      { status: 500 }
+    );
   }
+
 }
 

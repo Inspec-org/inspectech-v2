@@ -9,7 +9,7 @@ const SendTimeSchema = new mongoose.Schema({
 const ConfigurationSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true, trim: true },
-  isAutoEnabled: { type: Boolean, default: false },
+  isAutoEnabled: { type: Boolean, default: true },
   frequency: { type: String, enum: ['Daily', 'Weekly', 'Monthly'], default: 'Daily' },
   timesPerDay: { type: String, enum: ['Once per day', 'Twice per day', 'Three times per day'], default: 'Once per day' },
   times: { type: [SendTimeSchema], default: [] },
