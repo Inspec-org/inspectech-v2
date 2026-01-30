@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
 
+    
 
     const cleaned: any = { ...body };
     ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
