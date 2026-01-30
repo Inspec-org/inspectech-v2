@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    await Inspection.syncIndexes();
+
 
     const cleaned: any = { ...body };
     ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       );
     }
-    console.log(error);
     return NextResponse.json(
       { success: false, message: error?.message || "Internal Server Error" },
       { status: 500 }
