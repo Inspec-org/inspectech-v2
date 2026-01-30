@@ -136,11 +136,20 @@ const InspecTechOnboarding: React.FC = () => {
 
     const getVendors = async () => {
         try {
-            const res = await apiRequest('/api/vendors/get-vendors');
-            if (res.ok) {
-                const json = await res.json();
-                setVendors(json.vendors || []);
-                
+            const res1 = await apiRequest('/api/vendors/get-vendors?page=1&limit=1');
+            if (!res1.ok) {
+                setVendors([]);
+                return;
+            }
+            const json1 = await res1.json();
+            const total = Number(json1?.total ?? json1?.totalCount ?? (Array.isArray(json1?.vendors) ? json1.vendors.length : 0));
+            const limit = Math.max(total, 1);
+            const res2 = await apiRequest(`/api/vendors/get-vendors?page=1&limit=${limit}`);
+            if (res2.ok) {
+                const json2 = await res2.json();
+                setVendors(Array.isArray(json2?.vendors) ? json2.vendors : []);
+            } else {
+                setVendors([]);
             }
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'An error occurred';

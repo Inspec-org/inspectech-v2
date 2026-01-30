@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
     }
 
     await connectDB();
-    await Inspection.syncIndexes();
 
     const cleanedDocs: any[] = [];
     const errors: Array<{ index: number; unitId?: string; message: string }> = [];
@@ -52,20 +51,21 @@ export async function POST(req: NextRequest) {
     }
 
     const unitIds = cleanedDocs.map(d => String(d.unitId)).filter(Boolean);
-    const equipmentNumbers = cleanedDocs.map(d => String(d.equipmentNumber || '').trim()).filter(v => v);
+    const vendorIds = cleanedDocs.map(d => String(d.vendorId)).filter(Boolean);
+    const equipmentNumbers = cleanedDocs.map(d => String(d.equipmentNumber || '').trim()).filter(v => v && v.toLowerCase() !== 'n/a');
     const vins = cleanedDocs.map(d => String(d.vin || '').trim()).filter(v => v && v.toLowerCase() !== 'n/a');
 
     const existingDocs = await Inspection.find({
       $or: [
         { unitId: { $in: unitIds } },
-        ...(equipmentNumbers.length ? [{ equipmentNumber: { $in: equipmentNumbers } }] : []),
-        ...(vins.length ? [{ vin: { $in: vins } }] : []),
+        ...(equipmentNumbers.length ? [{ vendorId: { $in: vendorIds }, equipmentNumber: { $in: equipmentNumbers } }] : []),
+        ...(vins.length ? [{ vendorId: { $in: vendorIds }, vin: { $in: vins } }] : []),
       ]
-    }).select('unitId equipmentNumber vin').lean();
+    }).select('unitId equipmentNumber vin vendorId').lean();
 
     const existingUnitIds = new Set(existingDocs.map((d: any) => String(d.unitId)).filter(Boolean));
-    const existingEquipNums = new Set(existingDocs.map((d: any) => String(d.equipmentNumber || '')).filter(Boolean));
-    const existingVins = new Set(existingDocs.map((d: any) => String(d.vin || '')).filter(Boolean));
+    const existingEquipNums = new Set(existingDocs.map((d: any) => `${String(d.vendorId)}:${String(d.equipmentNumber || '')}`).filter(Boolean));
+    const existingVins = new Set(existingDocs.map((d: any) => `${String(d.vendorId)}:${String(d.vin || '')}`).filter(Boolean));
 
     const seenUnitIds = new Set<string>();
     const seenEquipNums = new Set<string>();
@@ -83,18 +83,24 @@ export async function POST(req: NextRequest) {
         duplicates.push({ unitId: uid, vendorId: String(doc.vendorId), departmentId: String(doc.departmentId), field: 'unitId', value: uid });
         continue;
       }
-      if (eq && (existingEquipNums.has(eq) || seenEquipNums.has(eq))) {
-        duplicates.push({ unitId: uid, vendorId: String(doc.vendorId), departmentId: String(doc.departmentId), field: 'equipmentNumber', value: eq });
+      const vendorKey = String(doc.vendorId);
+      const eqLower = eq.toLowerCase();
+      const eqKey = `${vendorKey}:${eq}`;
+      const vinLower = v.toLowerCase();
+      const vinKey = `${vendorKey}:${v}`;
+
+      if (eq && eqLower !== 'n/a' && (existingEquipNums.has(eqKey) || seenEquipNums.has(eqKey))) {
+        duplicates.push({ unitId: uid, vendorId: vendorKey, departmentId: String(doc.departmentId), field: 'equipmentNumber', value: eq });
         continue;
       }
-      if (v && v.toLowerCase() !== 'n/a' && (existingVins.has(v) || seenVins.has(v))) {
-        duplicates.push({ unitId: uid, vendorId: String(doc.vendorId), departmentId: String(doc.departmentId), field: 'vin', value: v });
+      if (v && vinLower !== 'n/a' && (existingVins.has(vinKey) || seenVins.has(vinKey))) {
+        duplicates.push({ unitId: uid, vendorId: vendorKey, departmentId: String(doc.departmentId), field: 'vin', value: v });
         continue;
       }
 
       seenUnitIds.add(uid);
-      if (eq) seenEquipNums.add(eq);
-      if (v && v.toLowerCase() !== 'n/a') seenVins.add(v);
+      if (eq && eqLower !== 'n/a') seenEquipNums.add(eqKey);
+      if (v && vinLower !== 'n/a') seenVins.add(vinKey);
 
       toInsert.push(doc);
     }
@@ -117,10 +123,13 @@ export async function POST(req: NextRequest) {
       created: insertedCount,
       skipped: skippedCount,
       failed: failedCount,
+      successCount: insertedCount,
+      failCount: failedCount,
       errors,
       duplicates
     }, { status: 200 });
   } catch (error: any) {
+    console.error(error);
     return NextResponse.json(
       { success: false, message: error?.message || "Internal Server Error" },
       { status: 500 }
