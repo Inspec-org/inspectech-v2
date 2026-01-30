@@ -84,12 +84,12 @@ InspectionSchema.index({ unitId: 1 }, { unique: true });
 
 InspectionSchema.index(
   { vendorId: 1, equipmentNumber: 1 },
-  { unique: true, partialFilterExpression: { equipmentNumber: { $exists: true, $type: 'string' } } }
+  { unique: true, partialFilterExpression: { equipmentNumber: { $exists: true, $type: 'string', $nin: ['N/A', ''] } } }
 );
 
 InspectionSchema.index(
   { vendorId: 1, vin: 1 },
-  { unique: true, partialFilterExpression: { vin: { $exists: true, $type: 'string' } } }
+  { unique: true, partialFilterExpression: { vin: { $exists: true, $type: 'string', $nin: ['N/A', ''] } } }
 );
 
 
