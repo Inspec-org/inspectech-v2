@@ -6,6 +6,7 @@ import Department from "@/lib/models/Departments";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
+
 export async function POST(req: NextRequest) {
     try {
         const { email, password, rememberMe = false } = await req.json();
