@@ -22,7 +22,6 @@ export default function DepartmentsPage() {
       const res = await apiRequest(endpoint);
       if (res.ok) {
         const json = await res.json();
-        console.log(json);
         // Use color and icon from DB; apply minimal fallback only if missing
         const departmentsWithImages = json.departments.map((dept: any) => {
           const icon = String(dept.icon || '');

@@ -262,8 +262,6 @@ export default function Edit({ type }: { type: string }) {
 
 
   const saveInspection = async () => {
-    console.log("formData", formData);
-    console.log("departmentId", department);
     if (!formData.unitId || formData.unitId.trim() === '') return;
     try {
       setSaveLoading(true);

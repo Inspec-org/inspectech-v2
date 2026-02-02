@@ -37,13 +37,23 @@ export default function DashboardAppHeader() {
 
   const getVendors = async () => {
     try {
-      const res = await apiRequest('/api/vendors/get-vendors');
-      if (res.ok) {
-        const json = await res.json();
-        setVendors(json.vendors || []);
+      const res1 = await apiRequest('/api/vendors/get-vendors?page=1&limit=1');
+      if (!res1.ok) {
+        setVendors([]);
+        return;
+      }
+      const json1 = await res1.json();
+      const total = Number(json1?.total ?? json1?.totalCount ?? (Array.isArray(json1?.vendors) ? json1.vendors.length : 0));
+      const limit = Math.max(total, 1);
+      const res2 = await apiRequest(`/api/vendors/get-vendors?page=1&limit=${limit}`);
+      if (res2.ok) {
+        const json2 = await res2.json();
+        setVendors(Array.isArray(json2?.vendors) ? json2.vendors : []);
+      } else {
+        setVendors([]);
       }
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Failed to fetch vendors';
+      const msg = error instanceof Error ? error.message : 'An error occurred';
       toast.error(msg);
       setVendors([]);
     }
@@ -74,7 +84,10 @@ export default function DashboardAppHeader() {
     if (!vendors.length) return;
     const cookieId = Cookies.get('selectedVendorId');
     const cookieName = Cookies.get('selectedVendor');
+    console.log(cookieId, cookieName)
+    console.log(vendors)
     const byId = cookieId ? vendors.find(v => String(v._id) === String(cookieId)) : undefined;
+    console.log(byId)
     const byName = !byId && cookieName ? vendors.find(v => v.name === cookieName) : undefined;
     const next = byId || byName || vendors[0] || null;
     setSelectedVendor(next);
