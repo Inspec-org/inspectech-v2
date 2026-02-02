@@ -15,9 +15,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const departmentId = String(body?.departmentId || "");
-    console.log(departmentId);
     const status = String(body?.status || "").toLowerCase();
-    console.log(status);
     if (!departmentId || !Types.ObjectId.isValid(departmentId)) {
       return NextResponse.json({ error: "Valid departmentId is required" }, { status: 400 });
     }
@@ -30,7 +28,6 @@ export async function POST(req: NextRequest) {
       departmentId,
       { $set: { status } },
     );
-    console.log(updated);
     if (!updated) {
       return NextResponse.json({ error: "Department not found" }, { status: 404 });
     }

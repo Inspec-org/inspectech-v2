@@ -67,17 +67,17 @@ function Dashboard() {
 
     const [departments, setDepartments] = React.useState<Department[]>([]);
     const readCache = (key: string) => {
-      try {
-        const raw = sessionStorage.getItem(key);
-        if (!raw) return null;
-        const obj = JSON.parse(raw);
-        if (!obj || typeof obj !== 'object') return null;
-        if (!obj.ts || obj.ts + 300000 < Date.now()) return null;
-        return obj.data;
-      } catch { return null; }
+        try {
+            const raw = sessionStorage.getItem(key);
+            if (!raw) return null;
+            const obj = JSON.parse(raw);
+            if (!obj || typeof obj !== 'object') return null;
+            if (!obj.ts || obj.ts + 300000 < Date.now()) return null;
+            return obj.data;
+        } catch { return null; }
     };
     const writeCache = (key: string, data: any) => {
-      try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+        try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch { }
     };
     const [vendors, setVendors] = React.useState<Vendor[]>([]);
     const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
@@ -108,7 +108,7 @@ function Dashboard() {
     useEffect(() => {
         const department = Cookies.get("selectedDepartment");
         if (departments.length > 0) {
-            
+
             const dept = departments.find(d => d.name === department) ?? null;
             ;
             setSelectedDepartment(dept);
@@ -132,17 +132,25 @@ function Dashboard() {
 
     const getVendors = async () => {
         try {
-            const res = await apiRequest("/api/vendors/get-vendors");
-            if (res.ok) {
-                const json = await res.json();
-                
-                setVendors(json.vendors);
+            const res1 = await apiRequest('/api/vendors/get-vendors?page=1&limit=1');
+            if (!res1.ok) {
+                setVendors([]);
+                return;
+            }
+            const json1 = await res1.json();
+            const total = Number(json1?.total ?? json1?.totalCount ?? (Array.isArray(json1?.vendors) ? json1.vendors.length : 0));
+            const limit = Math.max(total, 1);
+            const res2 = await apiRequest(`/api/vendors/get-vendors?page=1&limit=${limit}`);
+            if (res2.ok) {
+                const json2 = await res2.json();
+                setVendors(Array.isArray(json2?.vendors) ? json2.vendors : []);
+            } else {
+                setVendors([]);
             }
         } catch (error) {
-            ;
-            const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-            toast.error(errorMessage);
-            setDepartments([]);
+            const msg = error instanceof Error ? error.message : 'An error occurred';
+            toast.error(msg);
+            setVendors([]);
         }
     };
 
@@ -165,7 +173,7 @@ function Dashboard() {
             : undefined;
 
         const nextSelected = byId || byName || vendors[0];
-
+        console.log("nextSelected", nextSelected);
         setSelectedVendor(nextSelected);
         Cookies.set('selectedVendor', nextSelected?.name || '');
         Cookies.set('selectedVendorId', nextSelected?._id || '');
@@ -229,7 +237,6 @@ function Dashboard() {
             const departmentId = Cookies.get('selectedDepartmentId') || ''
             const key = `stats:${vendorId}:${departmentId}`;
             const cached = readCache(key);
-            console.log(cached);
             if (cached) {
                 setDashboardData(cached);
                 setLoading(false);
@@ -256,8 +263,7 @@ function Dashboard() {
                 setLoading(false)
             }
         }
-        console.log("selectedDepartment, selectedVendor", selectedDepartment, selectedVendor);
-        
+
         if (selectedDepartment && selectedVendor) {
             getStats();
             getRecent();
@@ -274,7 +280,7 @@ function Dashboard() {
                     </div>
                     <div>
                         <h1 className="text-lg md:text-xl font-semibold text-gray-900">Dashboard</h1>
-                       
+
                     </div>
                 </div>
                 {/* <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)} vendors={vendors} setSelectedVendor={setSelectedVendor} selectedVendor={vendors.find(v => v.name === selectedVendor?.name)}
@@ -306,7 +312,7 @@ function Dashboard() {
                     </div> */}
                     <div className="xl:col-span-4 col-span-12 h-full">
                         <div className="h-full">
-                            <QuickActions role={user?.role || ''}/>
+                            <QuickActions role={user?.role || ''} />
                         </div>
                     </div>
                 </div>
