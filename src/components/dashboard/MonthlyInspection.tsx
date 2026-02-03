@@ -1,28 +1,39 @@
 "use client";
 import dynamic from "next/dynamic";
-import useSWR from "swr";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { ApexOptions } from "apexcharts";
 import { monthlyInspection } from "./Dashboard";
 import { ClipLoader } from "react-spinners";
+import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
+import Cookies from "js-cookie";
+import { apiRequest } from "@/utils/apiWrapper";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
     ssr: false,
 });
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const YearHeader = ({ year, setYear }: { year: number; setYear: (val: number) => void }) => (
+    <div className="flex items-center justify-center gap-3 border-2 rounded-xl border-purple-400 p-1">
+        <button
+            onClick={() => setYear(year - 1)}
+            className="p-1 rounded hover:bg-white/10"
+        >
+            <ChevronLeft className="w-4 h-4" />
+        </button>
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const getRollingMonthLabels = () => {
-    const now = new Date();
-    const curr = now.getMonth();
-    return Array.from({ length: 12 }, (_, i) => MONTHS[(curr - 11 + i + 12) % 12]);
-};
-const getRollingQuarterLabels = () => {
-    const now = new Date();
-    const currQ = Math.floor(now.getMonth() / 3);
-    return Array.from({ length: 4 }, (_, i) => `Q${((currQ - 3 + i + 4) % 4) + 1}`);
-};
+        <span className="text-sm font-medium">{year}</span>
+
+        <button
+            onClick={() => setYear(Math.min(new Date().getFullYear(), year + 1))}
+            disabled={year >= new Date().getFullYear()}
+            className="p-1 rounded hover:bg-white/10 disabled:opacity-40"
+        >
+            <ChevronRight className="w-4 h-4" />
+        </button>
+    </div>
+);
+
+const QUARTERS = ["Q1","Q2","Q3","Q4"];
 
 type InspectionApi = {
     labels: string[];
@@ -36,33 +47,46 @@ type ViewType = "Monthly" | "Quarterly" | "Annually";
 
 
 export default function MonthlyInspectionChart({ data, loading }: { data?: monthlyInspection, loading: boolean }) {
-    const [view, setView] = useState<ViewType>("Monthly");
-    const currentYear = new Date().getFullYear();
-    const last4Years = [
-        currentYear - 3,
-        currentYear - 2,
-        currentYear - 1,
-        currentYear
-    ];
+    const [year, setYear] = useState<number>(new Date().getFullYear());
+    const [quarterData, setQuarterData] = useState<{ pass: number; fail: number }[]>([]);
+    const [yearLoading, setYearLoading] = useState<boolean>(false);
+
+    useEffect(() => {
+        const vendorId = Cookies.get('selectedVendorId') || '';
+        const departmentId = Cookies.get('selectedDepartmentId') || '';
+        if (!vendorId || !departmentId) {
+            setQuarterData([]);
+            return;
+        }
+        setYearLoading(true);
+        (async () => {
+            try {
+                const res = await apiRequest('/api/dashboard/get_quarterly_by_year', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vendorId, departmentId, year })
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    setQuarterData(json?.data?.quarterly ?? []);
+                } else {
+                    setQuarterData([]);
+                }
+            } catch {
+                setQuarterData([]);
+            } finally {
+                setYearLoading(false);
+            }
+        })();
+    }, [year]);
 
     const chartData = useMemo(() => {
-        if (!data) return null;
-
-        const selected =
-            view === "Monthly" ? data.monthly :
-                view === "Quarterly" ? data.quarterly :
-                    data.annually;
-
-        const labels =
-            view === "Monthly" ? getRollingMonthLabels() :
-                view === "Quarterly" ? getRollingQuarterLabels() :
-                    last4Years; // 12 months
-
+        const selected = Array.from({ length: 4 }, (_, i) => quarterData?.[i] ?? { pass: 0, fail: 0 });
+        const labels = QUARTERS;
         const passData = selected.map(i => i.pass);
         const failData = selected.map(i => i.fail);
-
         return { labels, passData, failData };
-    }, [data, view]);
+    }, [quarterData]);
 
     const options: ApexOptions = useMemo(
         () => ({
@@ -101,9 +125,13 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
             },
             xaxis: {
                 categories: chartData?.labels ?? [],
+                tickPlacement: "on",
                 axisBorder: { show: false },
                 axisTicks: { show: false },
+                tickAmount: 4,
                 labels: {
+                    rotate: 0,
+                    hideOverlappingLabels: false,
                     style: {
                         fontSize: "12px",
                         colors: "#94a3b8",
@@ -167,27 +195,16 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
         <div className="bg-white p-6 border border-gray-200 rounded-2xl">
             <div className="flex xl:flex-row flex-col justify-between xl:items-center mb-6">
                 <h3 className="font-semibold text-gray-900 text-lg">
-                    {view} Inspection Results
+                    Quarterly Inspection Results ({year})
                 </h3>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
-                    {(["Monthly", "Quarterly", "Annually"] as ViewType[]).map((type) => (
-                        <button
-                            key={type}
-                            onClick={() => setView(type)}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${view === type
-                                ? "bg-white text-gray-900 shadow-sm"
-                                : "text-gray-600 hover:text-gray-900"
-                                }`}
-                        >
-                            {type}
-                        </button>
-                    ))}
+                <div className="w-full xl:w-auto">
+                    <YearHeader year={year} setYear={setYear} />
                 </div>
             </div>
 
             <div className="max-w-full overflow-x-auto">
                 <div className="min-w-[600px]">
-                    {loading ? (
+                    {(loading || yearLoading) ? (
                         <div className="flex justify-center items-center h-[290px]">
                             <ClipLoader color="#465fff" size={30} />
                         </div>
