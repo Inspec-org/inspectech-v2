@@ -56,11 +56,11 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, variant, loadi
       if (variant === 'purple') {
         sessionStorage.removeItem('inspectionFilters');
       } else if (variant === 'green') {
-        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatuses: ['pass'] }));
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatus: ['PASS'] }));
       } else if (variant === 'red') {
-        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatuses: ['fail'] }));
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatus: ['FAIL'] }));
       } else if (variant === 'yellow') {
-        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatuses: ['needs review'] }));
+        sessionStorage.setItem('inspectionFilters', JSON.stringify({ inspectionStatus: ['NEEDS REVIEW'] }));
       }
     } catch { }
     router.push(`/${role}/inspections`);

@@ -131,7 +131,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                 }
             }));
 
-            const detailsCsv = `Unit ID,Inspection Checklist Status,Inspection Image Status\n${detailsRows.join('\n')}`;
+            const detailsCsv = `Unit ID,Inspection Checklist,Inspection Media Central\n${detailsRows.join('\n')}`;
 
             const res = await apiRequest('/api/admin-review/send', {
                 method: 'POST',

@@ -714,16 +714,23 @@ export const VendorUserManagementSection: React.FC<{ vendors: Vendor[] }> = ({ v
     useEffect(() => {
         (async () => {
             try {
-                const res = await apiRequest('/api/vendors/get-vendors');
-                const json = await res.json();
-                if (res.ok) {
-                    const opts = (json.vendors || []).map((v: any) => ({ value: String(v._id), label: v.name }));
-                    setVendorOptions(opts);
-                    if (!selectedVendor && opts.length) {
-                        setSelectedVendor(opts[0].value);
+                const limit = 250;
+                const firstRes = await apiRequest(`/api/vendors/get-vendors?page=1&limit=${limit}`);
+                const firstJson = await firstRes.json().catch(() => ({}));
+                let list = Array.isArray(firstJson.vendors) ? firstJson.vendors : [];
+                const totalPages = firstJson.totalPages || 1;
+                for (let p = 2; p <= totalPages; p++) {
+                    const r = await apiRequest(`/api/vendors/get-vendors?page=${p}&limit=${limit}`);
+                    if (r.ok) {
+                        const j = await r.json().catch(() => ({}));
+                        const more = Array.isArray(j.vendors) ? j.vendors : [];
+                        list = list.concat(more);
                     }
-                } else {
-                    setVendorOptions([]);
+                }
+                const opts = list.map((v: any) => ({ value: String(v._id), label: v.name }));
+                setVendorOptions(opts);
+                if (!selectedVendor && opts.length) {
+                    setSelectedVendor(opts[0].value);
                 }
             } catch {
                 setVendorOptions([]);

@@ -92,5 +92,13 @@ InspectionSchema.index(
   { unique: true, partialFilterExpression: { vin: { $exists: true, $type: 'string', $nin: ['N/A', ''] } } }
 );
 
+InspectionSchema.index({ departmentId: 1, vendorId: 1, createdAt: -1 });
+InspectionSchema.index({ departmentId: 1, vendorId: 1 });
+InspectionSchema.index({ inspectionStatus: 1 });
+InspectionSchema.index({ inspector: 1 });
+InspectionSchema.index({ type: 1 });
+InspectionSchema.index({ location: 1 });
+InspectionSchema.index({ delivered: 1 });
+InspectionSchema.index({ dateYear: 1, dateMonth: 1, dateDay: 1 });
 
 export default mongoose.models.Inspection || mongoose.model('Inspection', InspectionSchema)
