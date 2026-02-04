@@ -13,8 +13,44 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
+    const body = await req.json();
+    const department = body?.department || undefined;
+    const vendorId = body?.vendorId || undefined;
 
-    const inspections = await Inspection.find()
+    const query: any = {};
+    if (department) query.departmentId = department;
+    if (vendorId) query.vendorId = vendorId;
+
+    const [unitIds, statuses, types, inspectors, locations, delivered, durations, dates] = await Promise.all([
+      Inspection.distinct('unitId', query),
+      Inspection.distinct('inspectionStatus', query),
+      Inspection.distinct('type', query),
+      Inspection.distinct('inspector', query),
+      Inspection.distinct('location', query),
+      Inspection.distinct('delivered', query),
+      Inspection.aggregate([
+        { $match: query },
+        { $group: { _id: { min: '$durationMin', sec: '$durationSec' } } },
+        { $project: { _id: 0, min: '$_id.min', sec: '$_id.sec' } }
+      ]),
+      Inspection.aggregate([
+        { $match: query },
+        { $project: { day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } } } },
+        { $group: { _id: '$day' } },
+        { $project: { _id: 0, day: '$_id' } }
+      ])
+    ]);
+
+    const inspections = [
+      ...unitIds.map((v: string) => ({ unitId: v })),
+      ...statuses.map((v: string) => ({ inspectionStatus: v })),
+      ...types.map((v: string) => ({ type: v })),
+      ...inspectors.map((v: string) => ({ inspector: v })),
+      ...locations.map((v: string) => ({ location: v })),
+      ...delivered.map((v: string) => ({ delivered: v })),
+      ...durations.map((d: any) => ({ durationMin: d.min || '', durationSec: d.sec || '' })),
+      ...dates.map((d: any) => ({ createdAt: new Date(d.day) })),
+    ];
 
     return NextResponse.json({ success: true, inspections });
   } catch (error: any) {

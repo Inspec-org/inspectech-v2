@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
-import "@/lib/models/Vendor";
+import Vendor from "@/lib/models/Vendor";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function POST(req: NextRequest) {
@@ -61,8 +61,14 @@ export async function POST(req: NextRequest) {
     if (inspectors && inspectors.length) query.inspector = { $in: inspectors };
     else if (inspector) query.inspector = inspector;
 
-    if (vendors && vendors.length) query.vendor = { $in: vendors };
-    else if (vendor) query.vendor = vendor;
+    if (vendors && vendors.length) {
+      const vdocs = await Vendor.find({ name: { $in: vendors } }).select('_id').lean();
+      const ids = vdocs.map((v: any) => v._id);
+      if (ids.length) query.vendorId = { $in: ids };
+    } else if (vendor) {
+      const vdoc = await Vendor.findOne({ name: vendor }).select('_id');
+      if (vdoc?._id) query.vendorId = vdoc._id;
+    }
 
     if (locations && locations.length) query.location = { $in: locations };
     else if (location) query.location = location;
@@ -188,6 +194,7 @@ export async function POST(req: NextRequest) {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
+      .select('unitId inspectionStatus type inspector location delivered durationMin durationSec dateMonth dateDay dateYear vendorId createdAt')
       .populate({ path: 'vendorId', select: 'name' })
       .lean();
 

@@ -35,19 +35,34 @@ const VendorManageAccessModal: React.FC<Props> = ({
             setFetching(true);
             (async () => {
                 try {
-                    const [dRes, vRes] = await Promise.all([
-                        apiRequest('/api/departments/get-departments'),
+                    const limit = 250;
+                    const fetchAllDepartments = async () => {
+                        const out: { _id: string; name: string }[] = [];
+                        const firstRes = await apiRequest(`/api/departments/get-departments?page=1&limit=${limit}`);
+                        if (firstRes.ok) {
+                            const firstJson = await firstRes.json().catch(() => ({}));
+                            const list = Array.isArray(firstJson.departments) ? firstJson.departments : [];
+                            out.push(...list.map((d: any) => ({ _id: String(d._id), name: d.name })));
+                            const totalPages = (firstJson.pagination?.totalPages) || 1;
+                            for (let p = 2; p <= totalPages; p++) {
+                                const r = await apiRequest(`/api/departments/get-departments?page=${p}&limit=${limit}`);
+                                if (r.ok) {
+                                    const j = await r.json().catch(() => ({}));
+                                    const list2 = Array.isArray(j.departments) ? j.departments : [];
+                                    out.push(...list2.map((d: any) => ({ _id: String(d._id), name: d.name })));
+                                }
+                            }
+                        }
+                        return out;
+                    };
+
+                    const [deptList, vRes] = await Promise.all([
+                        fetchAllDepartments(),
                         apiRequest(`/api/vendors/details?vendorId=${encodeURIComponent(vendorId)}`),
                     ]);
-                    if (dRes.ok) {
-                        const djson = await dRes.json().catch(() => ({}));
-                        const mapped = Array.isArray(djson.departments)
-                            ? djson.departments.map((d: any) => ({ _id: String(d._id), name: d.name }))
-                            : [];
-                        setDepartments(mapped);
-                    } else {
-                        setDepartments([]);
-                    }
+
+                    setDepartments(deptList);
+
                     if (vRes.ok) {
                         const vjson = await vRes.json().catch(() => ({}));
                         const ids = Array.isArray(vjson.vendor?.departmentAccess)
