@@ -567,7 +567,7 @@ function Inspections() {
                 const res = await apiRequest(`/api/inspections/get-filters`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ department: dept }),
+                    body: JSON.stringify({ department: dept, vendorId: vendor }),
                 });
                 const json = await res.json();
                 if (res.ok && json.success) {
@@ -610,8 +610,14 @@ function Inspections() {
         }
     }, []);
 
+
+
     // Update handleApplyFilters to save to sessionStorage
     const handleApplyFilters = (filters: { [key: string]: string[] }) => {
+        isResettingInspectionPage.current = true;
+        const params = new URLSearchParams(searchParams);
+        params.set('inspection_page', '1');
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         setSelectedFilters(filters);
         sessionStorage.setItem('inspectionFilters', JSON.stringify(filters));
         closeEFilterModal();

@@ -1,7 +1,7 @@
 'use client'
 import { Edit3, FileText, Filter, Mail, Trash2, X, Check } from 'lucide-react';
 import React, { Suspense, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import GenericDataTable, { Column } from '../tables/GenericDataTable';
 import { ReportDropdown } from '../ui/dropdown/reportsDropdown';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -46,6 +46,8 @@ function TrackingInspections() {
     const { isOpen: isFilterOpen, openModal: openFilterModal, closeModal: closeEFilterModal } = useModal();
     const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: string[] }>({});
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
     const currentPage = parseInt(searchParams.get('tracking_page') || '1', 10);
     const [pageSize, setPageSize] = useState<number>(10);
     useEffect(() => {
@@ -115,14 +117,14 @@ function TrackingInspections() {
                     department: doc.departmentName || '',
                     departmentId: String(doc.departmentId || ''),
                     date_created: doc.inspectionId.dateDay
-                        ? `${doc.inspectionId.dateYear}-${doc.inspectionId.dateMonth}-${doc.inspectionId.dateDay}`
+                        ? `${String(doc.inspectionId.dateMonth).padStart(2, '0')}/${String(doc.inspectionId.dateDay).padStart(2, '0')}/${doc.inspectionId.dateYear}`
                         : '',
                     review_requested: doc.reviewRequestedAt
-                        ? new Date(doc.reviewRequestedAt).toISOString().slice(0, 10)
+                        ? (() => { const d = new Date(doc.reviewRequestedAt); return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`; })()
                         : '—',
                     missing_data: toLabel(doc.missingData),
                     review_completed: doc.reviewCompletedAt
-                        ? new Date(doc.reviewCompletedAt).toISOString().slice(0, 10)
+                        ? (() => { const d = new Date(doc.reviewCompletedAt); return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`; })()
                         : 'Pending',
                     email_notifcation: toEmailLabel(doc.emailNotification),
                 }));
@@ -446,6 +448,9 @@ function TrackingInspections() {
     };
 
     const handleApplyFilters = (filters: { [key: string]: string[] }) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('tracking_page', '1');
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         setSelectedFilters(filters);
         sessionStorage.setItem('trackingFilters', JSON.stringify(filters));
         closeEFilterModal();
@@ -796,56 +801,74 @@ function TrackingInspections() {
                 {filterCount > 0 && (
                     <div className='flex items-center gap-2 px-4 flex-wrap mb-4'>
                         {Object.entries(selectedFilters).map(([filterKey, valueIds]) =>
-                            valueIds.map(valueId => {
-                                // You'll need to import or define your filter options for tracking
-                                const filterOptionsMap: any = {
-                                    status: [
-                                        { id: 'complete', label: 'Complete' },
-                                        { id: 'incomplete', label: 'Incomplete' },
-                                        { id: 'needs review', label: 'Needs Review' },
-                                        { id: 'pass', label: 'Pass' },
-                                        { id: 'fail', label: 'Fail' }
-                                    ],
-                                    vendor: inspectionData.map(item => ({ id: item.vendor, label: item.vendor })).filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
-                                    department: inspectionData.map(item => ({ id: item.department, label: item.department })).filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
-                                    missing_data: [
-                                        { id: 'None', label: 'None' },
-                                        { id: 'Incomplete Image File', label: 'Incomplete Image File' },
-                                        { id: 'Incomplete DOT Form', label: 'Incomplete DOT Form' },
-                                        { id: 'Incomplete Checklist', label: 'Incomplete Checklist' }
-                                    ],
-                                    email_notifcation: [
-                                        { id: 'Yes', label: 'Yes' },
-                                        { id: 'No', label: 'No' },
-                                        { id: 'Manually Sent', label: 'Manually Sent' }
-                                    ]
-                                };
+                            (['dateCreated', 'reviewRequested', 'reviewCompleted'].includes(filterKey))
+                                ? valueIds.map((valueId, idx) => {
+                                    let formatted = valueId;
+                                    try {
+                                        const d = new Date(valueId);
+                                        formatted = d.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+                                    } catch {}
+                                    const kindMap: any = { dateCreated: 'Date Created', reviewRequested: 'Review Requested', reviewCompleted: 'Review Completed' };
+                                    const labelText = `${idx === 0 ? 'From' : 'To'} ${kindMap[filterKey]}`;
+                                    return (
+                                        <div key={`${filterKey}-${valueId}-${idx}`} className='flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg'>
+                                            <span className='text-sm'>
+                                                <span className='font-medium'>{labelText}</span> = "{formatted}"
+                                            </span>
+                                            <button onClick={() => handleRemoveFilter(filterKey, valueId)} className='hover:bg-blue-100 rounded p-0.5'>
+                                                <X className='w-4 h-4 text-gray-600' />
+                                            </button>
+                                        </div>
+                                    );
+                                })
+                                : valueIds.map(valueId => {
+                                    const filterOptionsMap: any = {
+                                        status: [
+                                            { id: 'complete', label: 'Complete' },
+                                            { id: 'incomplete', label: 'Incomplete' },
+                                            { id: 'needs review', label: 'Needs Review' },
+                                            { id: 'pass', label: 'Pass' },
+                                            { id: 'fail', label: 'Fail' }
+                                        ],
+                                        vendor: inspectionData.map(item => ({ id: item.vendor, label: item.vendor })).filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
+                                        department: inspectionData.map(item => ({ id: item.department, label: item.department })).filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
+                                        missing_data: [
+                                            { id: 'None', label: 'None' },
+                                            { id: 'Incomplete Image File', label: 'Incomplete Image File' },
+                                            { id: 'Incomplete DOT Form', label: 'Incomplete DOT Form' },
+                                            { id: 'Incomplete Checklist', label: 'Incomplete Checklist' }
+                                        ],
+                                        email_notifcation: [
+                                            { id: 'Yes', label: 'Yes' },
+                                            { id: 'No', label: 'No' },
+                                            { id: 'Manually Sent', label: 'Manually Sent' }
+                                        ]
+                                    };
 
-                                const filterLabels: any = {
-                                    status: 'Status',
-                                    vendor: 'Vendor',
-                                    department: 'Department',
-                                    missing_data: 'Missing Data',
-                                    email_notifcation: 'Email Notification',
-                                    date_created: 'Date Created',
-                                    review_requested: 'Review Requested',
-                                    review_completed: 'Review Completed'
-                                };
+                                    const filterLabels: any = {
+                                        status: 'Status',
+                                        vendor: 'Vendor',
+                                        department: 'Department',
+                                        missing_data: 'Missing Data',
+                                        email_notifcation: 'Email Notification',
+                                        review_requested: 'Review Requested',
+                                        review_completed: 'Review Completed'
+                                    };
 
-                                const filterLabel = filterLabels[filterKey] || filterKey;
-                                const valueLabel = filterOptionsMap[filterKey]?.find((opt: any) => opt.id === valueId)?.label || valueId;
+                                    const filterLabel = filterLabels[filterKey] || filterKey;
+                                    const valueLabel = filterOptionsMap[filterKey]?.find((opt: any) => opt.id === valueId)?.label || valueId;
 
-                                return (
-                                    <div key={`${filterKey}-${valueId}`} className='flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg'>
-                                        <span className='text-sm'>
-                                            <span className='font-medium'>{filterLabel}</span> = "{valueLabel}"
-                                        </span>
-                                        <button onClick={() => handleRemoveFilter(filterKey, valueId)} className='hover:bg-blue-100 rounded p-0.5'>
-                                            <X className='w-4 h-4 text-gray-600' />
-                                        </button>
-                                    </div>
-                                );
-                            })
+                                    return (
+                                        <div key={`${filterKey}-${valueId}`} className='flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg'>
+                                            <span className='text-sm'>
+                                                <span className='font-medium'>{filterLabel}</span> = "{valueLabel}"
+                                            </span>
+                                            <button onClick={() => handleRemoveFilter(filterKey, valueId)} className='hover:bg-blue-100 rounded p-0.5'>
+                                                <X className='w-4 h-4 text-gray-600' />
+                                            </button>
+                                        </div>
+                                    );
+                                })
                         )}
                         <button onClick={handleClearAllFilters} className='text-blue-600 hover:text-blue-700 text-sm font-medium'>
                             Clear all

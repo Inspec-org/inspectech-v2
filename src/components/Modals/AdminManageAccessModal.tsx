@@ -45,25 +45,47 @@ const AdminManageAccessModal: React.FC<Props> = ({
             setFetching(true);
             (async () => {
                 try {
-                    const [vRes, dRes] = await Promise.all([
-                        apiRequest('/api/vendors/get-vendors'),
-                        apiRequest('/api/departments/get-departments'),
-                    ]);
-                    if (vRes.ok) {
-                        const vjson = await vRes.json().catch(() => ({}));
-                        setVendors(Array.isArray(vjson.vendors) ? vjson.vendors : []);
-                    } else {
-                        setVendors([]);
-                    }
-                    if (dRes.ok) {
-                        const djson = await dRes.json().catch(() => ({}));
-                        const mapped = Array.isArray(djson.departments)
-                            ? djson.departments.map((d: any) => ({ _id: String(d._id), name: d.name }))
-                            : [];
-                        setDepartments(mapped);
-                    } else {
-                        setDepartments([]);
-                    }
+                    const limit = 250;
+                    const fetchAllVendors = async () => {
+                        const out: any[] = [];
+                        const firstRes = await apiRequest(`/api/vendors/get-vendors?page=1&limit=${limit}`);
+                        if (firstRes.ok) {
+                            const firstJson = await firstRes.json().catch(() => ({}));
+                            out.push(...(Array.isArray(firstJson.vendors) ? firstJson.vendors : []));
+                            const totalPages = firstJson.totalPages || 1;
+                            for (let p = 2; p <= totalPages; p++) {
+                                const r = await apiRequest(`/api/vendors/get-vendors?page=${p}&limit=${limit}`);
+                                if (r.ok) {
+                                    const j = await r.json().catch(() => ({}));
+                                    out.push(...(Array.isArray(j.vendors) ? j.vendors : []));
+                                }
+                            }
+                        }
+                        return out;
+                    };
+                    const fetchAllDepartments = async () => {
+                        const out: { _id: string; name: string }[] = [];
+                        const firstRes = await apiRequest(`/api/departments/get-departments?page=1&limit=${limit}`);
+                        if (firstRes.ok) {
+                            const firstJson = await firstRes.json().catch(() => ({}));
+                            const list = Array.isArray(firstJson.departments) ? firstJson.departments : [];
+                            out.push(...list.map((d: any) => ({ _id: String(d._id), name: d.name })));
+                            const totalPages = (firstJson.pagination?.totalPages) || 1;
+                            for (let p = 2; p <= totalPages; p++) {
+                                const r = await apiRequest(`/api/departments/get-departments?page=${p}&limit=${limit}`);
+                                if (r.ok) {
+                                    const j = await r.json().catch(() => ({}));
+                                    const list2 = Array.isArray(j.departments) ? j.departments : [];
+                                    out.push(...list2.map((d: any) => ({ _id: String(d._id), name: d.name })));
+                                }
+                            }
+                        }
+                        return out;
+                    };
+
+                    const [vList, dList] = await Promise.all([fetchAllVendors(), fetchAllDepartments()]);
+                    setVendors(vList);
+                    setDepartments(dList);
                 } catch {
                     setVendors([]);
                     setDepartments([]);
