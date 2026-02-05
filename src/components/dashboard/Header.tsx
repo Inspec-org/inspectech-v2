@@ -102,15 +102,15 @@ function Header({
           </span>
           <div className="relative" ref={vendorRef}>
             <button
-              onClick={() => user?.role === 'admin' && setVendorOpen(!vendorOpen)}
-              className={`flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[200px] ${user?.role === 'admin' ? 'cursor-pointer' : 'cursor-auto'}`}
+              onClick={() => (user?.role === 'admin' || user?.role === 'superadmin') && setVendorOpen(!vendorOpen)}
+              className={`flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[200px] ${(user?.role === 'admin' || user?.role === 'superadmin') ? 'cursor-pointer' : 'cursor-auto'}`}
             >
               <Building2 className="w-4 h-4 text-purple-600" />
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
               <span className="text-sm text-gray-700 flex-1 text-left">
                 {selectedVendor?.name || 'ABC Vendor'}
               </span>
-              {user?.role === 'admin' && (
+              {(user?.role === 'admin' || user?.role === 'superadmin') && (
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               )}
             </button>

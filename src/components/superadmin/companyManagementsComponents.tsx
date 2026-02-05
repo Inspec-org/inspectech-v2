@@ -108,9 +108,11 @@ export const AdminDepartmentsSection: React.FC<{ departments: Department[]; tota
     const { isOpen, openModal, closeModal } = useModal();
     const [items, setItems] = useState<Department[]>(departments);
     const [totalCount, setTotalCount] = useState<number>(extTotal ?? departments.length);
-    const startIndex = ((extPage ?? currentPage) - 1) * (extSize ?? pageSize);
-    const endIndex = Math.min(startIndex + (extSize ?? pageSize), totalCount);
-    const displayed = items;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const safePage = Math.min(Math.max(1, extPage ?? currentPage), totalPages);
+    const startIndex = (safePage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalCount);
+    const displayed = items.slice(startIndex, endIndex);
 
     useEffect(() => {
         setItems(departments);
@@ -137,6 +139,7 @@ export const AdminDepartmentsSection: React.FC<{ departments: Department[]; tota
             if (detail && (detail._id || detail.id)) {
                 const dep: Department = { id: String(detail._id || detail.id), name: detail.name, status: 'Active' };
                 setItems(prev => [dep, ...prev]);
+                setTotalCount(prev => prev + 1);
                 setCurrentPage(1);
             }
         };
@@ -192,7 +195,7 @@ export const AdminDepartmentsSection: React.FC<{ departments: Department[]; tota
                 return;
             }
             setItems(prev => prev.filter(d => d.id !== id));
-            setCurrentPage(1);
+            setTotalCount(prev => Math.max(0, prev - 1));
             toast.success('Department deleted');
         } catch (e: any) {
             toast.error(e?.message || 'Failed to delete department');

@@ -22,17 +22,25 @@ export async function POST(req: NextRequest) {
 
         /* -------------------- BODY -------------------- */
         const body = await req.json();
-        const { departmentId, unitIds }: { departmentId?: string; unitIds?: string[] } = body;
+        const { departmentId, unitIds, vendorId }: { departmentId?: string; unitIds?: string[]; vendorId?: string } = body;
 
         /* -------------------- DB -------------------- */
         await connectDB();
 
         /* -------------------- VENDOR ACCESS -------------------- */
-        const vendorIds: Types.ObjectId[] = (user.vendorAccess || []).map(
+        let vendorIds: Types.ObjectId[] = (user.vendorAccess || []).map(
             (id: any) => (id instanceof Types.ObjectId ? id : new Types.ObjectId(id))
         );
 
-        if (vendorIds.length === 0) {
+        if (user.role === 'superadmin') {
+            if (vendorId && Types.ObjectId.isValid(vendorId)) {
+                vendorIds = [new Types.ObjectId(vendorId)];
+            } else if (Array.isArray(unitIds) && unitIds.length > 0) {
+                vendorIds = [];
+            }
+        }
+
+        if (vendorIds.length === 0 && !(user.role === 'superadmin' && Array.isArray(unitIds) && unitIds.length > 0)) {
             return NextResponse.json({
                 success: true,
                 vendorInspectionCounts: [],
@@ -42,9 +50,10 @@ export async function POST(req: NextRequest) {
         }
 
         /* -------------------- BASE QUERY -------------------- */
-        const query: any = {
-            vendorId: { $in: vendorIds }
-        };
+        const query: any = {};
+        if (vendorIds.length > 0) {
+            query.vendorId = { $in: vendorIds };
+        }
 
         if (departmentId) {
             if (!Types.ObjectId.isValid(departmentId)) {

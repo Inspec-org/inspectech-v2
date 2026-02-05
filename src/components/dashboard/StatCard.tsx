@@ -98,33 +98,17 @@ interface StatsGridProps {
 }
 
 export const StatsGrid: React.FC<StatsGridProps> = ({ data, loading }) => {
-  // 
+  const showLoading = loading || !data;
+  const total = data?.total ?? 0;
+  const pass = `${Number(data?.passPercentage ?? 0)}%`;
+  const fail = `${Number(data?.failPercentage ?? 0)}%`;
+  const review = `${Number(data?.needsReviewPercentage ?? 0)}%`;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 w-full">
-      <StatCard
-        label="Total Inspections"
-        value={data?.total || 0}
-        variant="purple"
-        loading={loading}
-      />
-      <StatCard
-        label="Total Pass Rate"
-        value={data?.passPercentage + "%" || "0%"}
-        variant="green"
-        loading={loading}
-      />
-      <StatCard
-        label="Total Fail Rate"
-        value={data?.failPercentage + "%" || "0%"}
-        variant="red"
-        loading={loading}
-      />
-      <StatCard
-        label="Needs Review"
-        value={data?.needsReviewPercentage + "%" || "0%"}
-        variant="yellow"
-        loading={loading}
-      />
+      <StatCard label="Total Inspections" value={total} variant="purple" loading={showLoading} />
+      <StatCard label="Total Pass Rate" value={pass} variant="green" loading={showLoading} />
+      <StatCard label="Total Fail Rate" value={fail} variant="red" loading={showLoading} />
+      <StatCard label="Needs Review" value={review} variant="yellow" loading={showLoading} />
     </div>
   );
 };
