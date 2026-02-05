@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import * as XLSX from 'xlsx';
+
 import { Upload, ArrowLeft, FolderPlus, AlertCircle, X, Download, FileUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Modal } from '../ui/modal';
@@ -176,7 +176,7 @@ export default function BatchCreateInspections() {
     };
 
 
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
             if (!selectedFile.name.endsWith('.csv') && !selectedFile.name.endsWith('.xlsx')) {
@@ -189,10 +189,45 @@ export default function BatchCreateInspections() {
                 event.target.value = '';
                 return;
             }
+            if (!department || !vendorId) {
+                toast.error('Please select department and vendor first');
+                event.target.value = '';
+                return;
+            }
             setFile(selectedFile);
             setValidationErrors([]);
             setPreviewData(null);
-            processFile(selectedFile);
+            setIsProcessing(true);
+            try {
+                const form = new FormData();
+                form.append('file', selectedFile);
+                form.append('vendorId', vendorId);
+                form.append('departmentId', department);
+                const res = await apiRequest('/api/inspections/batch-validate', { method: 'POST', body: form });
+                const json = await res.json();
+                if (!res.ok) {
+                    throw new Error(json.message || 'Validation failed');
+                }
+                if (Array.isArray(json.errors) && json.errors.length) {
+                    setValidationErrors(json.errors);
+                    setPreviewData(null);
+                } else {
+                    setPreviewData(json.preview || null);
+                    setValidationErrors([]);
+                }
+            } catch (error) {
+                setValidationErrors([
+                    {
+                        row: 0,
+                        field: 'general',
+                        value: '',
+                        message: error instanceof Error ? error.message : 'Failed to process file',
+                    },
+                ]);
+                setPreviewData(null);
+            } finally {
+                setIsProcessing(false);
+            }
         }
         event.target.value = '';
     };
@@ -204,14 +239,10 @@ export default function BatchCreateInspections() {
             let rows: (string | number | null | undefined)[][] = [];
             if (file.name.toLowerCase().endsWith('.xlsx')) {
                 const data = await file.arrayBuffer();
-                const wb = XLSX.read(data, { type: 'array', cellDates: true });
-                const sheet = wb.Sheets[wb.SheetNames[0]];
-                rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'mm/dd/yyyy' }) as (string | number | null | undefined)[][];
+                rows = [];
             } else {
                 const text = await file.text();
-                const wb = XLSX.read(text, { type: 'string', cellDates: true });
-                const sheet = wb.Sheets[wb.SheetNames[0]];
-                rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'mm/dd/yyyy' }) as (string | number | null | undefined)[][];
+                rows = [];
             }
             rows = rows.filter((r) => Array.isArray(r) && r.some((c) => c !== null && c !== undefined && String(c).trim() !== ''));
 
@@ -758,10 +789,11 @@ export default function BatchCreateInspections() {
             if (!res.ok) {
                 throw new Error(data.message || 'Batch create failed');
             }
-            const success = Number(data?.successCount || 0);
-            const fail = Number(data?.failCount || 0);
-            toast.success(`Created ${success} inspections${fail ? `, ${fail} failed` : ''}`);
-            router.back();
+            const created = Number(data?.created || 0);
+            const failed = Number(data?.failed || 0);
+            const skipped = Number(data?.skipped || 0);
+            toast.success(`Created ${created} inspections${skipped ? `, ${skipped} duplicates skipped` : ''}${failed ? `, ${failed} failed` : ''}`);
+            // router.back();
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Unknown error';
             toast.error(`Failed to create inspections: ${errorMessage}`);

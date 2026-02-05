@@ -176,7 +176,7 @@ const UserModule: React.FC = () => {
         }
         setUserLoading(true);
         try {
-            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}&page=${userCurrentPage}&limit=${userlimit}`);
+            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}&role=user&page=${userCurrentPage}&limit=${userlimit}`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch users')
