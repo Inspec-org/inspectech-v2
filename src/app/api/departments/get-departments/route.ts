@@ -45,19 +45,24 @@ export async function GET(req: NextRequest) {
           .limit(limit);
       }
     } else if (user.role === "admin") {
-      const allowedDeptIds = (user.departmentAccess || []).map((id: any) => id.toString());
-      if (allowedDeptIds.length === 0) {
+      const vendorId = url.searchParams.get("vendorId");
+      const adminDeptIds = (user.departmentAccess || []).map((id: any) => id.toString());
+      if (adminDeptIds.length === 0) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
-      departments = await Department.find({ _id: { $in: allowedDeptIds } });
-      // departments.sort((a, b) => {
-      //   const aIsUS = a.name.toLowerCase().includes("us");
-      //   const bIsUS = b.name.toLowerCase().includes("us");
-
-      //   if (aIsUS && !bIsUS) return -1;
-      //   if (!aIsUS && bIsUS) return 1;
-      //   return a.name.localeCompare(b.name);
-      // });
+      let allowedDeptIds = adminDeptIds;
+      if (vendorId) {
+        const vendor = await Vendor.findById(vendorId).select("departmentAccess").lean();
+        if (!vendor) {
+          return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+        }
+        const vDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => id.toString());
+        allowedDeptIds = allowedDeptIds.filter((id: string) => vDeptIds.includes(id));
+      }
+      departments = await Department.find({ _id: { $in: allowedDeptIds } })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
     } else if (user.role === "user") {
       const vendorIds = [
         ...(user.vendorAccess || []),

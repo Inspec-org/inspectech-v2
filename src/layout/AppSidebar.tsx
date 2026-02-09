@@ -17,7 +17,7 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
-import { ArrowLeft, BarChart, BarChart2, BarChart4, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
+import { ArrowLeft, BarChart, BarChart2, BarChart4, ChevronLeft, ChevronRight, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
 import { UserContext } from "@/context/authContext";
 import RequestAdminReviewModal from "@/components/Modals/RequestAdminReviewModal";
 import Cookies from 'js-cookie';
@@ -441,7 +441,7 @@ const AppSidebar: React.FC = () => {
                 )}
 
               </div>
-              {/* <button
+              <button
                 onClick={() => {
                   setIsHovered(false);
                   setHoverSuspended(true);
@@ -449,21 +449,24 @@ const AppSidebar: React.FC = () => {
                 }}
                 className="text-gray-400 hover:text-white transition-colors"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M15 18l-6-6 6-6" />
-                </svg>
-              </button> */}
+                <ChevronLeft width={20} height={20} />
+              </button>
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
-              AB
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsHovered(false);
+                  setHoverSuspended(true);
+                  toggleSidebar();
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <ChevronRight width={20} height={20} />
+              </button>
             </div>
           )}
         </div>

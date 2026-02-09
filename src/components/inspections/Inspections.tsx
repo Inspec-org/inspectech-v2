@@ -593,9 +593,11 @@ function Inspections() {
             }
         };
 
-        getfilters();
+        if (dept && vendor) {
+            getfilters();
+        }
 
-    }, [dept])
+    }, [dept, vendor])
 
     useEffect(() => {
         // Load filters from sessionStorage on mount
@@ -614,10 +616,12 @@ function Inspections() {
 
     // Update handleApplyFilters to save to sessionStorage
     const handleApplyFilters = (filters: { [key: string]: string[] }) => {
-        isResettingInspectionPage.current = true;
         const params = new URLSearchParams(searchParams);
-        params.set('inspection_page', '1');
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        if (currentPage !== 1) {
+            isResettingInspectionPage.current = true;
+            params.set('inspection_page', '1');
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        }
         setSelectedFilters(filters);
         sessionStorage.setItem('inspectionFilters', JSON.stringify(filters));
         closeEFilterModal();

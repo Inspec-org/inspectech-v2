@@ -62,7 +62,7 @@ export default function AdminLayout({
         {/* Header */}
         {isDepartmentsPage ? <AppHeader /> : <DashboardAppHeader />}
 
-        {!isDepartmentsPage && (
+        {/* {!isDepartmentsPage && (
           <div className="fixed top-4 right-4 z-50 lg:hidden">
             <button
               className={`inline-flex items-center justify-center w-10 h-10 rounded-lg ${isMobileOpen ? "" : "border border-gray-200 bg-white"}  text-gray-700 shadow-sm`}
@@ -76,7 +76,7 @@ export default function AdminLayout({
               )}
             </button>
           </div>
-        )}
+        )} */}
 
         {/* Page Content */}
         <div className="p-4 mx-auto max-w-6xl md:p-6">

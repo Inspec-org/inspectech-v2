@@ -54,11 +54,12 @@ export default function DepartmentsPage() {
   }, []);
 
   const handleDepartmentSelect = (department: Department) => {
-    ;
-    router.push(`dashboard?department=${department.name}`);
+    const role = String(user?.role || 'superadmin');
+    const target = `/${role}/dashboard`;
     Cookies.set('selectedDepartment', department.name || '');
     Cookies.set('selectedDepartmentId', department._id || '');
     window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: department.name }));
+    router.push(target);
   };
 
   return (
