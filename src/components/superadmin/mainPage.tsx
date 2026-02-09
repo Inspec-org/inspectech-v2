@@ -129,6 +129,7 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; descriptio
 const InspecTechOnboarding: React.FC = () => {
     const [selectedVendor, setSelectedVendor] = useState<string>('');
     const [vendors, setVendors] = useState<{ _id: string; name: string }[]>([]);
+    const [vendorEnabledMap, setVendorEnabledMap] = useState<Record<string, boolean>>({});
     const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([]);
     const { isOpen, openModal, closeModal } = useModal();
     const { isOpen: isVendorOpen, openModal: openVendorModal, closeModal: closeVendorModal } = useModal();
@@ -175,6 +176,24 @@ const InspecTechOnboarding: React.FC = () => {
     };
 
     useEffect(() => { getVendors(); getDepartments(); }, []);
+
+    useEffect(() => {
+        if (!vendors.length) { setVendorEnabledMap({}); return; }
+        (async () => {
+            try {
+                const entries = await Promise.all(vendors.map(async (v) => {
+                    const res = await apiRequest(`/api/departments/get-departments?vendorId=${encodeURIComponent(v._id)}&limit=1`);
+                    if (!res.ok) return [String(v._id), false] as [string, boolean];
+                    const j = await res.json().catch(() => ({}));
+                    const has = Array.isArray(j.departments) && j.departments.length > 0;
+                    return [String(v._id), has] as [string, boolean];
+                }));
+                setVendorEnabledMap(Object.fromEntries(entries));
+            } catch {
+                setVendorEnabledMap({});
+            }
+        })();
+    }, [vendors]);
 
     const handleAccessDashboard = () => {
         if (!selectedVendor) return;
@@ -243,7 +262,18 @@ const InspecTechOnboarding: React.FC = () => {
                                 <div className="flex-1 min-w-0">
                                     <CustomDropdown
                                         name="select-vendor"
-                                        options={vendors.map((v) => ({ value: String(v._id), label: v.name }))}
+                                        options={vendors.map((v) => ({
+                                            value: String(v._id),
+                                            label: (
+                                                <span className="flex items-center gap-2">
+                                                    {v.name}
+                                                    {vendorEnabledMap[String(v._id)] === false && (
+                                                        <span className="text-xs text-gray-500">No departments</span>
+                                                    )}
+                                                </span>
+                                            ),
+                                            disabled: vendorEnabledMap[String(v._id)] === false
+                                        }))}
                                         value={selectedVendor}
                                         onChange={(val) => setSelectedVendor(val)}
                                         placeholder="Select Vendor"
@@ -255,8 +285,8 @@ const InspecTechOnboarding: React.FC = () => {
 
                                 <button
                                     onClick={handleAccessDashboard}
-                                    disabled={!selectedVendor}
-                                    className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${selectedVendor
+                                    disabled={!selectedVendor || vendorEnabledMap[selectedVendor] === false}
+                                    className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${selectedVendor && vendorEnabledMap[selectedVendor] !== false
                                         ? 'bg-[#7C3AED] text-white hover:bg-purple-700'
                                         : 'bg-[#7C3AED] text-white opacity-60 cursor-not-allowed'
                                         }`}

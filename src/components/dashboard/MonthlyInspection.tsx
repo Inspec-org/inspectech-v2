@@ -50,11 +50,24 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
     const [year, setYear] = useState<number>(new Date().getFullYear());
     const [quarterData, setQuarterData] = useState<{ pass: number; fail: number }[]>([]);
     const [yearLoading, setYearLoading] = useState<boolean>(false);
+    const [vId, setVId] = useState<string>('');
+    const [dId, setDId] = useState<string>('');
 
     useEffect(() => {
-        const vendorId = Cookies.get('selectedVendorId') || '';
-        const departmentId = Cookies.get('selectedDepartmentId') || '';
-        if (!vendorId || !departmentId) {
+        const handleDept = () => setDId(Cookies.get('selectedDepartmentId') || '');
+        const handleVendor = () => setVId(Cookies.get('selectedVendorId') || '');
+        window.addEventListener('selectedDepartmentChanged', handleDept as EventListener);
+        window.addEventListener('selectedVendorChanged', handleVendor as EventListener);
+        setVId(Cookies.get('selectedVendorId') || '');
+        setDId(Cookies.get('selectedDepartmentId') || '');
+        return () => {
+            window.removeEventListener('selectedDepartmentChanged', handleDept as EventListener);
+            window.removeEventListener('selectedVendorChanged', handleVendor as EventListener);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!vId || !dId) {
             setQuarterData([]);
             return;
         }
@@ -64,7 +77,7 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
                 const res = await apiRequest('/api/dashboard/get_quarterly_by_year', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ vendorId, departmentId, year })
+                    body: JSON.stringify({ vendorId: vId, departmentId: dId, year })
                 });
                 if (res.ok) {
                     const json = await res.json();
@@ -78,7 +91,7 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
                 setYearLoading(false);
             }
         })();
-    }, [year]);
+    }, [year, vId, dId]);
 
     const chartData = useMemo(() => {
         const selected = Array.from({ length: 4 }, (_, i) => quarterData?.[i] ?? { pass: 0, fail: 0 });
@@ -101,6 +114,10 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
             stroke: {
                 curve: "smooth",
                 width: 2,
+            },
+            markers: {
+                size: 4,
+                hover: { sizeOffset: 2 }
             },
             dataLabels: { enabled: false },
             fill: {

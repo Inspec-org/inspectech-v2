@@ -14,13 +14,14 @@ export default function DashboardAppHeader() {
   const [vendors, setVendors] = React.useState<Vendor[]>([]);
   const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
   const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(null);
+  const [vendorEnabledMap, setVendorEnabledMap] = React.useState<Record<string, boolean>>({});
   const { user } = useContext(UserContext)
 
 
   const getDepartments = async () => {
     try {
       const selectedVendorId = Cookies.get('selectedVendorId') || '';
-      const endpoint = selectedVendorId && user?.role === 'superadmin'
+      const endpoint = selectedVendorId && (user?.role === 'admin' || user?.role === 'superadmin')
         ? `/api/departments/get-departments?vendorId=${encodeURIComponent(selectedVendorId)}`
         : "/api/departments/get-departments";
       const res = await apiRequest(endpoint);
@@ -65,7 +66,9 @@ export default function DashboardAppHeader() {
   }, []);
 
   React.useEffect(() => {
-    if (!departments.length) return;
+    if (!departments.length) {
+      return;
+    }
     const isActive = (d: Department) => String(d.status ?? (d.isActive ? 'active' : 'inactive')).toLowerCase() === 'active';
     const active = departments.filter(isActive);
     const cookieId = Cookies.get('selectedDepartmentId');
@@ -97,6 +100,30 @@ export default function DashboardAppHeader() {
     }
   }, [vendors]);
 
+  React.useEffect(() => {
+    if (!(user?.role === 'admin' || user?.role === 'superadmin')) { setVendorEnabledMap({}); return; }
+    if (!vendors.length) { setVendorEnabledMap({}); return; }
+    (async () => {
+      try {
+        const entries = await Promise.all(vendors.map(async (v) => {
+          const res = await apiRequest(`/api/departments/get-departments?vendorId=${encodeURIComponent(v._id)}&limit=1`);
+          if (!res.ok) return [String(v._id), false] as [string, boolean];
+          const j = await res.json().catch(() => ({}));
+          const has = Array.isArray(j.departments) && j.departments.length > 0;
+          return [String(v._id), has] as [string, boolean];
+        }));
+        setVendorEnabledMap(Object.fromEntries(entries));
+      } catch {
+        setVendorEnabledMap({});
+      }
+    })();
+  }, [vendors, user]);
+
+  React.useEffect(() => {
+    if (!selectedVendor) return;
+    getDepartments();
+  }, [selectedVendor]);
+
   return (
     <div className="sticky top-0 flex w-full z-40 ">
       <Header
@@ -106,6 +133,7 @@ export default function DashboardAppHeader() {
         vendors={vendors}
         setSelectedVendor={setSelectedVendor}
         selectedVendor={selectedVendor || null}
+        vendorEnabledMap={vendorEnabledMap}
       />
     </div>
   );

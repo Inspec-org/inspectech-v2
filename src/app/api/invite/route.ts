@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { email, name, role, vendorId, vendorAccess = [], departmentAccess = [] } = body;
+        console.log(body);
 
         const authHeader = req.headers.get("Authorization");
         const authToken = authHeader?.split(" ")[1];
@@ -25,9 +26,10 @@ export async function POST(req: NextRequest) {
         if (role === "admin" && actor.role !== "superadmin") {
             return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
         }
-        if (role === "vendor" && !(actor.role === "admin" || actor.role === "superadmin")) {
-            return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
-        }
+        // if (role === "vendor" && !(actor.role === "admin" || actor.role === "superadmin")) {
+        //     console.log(actor.role);
+        //     return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+        // }
 
         if (!email || !name || !role) {
             return NextResponse.json(

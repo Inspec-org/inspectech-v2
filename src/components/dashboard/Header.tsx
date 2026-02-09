@@ -1,6 +1,6 @@
 'use client';
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { ChevronDown, Folder, Building2 } from 'lucide-react';
+import { ChevronDown, Folder, Building2, ChevronLeft } from 'lucide-react';
 import { Department } from '../departments/DepartmentCard';
 import { Vendor } from './Dashboard';
 import { UserContext } from '@/context/authContext';
@@ -15,6 +15,7 @@ function Header({
   vendors,
   setSelectedVendor,
   selectedVendor,
+  vendorEnabledMap,
 }: {
   departments: Department[];
   setSelectedDepartment: React.Dispatch<React.SetStateAction<Department | null>>;
@@ -22,13 +23,14 @@ function Header({
   vendors?: Vendor[] | null;
   setSelectedVendor: React.Dispatch<React.SetStateAction<Vendor | null>>;
   selectedVendor?: Vendor | null;
+  vendorEnabledMap?: Record<string, boolean>;
 }) {
   const [departmentOpen, setDepartmentOpen] = useState(false);
   const [vendorOpen, setVendorOpen] = useState(false);
   const { user } = useContext(UserContext);
   const deptRef = React.useRef<HTMLDivElement>(null);
   const vendorRef = React.useRef<HTMLDivElement>(null);
-  const { toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const { toggleSidebar, toggleMobileSidebar, isExpanded, isMobileOpen } = useSidebar();
   React.useEffect(() => {
     const handle = (e: MouseEvent) => {
       const t = e.target as Node;
@@ -41,13 +43,6 @@ function Header({
 
   return (
     <div className="w-full bg-gradient-to-br from-purple-700 to-purple-800 px-6 py-3 border-b border-purple-100 flex">
-      <button
-        onClick={() => { if (typeof window !== 'undefined' && window.innerWidth < 1024) { toggleMobileSidebar(); } else { toggleSidebar(); } }}
-        className="p-2 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-        aria-label="Toggle sidebar"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
       {/* Department Section */}
       <div className='mx-auto max-w-6xl w-full md:px-6 flex flex-col md:flex-row flex-wrap md:items-center gap-6'>
         <div className="flex xl:flex-row flex-col xl:items-center gap-3">
@@ -117,24 +112,28 @@ function Header({
             {vendorOpen && (
               <div className="absolute top-full mt-1 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 <div className="py-1">
-                  {vendors?.map((vendor) => (
-                    <button
-                      key={vendor._id}
-                      onClick={() => {
-                        ;
-                        setSelectedVendor(vendor);
-                        setVendorOpen(false);
-                        ;
-                        Cookies.set('selectedVendor', vendor.name || '');
-                        Cookies.set('selectedVendorId', vendor._id || '');
-                        window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: vendor.name }));
-                      }}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
-                    >
-                      <Building2 className="w-4 h-4 text-purple-600" />
-                      {vendor.name}
-                    </button>
-                  ))}
+                  {vendors?.map((vendor) => {
+                    const canSelect = (user?.role === 'admin' || user?.role === 'superadmin');
+                    const isDisabled = canSelect ? (vendorEnabledMap && vendorEnabledMap[String(vendor._id)] === false) : true;
+                    return (
+                      <button
+                        key={vendor._id}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          setSelectedVendor(vendor);
+                          setVendorOpen(false);
+                          Cookies.set('selectedVendor', vendor.name || '');
+                          Cookies.set('selectedVendorId', vendor._id || '');
+                          window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: vendor.name }));
+                        }}
+                        disabled={isDisabled}
+                        className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Building2 className="w-4 h-4 text-purple-600" />
+                        {vendor.name}
+                      </button>
+                    );
+                  })}
                   {/* <button className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-purple-600" />
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
