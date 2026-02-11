@@ -42,7 +42,6 @@ export async function PATCH(req: NextRequest) {
     const inspectionUpdate: any = {};
 
     if (typeof missingData === "string") update.missingData = missingData;
-    if (typeof emailNotification === "string") update.emailNotification = emailNotification;
 
     if (newVendorId) {
       update.vendorId = newVendorId;
@@ -64,6 +63,15 @@ export async function PATCH(req: NextRequest) {
       update.reviewCompletedAt = reviewCompletedAt
         ? new Date(reviewCompletedAt)
         : null;
+    }
+
+    if (typeof emailNotification === "string") {
+      update.emailNotification = emailNotification;
+      if (emailNotification === "no") {
+        update.reviewCompletedAt = null;
+      } else if (emailNotification === "manually sent") {
+        update.reviewCompletedAt = new Date();
+      }
     }
 
     if (!Object.keys(update).length) {

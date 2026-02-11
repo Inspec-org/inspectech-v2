@@ -69,13 +69,15 @@ export async function POST(req: NextRequest) {
       await Review.findOneAndUpdate(
         { unitId, vendorId, departmentId },
         {
+          $set: {
+            emailNotification: "no",
+            reviewCompletedAt: null,
+          },
           $setOnInsert: {
-            inspectionId: insp?._id || null, // Explicitly handle null case
+            inspectionId: insp?._id || null,
             reviewRequestedAt: new Date(),
             missingData: "none",
-            reviewCompletedAt: null,
-            emailNotification: "no"
-          }
+          },
         },
         { upsert: true }
       );
@@ -84,6 +86,7 @@ export async function POST(req: NextRequest) {
     await sendEmail(recipients, "Admin Review Request", emailHtml, attachments);
     return NextResponse.json({ success: true, message: "Email sent" });
   } catch (error: any) {
+    console.log(error)
     return NextResponse.json({ success: false, message: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }

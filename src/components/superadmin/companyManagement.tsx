@@ -95,29 +95,38 @@ const CompanyManagementPage: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        (async () => {
-            setAdminsLoading(true);
+        setAdminsLoading(true);
+
+        const timer = setTimeout(async () => {
             try {
-                const res = await apiRequest(`/api/users/get-users?role=admin&page=${adminPage}&limit=${adminPageSize}&q=${encodeURIComponent(adminSearch)}`);
+                const res = await apiRequest(
+                    `/api/users/get-users?role=admin&page=${adminPage}&limit=${adminPageSize}&q=${encodeURIComponent(adminSearch)}`
+                );
                 const json = await res.json();
+
                 if (res.ok) {
                     const mapped = (json.users || []).map((u: any, idx: number) => {
                         const vendorNames = Array.isArray(u.vendorNames) && u.vendorNames.length
                             ? u.vendorNames
-                            : typeof u.vendor === 'string'
-                                ? u.vendor.split(',').map((s: string) => s.trim()).filter(Boolean)
+                            : typeof u.vendor === "string"
+                                ? u.vendor.split(",").map((s: string) => s.trim()).filter(Boolean)
                                 : [];
+
                         return {
                             id: (adminPage - 1) * adminPageSize + idx + 1,
-                            name: `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() || (u.name || ''),
-                            email: u.email || '',
-                            secondaryEmail: u.email || '',
-                            vendor: vendorNames.length ? vendorNames.join(', ') : '—',
+                            name:
+                                `${(u.firstName || "").trim()} ${(u.lastName || "").trim()}`.trim() ||
+                                u.name ||
+                                "",
+                            email: u.email || "",
+                            secondaryEmail: u.email || "",
+                            vendor: vendorNames.length ? vendorNames.join(", ") : "—",
                             vendorNames,
                             departments: Array.isArray(u.departmentNames) ? u.departmentNames : [],
-                            department: vendorNames.length ? vendorNames[0] : '—',
+                            department: vendorNames.length ? vendorNames[0] : "—",
                         };
                     });
+
                     setAdmins(mapped);
                     setAdminsTotal(Number(json.total || json.totalCount || mapped.length));
                 } else {
@@ -130,8 +139,13 @@ const CompanyManagementPage: React.FC = () => {
             } finally {
                 setAdminsLoading(false);
             }
-        })();
+        }, 1000); // ⏳ 2 seconds debounce
+
+        return () => {
+            clearTimeout(timer); // 🚫 cancel previous call
+        };
     }, [adminPage, adminSearch, vendorId]);
+
     const tabs = [
         { id: 'admin-departments', label: 'Admin Departments', icon: <Building2 className="text-gray-400" size={18} /> },
         { id: 'admin-users', label: 'Admin Users', icon: <Users className="text-gray-400" size={18} /> },
@@ -179,7 +193,7 @@ const CompanyManagementPage: React.FC = () => {
                                 pageSize={adminPageSize}
                                 onPageChange={setAdminPage}
                                 searchQuery={adminSearch}
-                                onSearchChange={setAdminSearch}
+                                onSearchChange={(q) => { setAdminSearch(q); setAdminPage(1); }}
                                 loading={adminsLoading}
                             />
                         )}
