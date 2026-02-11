@@ -313,10 +313,22 @@ function TrackingInspections() {
             const json = await res.json();
 
             if (res.ok && json.success) {
+                const d = new Date();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                const display = `${mm}/${dd}/${yyyy}`;
                 setReports(prev =>
                     prev.map(r =>
                         r.id === unitId
-                            ? { ...r, email_notifcation: label }
+                            ? {
+                                ...r,
+                                email_notifcation: label,
+                                review_completed:
+                                  label === 'No' ? 'Pending' :
+                                  label === 'Manually Sent' ? display :
+                                  r.review_completed,
+                              }
                             : r
                     )
                 );
@@ -386,8 +398,16 @@ function TrackingInspections() {
                         vendorId: editingValues.vendorId || r.vendorId,
                         department: departments.find(d => d._id === editingValues.departmentId)?.name || r.department,
                         departmentId: editingValues.departmentId || r.departmentId,
-                        review_requested: editingValues.reviewRequested || '—',
-                        review_completed: editingValues.reviewCompleted || 'Pending'
+                        review_requested: editingValues.reviewRequested
+                          ? (editingValues.reviewRequested.includes('/')
+                              ? editingValues.reviewRequested
+                              : (() => { const [y,m,d] = editingValues.reviewRequested.split('-'); return `${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${y}`; })())
+                          : '—',
+                        review_completed: editingValues.reviewCompleted
+                          ? (editingValues.reviewCompleted.includes('/')
+                              ? editingValues.reviewCompleted
+                              : (() => { const [y,m,d] = editingValues.reviewCompleted.split('-'); return `${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${y}`; })())
+                          : 'Pending'
                     } : r));
                     toast.success('Inspection updated.');
                 }
@@ -599,7 +619,15 @@ function TrackingInspections() {
                                 const CM = t.getMonth() + 1;
                                 const CD = t.getDate();
                                 const cur = editingValues?.reviewRequested ?? (row.review_requested === '—' ? '' : row.review_requested) ?? '';
-                                const [yy, mm, dd] = cur ? cur.split('-').map((n: any) => parseInt(n)) : [CY, CM, CD];
+                                const [yy, mm, dd] = (() => {
+                                    if (!cur) return [CY, CM, CD];
+                                    if (cur.includes('/')) {
+                                        const [m, d, y] = cur.split('/');
+                                        return [parseInt(y, 10), parseInt(m, 10), parseInt(d, 10)];
+                                    }
+                                    const [y, m, d] = cur.split('-');
+                                    return [parseInt(y, 10), parseInt(m, 10), parseInt(d, 10)];
+                                })();
                                 return (
                                     <div className="flex items-center gap-2">
                                         <input
@@ -697,7 +725,15 @@ function TrackingInspections() {
                                 const CM = t.getMonth() + 1;
                                 const CD = t.getDate();
                                 const cur = editingValues?.reviewCompleted ?? (row.review_completed === 'Pending' ? '' : row.review_completed) ?? '';
-                                const [yy, mm, dd] = cur ? cur.split('-').map((n: any) => parseInt(n)) : [CY, CM, CD];
+                                const [yy, mm, dd] = (() => {
+                                    if (!cur) return [CY, CM, CD];
+                                    if (cur.includes('/')) {
+                                        const [m, d, y] = cur.split('/');
+                                        return [parseInt(y, 10), parseInt(m, 10), parseInt(d, 10)];
+                                    }
+                                    const [y, m, d] = cur.split('-');
+                                    return [parseInt(y, 10), parseInt(m, 10), parseInt(d, 10)];
+                                })();
                                 return (
                                     <div className="flex items-center gap-2">
                                         <input

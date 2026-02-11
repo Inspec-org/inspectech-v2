@@ -378,7 +378,7 @@ export const AdminUserManagementSection: React.FC<{
                                             <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
                                             <td className="py-4 px-4">
                                                 <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                                <div className="text-sm text-gray-500">{user.secondaryEmail}</div>
+                                                {/* <div className="text-sm text-gray-500">{user.secondaryEmail}</div> */}
                                             </td>
                                             <td className="py-4 px-4 text-sm text-gray-900">{user.email}</td>
                                             <td className="py-4 px-4 text-sm text-gray-900">
