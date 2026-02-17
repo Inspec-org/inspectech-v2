@@ -662,14 +662,15 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                             </div>
                             {showCamera && (
                                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                                    <div className="bg-white rounded-lg p-4 w-full max-w-md">
-                                        <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                                            <video ref={cameraVideoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
+                                    <div className="bg-white rounded-lg p-6 max-w-2xl">
+                                        <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                                            <video ref={cameraVideoRef} className="w-full h-full object-contain" playsInline autoPlay muted />
+                                            <img src={silhouetteImages[activeTab]} alt="Silhouette guide" className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-50" style={{ transform: 'scale(1.12)', transformOrigin: 'center' }} />
                                         </div>
                                         <canvas ref={cameraCanvasRef} className="hidden" />
                                         <div className="flex gap-3 mt-4 justify-center">
-                                            <button onClick={capturePhoto} className="bg-purple-600 text-white px-5 py-2 rounded-full font-medium hover:bg-purple-700">Capture</button>
-                                            <button onClick={stopCamera} className="bg-gray-200 px-5 py-2 rounded-full font-medium hover:bg-gray-300">Cancel</button>
+                                            <button onClick={capturePhoto} className="bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700">Capture</button>
+                                            <button onClick={stopCamera} className="bg-gray-200 px-6 py-2.5 rounded-full font-medium hover:bg-gray-300">Cancel</button>
                                         </div>
                                     </div>
                                 </div>
