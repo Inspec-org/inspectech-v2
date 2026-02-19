@@ -6,41 +6,76 @@ import { getUserFromToken } from "@/lib/getUserFromToken";
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
-    const token = authHeader?.split(" ")[1];
-    if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
-    }
+    const token = authHeader?.split(" ")[1] || "";
 
     const user = await getUserFromToken(token);
+
+    // 1️⃣ Check authorization
     if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return NextResponse.json({
+        status: 403,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 403 });
     }
 
     const body = await req.json();
     const name = String(body?.name || "").trim();
     const departmentAccess: string[] = Array.isArray(body?.departmentAccess) ? body.departmentAccess : [];
 
+    // 2️⃣ Validate inputs
     if (!name) {
-      return NextResponse.json({ error: "Vendor name is required" }, { status: 400 });
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "Vendor name is required",
+        data: null
+      }, { status: 400 });
     }
+
     if (!departmentAccess.length) {
-      return NextResponse.json({ error: "departmentAccess must include at least one department id" }, { status: 400 });
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "departmentAccess must include at least one department id",
+        data: null
+      }, { status: 400 });
     }
 
     await connectDB();
 
+    // 3️⃣ Check if vendor already exists
     const exists = await Vendor.findOne({ name });
     if (exists) {
-      return NextResponse.json({ error: "Vendor already exists" }, { status: 409 });
+      return NextResponse.json({
+        status: 409,
+        success: false,
+        message: "Vendor already exists",
+        data: null
+      }, { status: 409 });
     }
 
+    // 4️⃣ Create vendor
     const vendor = await Vendor.create({ name, departmentAccess });
 
-    return NextResponse.json(
-      { status: "success", vendor: { _id: vendor._id, name: vendor.name, departmentAccess: vendor.departmentAccess } },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      status: 201,
+      success: true,
+      message: "Vendor created successfully",
+      data: {
+        _id: vendor._id,
+        name: vendor.name,
+        departmentAccess: vendor.departmentAccess
+      }
+    }, { status: 201 });
+
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error?.message || "Internal Server Error",
+      data: null
+    }, { status: 500 });
   }
 }
