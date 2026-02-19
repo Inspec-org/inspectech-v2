@@ -4,7 +4,7 @@ import Vendor from "@/lib/models/Vendor";
 import Department from "@/lib/models/Departments";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
-export async function POST(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
     const token = req.headers.get("Authorization")?.split(" ")[1] || "";
 

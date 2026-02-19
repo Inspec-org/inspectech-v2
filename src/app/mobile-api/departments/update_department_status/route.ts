@@ -4,7 +4,7 @@ import Department from "@/lib/models/Departments";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 import { Types } from "mongoose";
 
-export async function POST(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1] || "";

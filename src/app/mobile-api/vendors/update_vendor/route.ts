@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db/db";
 import Vendor from "@/lib/models/Vendor";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
-export async function POST(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1] || "";
