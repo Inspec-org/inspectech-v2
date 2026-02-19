@@ -11,19 +11,27 @@ export async function GET(req: Request) {
 
     const vendorId = url.searchParams.get("vendorId");
     const role = url.searchParams.get("role");
-    const page = parseInt(url.searchParams.get("page") || "1", 10);
-    const limit = parseInt(url.searchParams.get("limit") || "10", 10);
     const q = (url.searchParams.get("q") || "").trim();
 
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
     if (!token) {
-      return NextResponse.json({ success: false, message: "No token provided" }, { status: 401 });
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "No token provided",
+        data: null
+      }, { status: 401 });
     }
 
     const actor = await getUserFromToken(token);
     if (!actor) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
     }
 
     await connectDB();
@@ -121,14 +129,10 @@ export async function GET(req: Request) {
     }
 
     /* =========================
-       QUERY
+       QUERY (No pagination)
     ========================= */
-    const totalUsers = await User.countDocuments(filter);
-
     const records = await User.find(filter)
       .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
       .populate("vendorId")
       .populate("vendorAccess")
       .populate("departmentAccess");
@@ -162,17 +166,18 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({
+      status: 200,
       success: true,
-      users,
-      total: totalUsers,
-      page,
-      limit,
-      totalPages: Math.ceil(totalUsers / limit),
-    });
+      message: "Users fetched successfully",
+      data: users
+    }, { status: 200 });
+
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error.message || "Server error",
+      data: null
+    }, { status: 500 });
   }
 }

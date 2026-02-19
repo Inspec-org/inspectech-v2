@@ -37,7 +37,7 @@ async function getBucket() {
   return { bucket: admin.storage().bucket(storageBucketEnv), warning: null };
 }
 
-export async function POST(req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1] || "";

@@ -5,16 +5,24 @@ import Vendor from "@/lib/models/Vendor";
 import Department from "@/lib/models/Departments";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
-export async function PATCH(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
     const actor = await getUserFromToken(token);
+
     if (!actor) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { status: 401, success: false, message: "Unauthorized", data: null },
+        { status: 401 }
+      );
     }
+
     if (actor.role !== "superadmin" && actor.role !== "admin") {
-      return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+      return NextResponse.json(
+        { status: 403, success: false, message: "Forbidden", data: null },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
@@ -30,43 +38,69 @@ export async function PATCH(req: NextRequest) {
         : undefined;
 
     if (!targetEmail) {
-      return NextResponse.json({ success: false, message: "targetEmail is required" }, { status: 400 });
+      return NextResponse.json(
+        { status: 400, success: false, message: "targetEmail is required", data: null },
+        { status: 400 }
+      );
     }
+
     if (status && status !== "active" && status !== "inactive") {
-      return NextResponse.json({ success: false, message: "Invalid status" }, { status: 400 });
+      return NextResponse.json(
+        { status: 400, success: false, message: "Invalid status", data: null },
+        { status: 400 }
+      );
     }
 
     await connectDB();
 
     const isStatusUpdate = typeof status !== "undefined";
-    const isAccessUpdate = (Array.isArray(vendorIds) && vendorIds.length > 0) || (Array.isArray(departmentIds) && departmentIds.length > 0);
+    const isAccessUpdate = (vendorIds.length > 0) || (departmentIds.length > 0);
 
     if (!isStatusUpdate && !isAccessUpdate) {
-      return NextResponse.json({ success: false, message: "No update fields provided" }, { status: 400 });
-    }
-    if (isStatusUpdate && isAccessUpdate) {
-      return NextResponse.json({ success: false, message: "Provide either status or access fields, not both" }, { status: 400 });
+      return NextResponse.json(
+        { status: 400, success: false, message: "No update fields provided", data: null },
+        { status: 400 }
+      );
     }
 
+    if (isStatusUpdate && isAccessUpdate) {
+      return NextResponse.json(
+        { status: 400, success: false, message: "Provide either status or access fields, not both", data: null },
+        { status: 400 }
+      );
+    }
+
+    // ===================== STATUS UPDATE =====================
     if (isStatusUpdate) {
       const target = await User.findOne({ email: targetEmail, role: "user" });
       if (!target) {
-        return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+        return NextResponse.json(
+          { status: 404, success: false, message: "User not found", data: null },
+          { status: 404 }
+        );
       }
+
       target.status = status as any;
       await target.save();
-      return NextResponse.json({
-        success: true,
-        user: {
-          email: target.email,
-          status: target.status,
+
+      return NextResponse.json(
+        {
+          status: 200,
+          success: true,
+          message: "User status updated successfully",
+          data: { email: target.email, status: target.status },
         },
-      });
+        { status: 200 }
+      );
     }
 
+    // ===================== ACCESS UPDATE =====================
     const target = await User.findOne({ email: targetEmail, role: "admin" });
     if (!target) {
-      return NextResponse.json({ success: false, message: "Admin user not found" }, { status: 404 });
+      return NextResponse.json(
+        { status: 404, success: false, message: "Admin user not found", data: null },
+        { status: 404 }
+      );
     }
 
     const validVendorIds = vendorIds.filter(Boolean);
@@ -74,20 +108,29 @@ export async function PATCH(req: NextRequest) {
 
     target.vendorAccess = validVendorIds as any;
     target.departmentAccess = validDeptIds as any;
-
     await target.save();
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        email: target.email,
-        vendorAccess: target.vendorAccess,
-        departmentAccess: target.departmentAccess,
+    return NextResponse.json(
+      {
+        status: 200,
+        success: true,
+        message: "Admin access updated successfully",
+        data: {
+          email: target.email,
+          vendorAccess: target.vendorAccess,
+          departmentAccess: target.departmentAccess,
+        },
       },
-    });
+      { status: 200 }
+    );
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: error?.message || "Internal Server Error" },
+      {
+        status: 500,
+        success: false,
+        message: error?.message || "Internal Server Error",
+        data: null,
+      },
       { status: 500 }
     );
   }

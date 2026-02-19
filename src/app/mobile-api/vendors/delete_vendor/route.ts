@@ -6,7 +6,7 @@ import Review from "@/lib/models/Reviews";
 import User from "@/lib/models/User";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
-export async function POST(req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1] || "";
