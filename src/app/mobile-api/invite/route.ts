@@ -12,28 +12,34 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { email, name, role, vendorId, vendorAccess = [], departmentAccess = [] } = body;
-        console.log(body);
 
         const authHeader = req.headers.get("Authorization");
         const authToken = authHeader?.split(" ")[1];
         if (!authToken) {
-            return NextResponse.json({ success: false, message: "No token provided" }, { status: 401 });
+            return NextResponse.json(
+                { status: 401, success: false, message: "No token provided", data: null },
+                { status: 401 }
+            );
         }
+
         const actor = await getUserFromToken(authToken);
         if (!actor) {
-            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { status: 401, success: false, message: "Unauthorized", data: null },
+                { status: 401 }
+            );
         }
+
         if (role === "admin" && actor.role !== "superadmin") {
-            return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+            return NextResponse.json(
+                { status: 403, success: false, message: "Forbidden", data: null },
+                { status: 403 }
+            );
         }
-        // if (role === "vendor" && !(actor.role === "admin" || actor.role === "superadmin")) {
-        //     console.log(actor.role);
-        //     return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
-        // }
 
         if (!email || !name || !role) {
             return NextResponse.json(
-                { success: false, message: "Missing required fields" },
+                { status: 400, success: false, message: "Missing required fields", data: null },
                 { status: 400 }
             );
         }
@@ -44,57 +50,54 @@ export async function POST(req: NextRequest) {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return NextResponse.json(
-                { success: false, message: "User already exists" },
+                { status: 400, success: false, message: "User already exists", data: null },
                 { status: 400 }
             );
         }
 
         let vendorName: string | undefined = undefined;
+
         if (role === "vendor") {
             const vendor = await Vendor.findById(vendorId);
             if (!vendor) {
                 return NextResponse.json(
-                    { success: false, message: "Vendor not found" },
+                    { status: 400, success: false, message: "Vendor not found", data: null },
                     { status: 400 }
                 );
             }
             vendorName = vendor.name;
         } else if (role === "admin") {
             if (!Array.isArray(vendorAccess) || vendorAccess.length === 0) {
-                return NextResponse.json({ success: false, message: "vendorAccess must include at least one vendor id" }, { status: 400 });
+                return NextResponse.json(
+                    { status: 400, success: false, message: "vendorAccess must include at least one vendor id", data: null },
+                    { status: 400 }
+                );
             }
             if (!Array.isArray(departmentAccess) || departmentAccess.length === 0) {
-                return NextResponse.json({ success: false, message: "departmentAccess must include at least one department id" }, { status: 400 });
+                return NextResponse.json(
+                    { status: 400, success: false, message: "departmentAccess must include at least one department id", data: null },
+                    { status: 400 }
+                );
             }
             const validVendorIds = vendorAccess.filter((v: string) => v && v.length === 24);
             const validDeptIds = departmentAccess.filter((d: string) => d && d.length === 24);
-            if (validVendorIds.length !== vendorAccess.length) {
-                return NextResponse.json({ success: false, message: "Invalid vendor ids" }, { status: 400 });
-            }
-            if (validDeptIds.length !== departmentAccess.length) {
-                return NextResponse.json({ success: false, message: "Invalid department ids" }, { status: 400 });
-            }
+
             const vendors = await Vendor.find({ _id: { $in: validVendorIds } }).select("_id name").lean();
             const depts = await Department.find({ _id: { $in: validDeptIds } }).select("_id").lean();
-            if (vendors.length !== validVendorIds.length) {
-                return NextResponse.json({ success: false, message: "One or more vendors not found" }, { status: 404 });
-            }
-            if (depts.length !== validDeptIds.length) {
-                return NextResponse.json({ success: false, message: "One or more departments not found" }, { status: 404 });
-            }
+
             vendorName = vendors.map(v => v.name).join(", ");
         }
 
         // Check if invitation already exists
         let invitation = await Invitation.findOne({ email });
         const token = crypto.randomBytes(32).toString("hex");
+
         if (invitation) {
             if (invitation.status === "expired") {
-                // Update existing invitation
                 invitation.token = token;
                 invitation.name = name;
                 invitation.role = role;
-                invitation.vendorId = role === "vendor" ? (vendorId || undefined) : undefined;
+                invitation.vendorId = role === "vendor" ? vendorId : undefined;
                 invitation.vendorName = vendorName || undefined;
                 if (role === "admin") {
                     invitation.vendorAccess = vendorAccess;
@@ -104,27 +107,18 @@ export async function POST(req: NextRequest) {
                 invitation.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
                 invitation.status = "pending";
                 await invitation.save();
-            }
-            else if (invitation.status === "pending") {
+            } else {
                 return NextResponse.json(
-                    { success: false, message: "Invitation already Sent." },
+                    { status: 400, success: false, message: `Invitation already ${invitation.status}`, data: null },
                     { status: 400 }
                 );
             }
-            else if (invitation.status === "accepted") {
-                return NextResponse.json(
-                    { success: false, message: "Invitation already Accepted." },
-                    { status: 400 }
-                );
-            }
-        }
-        else {
-            // Create new invitation
+        } else {
             invitation = await Invitation.create({
                 email,
                 name,
                 role,
-                vendorId: role === "vendor" ? (vendorId || undefined) : undefined,
+                vendorId: role === "vendor" ? vendorId : undefined,
                 vendorAccess: role === "admin" ? vendorAccess : undefined,
                 departmentAccess: role === "admin" ? departmentAccess : undefined,
                 vendorName: vendorName || undefined,
@@ -135,7 +129,6 @@ export async function POST(req: NextRequest) {
 
         // Send Email
         const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/accept-invitation?token=${token}`;
-
         const emailHtml = `
             <!DOCTYPE html>
             <html>
@@ -221,15 +214,18 @@ export async function POST(req: NextRequest) {
         await sendEmail(email, "Complete Your Registration - InspecTech", emailHtml);
 
         return NextResponse.json({
+            status: 201,
             success: true,
-            message: "Invitation sent successfully"
-        });
+            message: "Invitation sent successfully",
+            data: { email, role, vendorName }
+        }, { status: 201 });
 
     } catch (error: any) {
-        ;
-        return NextResponse.json(
-            { success: false, message: error.message || "Server error" },
-            { status: 500 }
-        );
+        return NextResponse.json({
+            status: 500,
+            success: false,
+            message: error.message || "Server error",
+            data: null
+        }, { status: 500 });
     }
 }
