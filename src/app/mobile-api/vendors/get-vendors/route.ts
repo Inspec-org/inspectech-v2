@@ -5,114 +5,128 @@ import Vendor from "@/lib/models/Vendor";
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
-    const token = authHeader?.split(" ")[1];
+    const token = authHeader?.split(" ")[1] || "";
 
     if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "No token provided",
+        data: null
+      }, { status: 401 });
     }
 
     const user = await getUserFromToken(token);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
     }
-    const url = new URL(req.url);
-    const pageParam = url.searchParams.get("page");
-    const limitParam = url.searchParams.get("limit");
-    const page = pageParam && /^\d+$/.test(pageParam) ? Math.max(parseInt(pageParam, 10), 1) : 1;
-    const limit = limitParam && /^\d+$/.test(limitParam) ? Math.max(parseInt(limitParam, 10), 1) : 10;
+
     let vendors: any[] = [];
-    let total = 0;
+
     if (user.role === "admin") {
       if (user.vendorAccess && user.vendorAccess.length > 0) {
         const vendorIds = user.vendorAccess.map((v: any) => v.$oid || v);
-        total = await Vendor.countDocuments({ _id: { $in: vendorIds }, status: 'active' });
         vendors = await Vendor.find({ _id: { $in: vendorIds }, status: 'active' })
           .select("_id name")
-          .sort({ createdAt: -1 })
-          .skip((page - 1) * limit)
-          .limit(limit);
+          .sort({ createdAt: -1 });
       }
-    }
-    else if (user.role === "vendor" || user.role === "user") {
-      vendors = await Vendor.find({ _id: user.vendorId, status: 'active' }).select("_id name");
-    }
-    else if (user.role === "superadmin") {
-      total = await Vendor.countDocuments();
+    } else if (user.role === "vendor" || user.role === "user") {
+      if (user.vendorId) {
+        vendors = await Vendor.find({ _id: user.vendorId, status: 'active' })
+          .select("_id name");
+      }
+    } else if (user.role === "superadmin") {
       vendors = await Vendor.find()
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit);
+        .select("_id name")
+        .sort({ createdAt: -1 });
     }
 
-    const payload: any = { status: "success", vendors };
-    if (user.role === "superadmin" || user.role === "admin") {
-      payload.total = total;
-      payload.page = page;
-      payload.limit = limit;
-      payload.totalPages = Math.ceil(total / limit);
-    }
-    return NextResponse.json(payload, { status: 200 });
+    return NextResponse.json({
+      status: 200,
+      success: true,
+      message: "Vendors retrieved successfully",
+      data: vendors
+    }, { status: 200 });
+
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error.message || "Internal Server Error",
+      data: null
+    }, { status: 500 });
   }
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    // 🔐 Auth
-    const authHeader = req.headers.get("Authorization");
-    const token = authHeader?.split(" ")[1];
 
-    if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
-    }
+// export async function POST(req: NextRequest) {
+//   try {
+//     const authHeader = req.headers.get("Authorization");
+//     const token = authHeader?.split(" ")[1] || "";
 
-    const user = await getUserFromToken(token);
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+//     if (!token) {
+//       return NextResponse.json({
+//         status: 401,
+//         success: false,
+//         message: "No token provided",
+//         data: null
+//       }, { status: 401 });
+//     }
 
-    // 📦 Body
-    const { name } = await req.json();
+//     const user = await getUserFromToken(token);
+//     if (!user || user.role !== "admin") {
+//       return NextResponse.json({
+//         status: 403,
+//         success: false,
+//         message: "Unauthorized",
+//         data: null
+//       }, { status: 403 });
+//     }
 
-    if (!name || !name.trim()) {
-      return NextResponse.json(
-        { error: "Vendor name is required" },
-        { status: 400 }
-      );
-    }
+//     const { name } = await req.json();
 
-    // 🚫 Check duplicate
-    const exists = await Vendor.findOne({ name: name.trim() });
-    if (exists) {
-      return NextResponse.json(
-        { error: "Vendor already exists" },
-        { status: 409 }
-      );
-    }
+//     if (!name || !name.trim()) {
+//       return NextResponse.json({
+//         status: 400,
+//         success: false,
+//         message: "Vendor name is required",
+//         data: null
+//       }, { status: 400 });
+//     }
 
-    // ✅ Create
-    const vendor = await Vendor.create({
-      name: name.trim(),
-    });
+//     const exists = await Vendor.findOne({ name: name.trim() });
+//     if (exists) {
+//       return NextResponse.json({
+//         status: 409,
+//         success: false,
+//         message: "Vendor already exists",
+//         data: null
+//       }, { status: 409 });
+//     }
 
-    return NextResponse.json(
-      {
-        status: "success",
-        vendor: {
-          _id: vendor._id,
-          name: vendor.name,
-        },
-      },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
+//     const vendor = await Vendor.create({ name: name.trim() });
+
+//     return NextResponse.json({
+//       status: 201,
+//       success: true,
+//       message: "Vendor created successfully",
+//       data: {
+//         _id: vendor._id,
+//         name: vendor.name
+//       }
+//     }, { status: 201 });
+
+//   } catch (error: any) {
+//     return NextResponse.json({
+//       status: 500,
+//       success: false,
+//       message: error.message || "Internal Server Error",
+//       data: null
+//     }, { status: 500 });
+//   }
+// }
