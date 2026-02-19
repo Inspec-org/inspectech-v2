@@ -1,58 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import User from "@/lib/models/User";
-import jwt from "jsonwebtoken";
 import { sendEmail } from "@/lib/sendEmail";
 
 export async function POST(req: NextRequest) {
     try {
         const { email } = await req.json();
 
+        // 1️⃣ Validate email
         if (!email) {
-            return NextResponse.json(
-                { success: false, message: "Email is required" },
-                { status: 400 }
-            );
+            return NextResponse.json({
+                status: 400,
+                success: false,
+                message: "Email is required",
+                data: null
+            }, { status: 400 });
         }
 
-        await connectDB();   // <-- CONNECT SAFELY (prevents errors)
+        await connectDB();
 
+        // 2️⃣ Find user
         const user = await User.findOne({ email, isDeleted: false });
+
         if (!user) {
-            return NextResponse.json(
-                { success: false, message: "User not found" },
-                { status: 401 }
-            );
+            return NextResponse.json({
+                status: 401,
+                success: false,
+                message: "User not found",
+                data: null
+            }, { status: 401 });
         }
 
+        // 3️⃣ Generate OTP
         const otp = Math.floor(1000 + Math.random() * 9000);
 
+        // 4️⃣ Send Email
         await sendEmail(
             user.email,
             "Reset Your Password - Verification Code Inside",
-            getResetPasswordEmailTemplate(otp, user.name) 
+            getResetPasswordEmailTemplate(otp, user.name)
         );
 
+        // 5️⃣ Save OTP
         user.resetPasswordOTP = otp;
         user.resetPasswordExpires = Date.now() + 3600000;
         await user.save();
 
         return NextResponse.json({
+            status: 200,
             success: true,
-            message: "Email Sent Successfully"
-        });
+            message: "Email Sent Successfully",
+            data: null
+        }, { status: 200 });
 
     } catch (error: any) {
-        ;
-        return NextResponse.json(
-            { success: false, message: error.message || "Server error" },
-            { status: 500 }
-        );
+        return NextResponse.json({
+            status: 500,
+            success: false,
+            message: error.message || "Server error",
+            data: null
+        }, { status: 500 });
     }
 }
-
-
-// lib/emailTemplates.ts
 
 export const getResetPasswordEmailTemplate = (otp: number, userName?: string) => {
     return `
@@ -149,4 +158,3 @@ export const getResetPasswordEmailTemplate = (otp: number, userName?: string) =>
 </html>
   `;
 };
-
