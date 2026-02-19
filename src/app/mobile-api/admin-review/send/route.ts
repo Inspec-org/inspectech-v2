@@ -6,16 +6,13 @@ import Review from "@/lib/models/Reviews";
 
 export async function POST(req: NextRequest) {
   try {
-    const { recipients, unitIds, vendorName, vendorId, departmentId } = await req.json();
+    const { recipients, unitIds, vendorName, vendorId, departmentId, detailsCsv } = await req.json();
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return NextResponse.json({ success: false, message: "recipients must be a non-empty array" }, { status: 400 });
     }
     if (!Array.isArray(unitIds) || unitIds.length === 0) {
       return NextResponse.json({ success: false, message: "unitIds must be a non-empty array" }, { status: 400 });
-    }
-    if (!vendorId || !departmentId) {
-      return NextResponse.json({ success: false, message: "vendorId and departmentId required" }, { status: 400 });
     }
 
     const safeVendor = vendorName || "N/A";
@@ -42,42 +39,54 @@ export async function POST(req: NextRequest) {
         .detail-row { margin-bottom: 16px;}
       </style>
       </head><body><div class="container">
-        <div class="header"><h1 class="title">Admin Notification</h1><p class="subtitle">InspecTech Inspection Management System</p></div>
+        <div class="header"><h1 class="title">Admin Review Request</h1><p class="subtitle">InspecTech Inspection Management System</p></div>
         <div class="section">
-         <div class="box"><p class="heading">Notification Details</p><div class="detail-row"><span class="label">Vendor:</span> ${safeVendor}</div> <div class="detail-row"><span class="label">Date:</span> ${dateStr}</div></div>
+         <div class="box"><p class="heading">Request Details</p><div class="detail-row"><span class="label">Vendor:</span> ${safeVendor}</div> <div class="detail-row"><span class="label">Date:</span> ${dateStr}</div></div>
           <div style="height:12px"></div>
           <div class="box">
-            <div><span class="heading">Unit IDs (${count} item${count > 1 ? "s" : ""})</span></div>
+            <div><span class="heading">Unit IDs for Review (${count} item${count > 1 ? "s" : ""})</span></div>
             <div style="height:8px"></div>
             <div class="list">Please see attached CSV file:<ul class="bullet"><li>Unit ID list</li></ul></div>
           </div>
           <div style="height:16px"></div>
-          <p class="muted">This is a manual admin notification regarding the listed Unit IDs.</p>
+          <p class="muted">A vendor has submitted the above Unit IDs for admin review. This submission includes detailed analysis results with inspection status classifications.</p>
           <p style="margin-top:10px;">Thank you,<br/><strong>The InspecTech Team</strong></p>
         </div>
         <div class="footer">This is an automated message from the InspecTech inspection management system.</div>
       </div></body></html>
     `;
 
-    const csv = "unitId\n" + unitIds.join("\n");
-    const attachments = [{ filename: "unit_ids.csv", content: csv, contentType: "text/csv" }];
+    const csv = detailsCsv ? detailsCsv : "unitId\n" + unitIds.join("\n");
+    const attachments = [{ filename: detailsCsv ? "inspection_details.csv" : "unit_ids.csv", content: csv, contentType: "text/csv" }];
 
+    if (!vendorId || !departmentId) {
+      return NextResponse.json({ success: false, message: "vendorId and departmentId required" }, { status: 400 });
+    }
     await connectDB();
-
     for (const unitId of unitIds) {
-      const insp = await Inspection.findOne({ unitId, vendorId, departmentId }).select('_id').lean();
+      const insp = await Inspection.findOne({ unitId, vendorId, departmentId }).select('_id').lean() as { _id: any } | null;
+
       await Review.findOneAndUpdate(
         { unitId, vendorId, departmentId },
         {
-          $set: { emailNotification: 'manually sent' }
+          $set: {
+            emailNotification: "no",
+            reviewCompletedAt: null,
+          },
+          $setOnInsert: {
+            inspectionId: insp?._id || null,
+            reviewRequestedAt: new Date(),
+            missingData: "none",
+          },
         },
         { upsert: true }
       );
     }
 
-    await sendEmail(recipients, "Admin Notification", emailHtml, attachments);
+    await sendEmail(recipients, "Admin Review Request", emailHtml, attachments);
     return NextResponse.json({ success: true, message: "Email sent" });
   } catch (error: any) {
+    console.log(error)
     return NextResponse.json({ success: false, message: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
