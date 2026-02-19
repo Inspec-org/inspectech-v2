@@ -9,10 +9,11 @@ interface UploadCardProps {
     onUploadToCloudinary: (file: File) => Promise<void>;
     onRemove?: () => void;
     onZoom?: () => void;
+    uploadAreaId?: string;
 }
 type TabType = 'Front Left Side' | 'Front Right Side' | 'Rare Left Side' | 'Rare Right Side' | 'Inside Trailer Image' | 'Door Details Image';
 
-const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl, onUploadToCloudinary, onRemove, onZoom }) => {
+const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl, onUploadToCloudinary, onRemove, onZoom, uploadAreaId }) => {
     const [isUploaded, setIsUploaded] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -87,6 +88,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                     handleUpload(file);
                 }}
                 onClick={() => { if (!(previewUrl || currentUrl)) inputRef.current?.click(); }}
+                data-upload-area={uploadAreaId ?? title}
             >
                 {(previewUrl || currentUrl) ? (
                     <>
@@ -357,12 +359,39 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
     const [showCamera, setShowCamera] = useState(false);
     const segCtrlRef = useRef<AbortController | null>(null);
     const segSeqRef = useRef(0);
+    const [cameraSize, setCameraSize] = useState<{ width: number; height: number } | null>(null);
     const startCamera = async () => {
         if (computing) return;
         try {
             setShowCamera(true); // Show modal first so video element exists in DOM
 
             await new Promise(resolve => setTimeout(resolve, 100)); // Wait for DOM to render
+
+            try {
+                const targetId = tabFieldMap[activeTab];
+                const el = document.querySelector(`[data-upload-area="${targetId}"]`) as HTMLElement | null;
+                if (el) {
+                    const cs = window.getComputedStyle(el);
+                    const padL = parseFloat(cs.paddingLeft || '0');
+                    const padR = parseFloat(cs.paddingRight || '0');
+                    const rawW = el.clientWidth;
+                    const contentW = Math.max(0, rawW - padL - padR);
+                    const desiredH = 224;
+                    const maxW = Math.floor(window.innerWidth * 0.95);
+                    const maxH = Math.floor(window.innerHeight * 0.8);
+                    const w = Math.min(contentW, maxW);
+                    const h = Math.min(desiredH, maxH);
+                    setCameraSize({ width: w, height: h });
+                } else {
+                    const fallbackW = Math.floor(window.innerWidth * 0.9);
+                    const fallbackH = Math.min(224, Math.floor(window.innerHeight * 0.8));
+                    setCameraSize({ width: fallbackW, height: fallbackH });
+                }
+            } catch {
+                const fallbackW = Math.floor(window.innerWidth * 0.9);
+                const fallbackH = Math.min(224, Math.floor(window.innerHeight * 0.8));
+                setCameraSize({ width: fallbackW, height: fallbackH });
+            }
 
             const candidates: MediaStreamConstraints[] = [
                 { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
@@ -662,8 +691,14 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                             </div>
                             {showCamera && (
                                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                                    <div className="bg-white rounded-lg p-6 max-w-2xl">
-                                        <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                                    <div className="bg-white rounded-lg p-6" style={{ maxWidth: '95vw' }}>
+                                        <div
+                                            className="relative bg-black rounded-lg overflow-hidden"
+                                            style={{
+                                                width: cameraSize ? `${cameraSize.width}px` : '90vw',
+                                                height: cameraSize ? `${cameraSize.height}px` : '224px'
+                                            }}
+                                        >
                                             <video ref={cameraVideoRef} className="w-full h-full object-contain" playsInline autoPlay muted />
                                             <img src={silhouetteImages[activeTab]} alt="Silhouette guide" className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-50" style={{ transform: 'scale(1.12)', transformOrigin: 'center' }} />
                                         </div>
@@ -815,6 +850,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                             onUploadToCloudinary={(file) => onUploadToCloudinary('frontLeftSideUrl', file)}
                             onRemove={() => setFormData(prev => ({ ...prev, frontLeftSideUrl: '' }))}
                             onZoom={() => openSlideshow('Front Left Side')}
+                            uploadAreaId="frontLeftSideUrl"
                         />
                         <UploadCard
                             title="Front Right Side"
@@ -823,6 +859,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                             onUploadToCloudinary={(file) => onUploadToCloudinary('frontRightSideUrl', file)}
                             onRemove={() => setFormData(prev => ({ ...prev, frontRightSideUrl: '' }))}
                             onZoom={() => openSlideshow('Front Right Side')}
+                            uploadAreaId="frontRightSideUrl"
                         />
                     </div>
                 </div>
@@ -837,6 +874,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                             onUploadToCloudinary={(file) => onUploadToCloudinary('rearLeftSideUrl', file)}
                             onRemove={() => setFormData(prev => ({ ...prev, rearLeftSideUrl: '' }))}
                             onZoom={() => openSlideshow('Rear Left Side')}
+                            uploadAreaId="rearLeftSideUrl"
                         />
                         <UploadCard
                             title="Rear Right Side"
@@ -845,6 +883,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                             onUploadToCloudinary={(file) => onUploadToCloudinary('rearRightSideUrl', file)}
                             onRemove={() => setFormData(prev => ({ ...prev, rearRightSideUrl: '' }))}
                             onZoom={() => openSlideshow('Rear Right Side')}
+                            uploadAreaId="rearRightSideUrl"
                         />
                     </div>
                 </div>
@@ -860,6 +899,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                                 onUploadToCloudinary={(file) => onUploadToCloudinary('insideTrailerImageUrl', file)}
                                 onRemove={() => setFormData(prev => ({ ...prev, insideTrailerImageUrl: '' }))}
                                 onZoom={() => openSlideshow('Inside Trailer Image')}
+                            uploadAreaId="insideTrailerImageUrl"
                             />
                         </div>
                     </div>
@@ -873,6 +913,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                                 onUploadToCloudinary={(file) => onUploadToCloudinary('doorDetailsImageUrl', file)}
                                 onRemove={() => setFormData(prev => ({ ...prev, doorDetailsImageUrl: '' }))}
                                 onZoom={() => openSlideshow('Door Details Image')}
+                            uploadAreaId="doorDetailsImageUrl"
                             />
                         </div>
                     </div>
@@ -891,6 +932,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                             onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormImageUrl', file)}
                             onRemove={() => setFormData(prev => ({ ...prev, dotFormImageUrl: '' }))}
                             onZoom={() => openSlideshow('DOT Form Image')}
+                            uploadAreaId="dotFormImageUrl"
                         />
                         <PDFUpload
                             onUploadToCloudinary={(file) => onUploadToCloudinary('dotFormPdfUrl', file)}
@@ -930,6 +972,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                             onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment1', file)}
                             onRemove={() => setFormData(prev => ({ ...prev, additionalAttachment1: '' }))}
                             onZoom={() => openSlideshow('Additional Attachment 1')}
+                            uploadAreaId="additionalAttachment1"
                         />
                         <UploadCard
                             title="Additional Attachment 2"
@@ -938,6 +981,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                             onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment2', file)}
                             onRemove={() => setFormData(prev => ({ ...prev, additionalAttachment2: '' }))}
                             onZoom={() => openSlideshow('Additional Attachment 2')}
+                            uploadAreaId="additionalAttachment2"
                         />
                         <UploadCard
                             title="Additional Attachment 3"
@@ -946,6 +990,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                             onUploadToCloudinary={(file) => onUploadToCloudinary('additionalAttachment3', file)}
                             onRemove={() => setFormData(prev => ({ ...prev, additionalAttachment3: '' }))}
                             onZoom={() => openSlideshow('Additional Attachment 3')}
+                            uploadAreaId="additionalAttachment3"
                         />
                     </div>
                 )}
