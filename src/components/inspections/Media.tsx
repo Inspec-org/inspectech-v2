@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Check, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload, X, ZoomIn } from 'lucide-react';
-import { FormData } from './Edit';
+import type { FormData as InspectionFormData } from './Edit';
 import { toast } from 'react-toastify';
 interface UploadCardProps {
     title: string;
@@ -337,11 +337,91 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
         'Door Details Image': '/images/reference_images/door_details_silhouette.svg',
     };
 
+    const referenceMaskImages: Record<TabType, string> = {
+        'Front Left Side': '/images/reference_images/front_left_mask.png',
+        'Front Right Side': '/images/reference_images/front_right_mask.png',
+        'Rare Left Side': '/images/reference_images/rear_left_mask.png',
+        'Rare Right Side': '/images/reference_images/rear_right_maskf.png',
+        'Inside Trailer Image': '/images/reference_images/inside_trailer_mask.png',
+        'Door Details Image': '/images/reference_images/door_details_mask.png',
+    };
+
     const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
     const [overlayFile, setOverlayFile] = useState<File | null>(null);
     const [alignmentScore, setAlignmentScore] = useState<number | null>(null);
     const [computing, setComputing] = useState(false);
     const overlayInputRef = useRef<HTMLInputElement>(null);
+    const cameraVideoRef = useRef<HTMLVideoElement>(null);
+    const cameraCanvasRef = useRef<HTMLCanvasElement>(null);
+    const cameraStreamRef = useRef<MediaStream | null>(null);
+    const [showCamera, setShowCamera] = useState(false);
+    const segCtrlRef = useRef<AbortController | null>(null);
+    const segSeqRef = useRef(0);
+    const startCamera = async () => {
+        if (computing) return;
+        try {
+            setShowCamera(true); // Show modal first so video element exists in DOM
+
+            await new Promise(resolve => setTimeout(resolve, 100)); // Wait for DOM to render
+
+            const candidates: MediaStreamConstraints[] = [
+                { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
+                { video: { facingMode: 'environment' } },
+                { video: true }
+            ];
+            let stream: MediaStream | null = null;
+            let lastErr: any = null;
+            for (const c of candidates) {
+                try { stream = await navigator.mediaDevices.getUserMedia(c); break; } catch (e) { lastErr = e; }
+            }
+            if (!stream) {
+                setShowCamera(false);
+                throw lastErr || new Error('camera_unavailable');
+            }
+            cameraStreamRef.current = stream;
+
+            const v = cameraVideoRef.current;
+            if (v) {
+                v.srcObject = stream;
+                await new Promise<void>((resolve) => {
+                    v.onloadedmetadata = () => {
+                        v.play().then(() => resolve()).catch(() => resolve());
+                    };
+                });
+            }
+        } catch (e: any) {
+            setShowCamera(false);
+            toast.error(e?.message || 'Unable to access camera');
+        }
+    };
+    const stopCamera = () => {
+        const s = cameraStreamRef.current;
+        if (s) s.getTracks().forEach(t => t.stop());
+        cameraStreamRef.current = null;
+        const v = cameraVideoRef.current;
+        if (v) v.srcObject = null;
+        setShowCamera(false);
+    };
+    const capturePhoto = () => {
+        const v = cameraVideoRef.current;
+        if (!v) return;
+        if (v.videoWidth === 0 || v.videoHeight === 0) { toast.error('Camera is not ready'); return; }
+        const c = cameraCanvasRef.current || document.createElement('canvas');
+        c.width = v.videoWidth;
+        c.height = v.videoHeight;
+        const ctx = c.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(v, 0, 0, c.width, c.height);
+        c.toBlob((blob) => {
+            if (!blob) { toast.error('Capture failed'); return; }
+            const file = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
+            const url = URL.createObjectURL(blob);
+            setOverlayFile(file);
+            setOverlayUrl(url);
+            setAlignmentScore(null);
+            stopCamera();
+        }, 'image/jpeg', 0.92);
+    };
     const handleOverlayFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -371,39 +451,107 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
         ctx.drawImage(img, dx, dy, nw, nh);
     };
 
+
+
     const computeAlignment = async () => {
-        if (!overlayUrl) return;
+        if (!overlayFile) return;
         setComputing(true);
         setAlignmentScore(null);
+        let seq = 0;
         try {
-            const [userImg, silImg] = await Promise.all([
-                loadImage(overlayUrl),
-                loadImage(silhouetteImages[activeTab])
-            ]);
+            if (segCtrlRef.current) segCtrlRef.current.abort();
+            const ctrl = new AbortController();
+            segCtrlRef.current = ctrl;
+            seq = segSeqRef.current + 1;
+            segSeqRef.current = seq;
+            const endpoint = 'https://mlbench-inspectech-segmentation.hf.space/segment/mask';
+            const fd = new FormData();
+            fd.append('file', overlayFile, overlayFile.name);
+            fd.append('model', 'birefnet');
+            fd.append('threshold', '0.5');
+            console.log([...fd.entries()]);
+            const resp = await fetch(endpoint, { method: 'POST', body: fd, signal: ctrl.signal });
+            if (!resp.ok) {
+                const errText = await resp.text().catch(() => '');
+                throw new Error(errText || 'segmentation_failed');
+            }
+            console.log("api done")
+            const blob = await resp.blob();
+            const maskUrl = URL.createObjectURL(blob);
+
+            // Load the mask from API
+            const maskImg = await loadImage(maskUrl);
+            URL.revokeObjectURL(maskUrl);
+
+            let refMaskImg: HTMLImageElement;
+            try {
+                console.log('using precomputed mask');
+                console.log(activeTab)
+                console.log(referenceMaskImages);
+                console.log(referenceMaskImages[activeTab]);
+
+                const preMaskUrl = referenceMaskImages[activeTab];
+                if (!preMaskUrl) throw new Error('no_precomputed_mask');
+                refMaskImg = await loadImage(preMaskUrl);
+            } catch {
+                const refImageResponse = await fetch(referenceImages[activeTab]);
+                const refImageBlob = await refImageResponse.blob();
+                const refFile = new File([refImageBlob], 'reference.jpg', { type: refImageBlob.type });
+
+                const fdRef = new FormData();
+                fdRef.append('file', refFile);
+                fdRef.append('model', 'birefnet');
+                fdRef.append('threshold', '0.5');
+
+                const respRef = await fetch(endpoint, { method: 'POST', body: fdRef, signal: ctrl.signal });
+                if (!respRef.ok) {
+                    throw new Error('Failed to get reference mask');
+                }
+
+                const refMaskBlob = await respRef.blob();
+                const refMaskUrl = URL.createObjectURL(refMaskBlob);
+                refMaskImg = await loadImage(refMaskUrl);
+                URL.revokeObjectURL(refMaskUrl);
+            }
+
+            // Now compare the two masks
             const size = 256;
-            const c1 = document.createElement('canvas'); c1.width = size; c1.height = size;
-            const ctx1 = c1.getContext('2d')!; drawContain(ctx1, silImg, size);
-            const mdata = ctx1.getImageData(0, 0, size, size).data;
-            const c2 = document.createElement('canvas'); c2.width = size; c2.height = size;
-            const ctx2 = c2.getContext('2d')!; drawContain(ctx2, userImg, size);
-            const idata = ctx2.getImageData(0, 0, size, size).data;
-            let mask = 0, match = 0;
-            for (let y = 0; y < size; y += 2) {
-                for (let x = 0; x < size; x += 2) {
+
+            const cRef = document.createElement('canvas');
+            cRef.width = size;
+            cRef.height = size;
+            const ctxRef = cRef.getContext('2d')!;
+            drawContain(ctxRef, refMaskImg, size);
+            const refData = ctxRef.getImageData(0, 0, size, size).data;
+
+            const cMask = document.createElement('canvas');
+            cMask.width = size;
+            cMask.height = size;
+            const ctxMask = cMask.getContext('2d')!;
+            drawContain(ctxMask, maskImg, size);
+            const usrData = ctxMask.getImageData(0, 0, size, size).data;
+
+            let inter = 0, union = 0;
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
                     const i = (y * size + x) * 4;
-                    const br = 0.299 * mdata[i] + 0.587 * mdata[i + 1] + 0.114 * mdata[i + 2];
-                    if (br < 140) {
-                        mask++;
-                        const br2 = 0.299 * idata[i] + 0.587 * idata[i + 1] + 0.114 * idata[i + 2];
-                        if (br2 < 150) match++;
-                    }
+                    const brRef = 0.299 * refData[i] + 0.587 * refData[i + 1] + 0.114 * refData[i + 2];
+                    const refMask = brRef > 128;
+                    const brUsr = 0.299 * usrData[i] + 0.587 * usrData[i + 1] + 0.114 * usrData[i + 2];
+                    const usrMask = brUsr > 128;
+
+                    if (refMask || usrMask) union++;
+                    if (refMask && usrMask) inter++;
                 }
             }
-            setAlignmentScore(mask ? Math.round((match / mask) * 100) : 0);
-        } catch {
+            const iou = union > 0 ? inter / union : 0;
+            if (seq === segSeqRef.current) setAlignmentScore(Math.round(iou * 100));
+        } catch (e: any) {
+            if (e?.name === 'AbortError') return;
             setAlignmentScore(null);
+            toast.error('Alignment scoring failed');
         } finally {
-            setComputing(false);
+            if (seq === segSeqRef.current) setComputing(false);
         }
     };
 
@@ -427,10 +575,10 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
     };
 
     useEffect(() => {
-        if (overlayUrl) {
+        if (overlayFile) {
             void computeAlignment();
         }
-    }, [overlayUrl, activeTab]);
+    }, [overlayFile, activeTab]);
 
     return (
         <div className="">
@@ -478,11 +626,12 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                 {tabs.map((tab) => (
                                     <button
                                         key={tab}
-                                        onClick={() => { setActiveTab(tab); setOverlayUrl(null); }}
+                                        disabled={computing}
+                                        onClick={() => { if (computing) return; setActiveTab(tab); setOverlayUrl(null); }}
                                         className={`px-6 2xl:px-14 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeTab === tab
                                             ? 'bg-purple-600 text-white'
                                             : 'bg-white text-gray-700 hover:bg-gray-200'
-                                            }`}
+                                            } ${computing ? 'opacity-60 cursor-not-allowed' : ''}`}
                                     >
                                         {tab}
                                     </button>
@@ -499,16 +648,33 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                             </p>
 
                             <div className="flex justify-center gap-3 mb-6">
-                                <div className="bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700 flex items-center gap-2 cursor-pointer" onClick={() => overlayInputRef.current?.click()}>
+                                <div className={`bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700 flex items-center gap-2 cursor-pointer ${computing ? 'opacity-60 cursor-not-allowed' : ''}`} onClick={() => { if (!computing) overlayInputRef.current?.click(); }}>
                                     <input type="file" accept=".jpg,.jpeg,.png" ref={overlayInputRef} onChange={handleOverlayFileSelect} className="hidden" />
-                                    {/* <Upload size={18} /> */}
                                     Upload Image
                                 </div>
-                                <button className="bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700 flex items-center gap-2">
-                                    {/* <Camera size={18} /> */}
+                                <button
+                                    disabled={computing}
+                                    onClick={startCamera}
+                                    className={`bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700 flex items-center gap-2 ${computing ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                >
                                     Take a Photo
                                 </button>
                             </div>
+                            {showCamera && (
+                                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                                    <div className="bg-white rounded-lg p-6 max-w-2xl">
+                                        <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                                            <video ref={cameraVideoRef} className="w-full h-full object-contain" playsInline autoPlay muted />
+                                            <img src={silhouetteImages[activeTab]} alt="Silhouette guide" className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-50" style={{ transform: 'scale(1.12)', transformOrigin: 'center' }} />
+                                        </div>
+                                        <canvas ref={cameraCanvasRef} className="hidden" />
+                                        <div className="flex gap-3 mt-4 justify-center">
+                                            <button onClick={capturePhoto} className="bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700">Capture</button>
+                                            <button onClick={stopCamera} className="bg-gray-200 px-6 py-2.5 rounded-full font-medium hover:bg-gray-300">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="bg-gray-50 rounded-lg p-6 text-center">
                                 <h4 className="text-lg font-semibold text-purple-700 mb-2">
@@ -556,12 +722,14 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                 <div className="bg-purple-600 text-white p-4 text-center">
                                     <h3 className="font-semibold">Your Image+ Reference Overlay</h3>
                                 </div>
-                                <div className="p-6 min-h-[400px]">
-                                    <div className="relative bg-white border border-gray-200 rounded-lg min-h-[400px] flex items-center justify-center">
+                                <div className="p-6">
+                                    <div className={`relative border border-gray-200 rounded-lg h-[400px] flex items-center justify-center ${overlayUrl ? 'bg-black' : 'bg-white'}`}>
                                         {overlayUrl ? (
                                             <>
-                                                <img src={overlayUrl} alt="Uploaded" className="w-full h-full object-contain" />
-                                                <img src={silhouetteImages[activeTab]} alt="Silhouette" className="absolute inset-0 w-full h-full object-contain pointer-events-none" style={{ opacity: 0.6 }} />
+                                                <img src={overlayUrl} alt="Uploaded" className="max-w-full h-full object-contain" />
+                                                {alignmentScore !== null && (
+                                                    <img src={silhouetteImages[activeTab]} alt="Silhouette" className="absolute inset-0 w-full h-full object-contain pointer-events-none" style={{ opacity: 0.6 }} />
+                                                )}
                                             </>
                                         ) : (
                                             <div className="text-center text-sm text-gray-500">
@@ -571,13 +739,11 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                         )}
                                     </div>
                                     <div className="mt-4 flex flex-wrap items-center gap-4">
-
                                         {overlayUrl && (
                                             <button type="button" className="text-xs text-purple-500 hover:text-purple-700" onClick={() => { setOverlayUrl(null); setAlignmentScore(null); }}>
                                                 Clear
                                             </button>
                                         )}
-
                                     </div>
                                 </div>
                             </div>
@@ -586,8 +752,10 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                 <div className="bg-purple-600 text-white p-4 text-center">
                                     <h3 className="font-semibold">Ideal Reference Template</h3>
                                 </div>
-                                <div className="p-6 min-h-[400px] bg-gray-50 flex items-center justify-center">
-                                    <img src={referenceImages[activeTab]} alt="Reference template" className=" w-full object-contain rounded-md border border-gray-200 bg-white" />
+                                <div className="p-6 bg-gray-50 flex items-center justify-center">
+                                    <div className="h-[400px] flex items-center justify-center">
+                                        <img src={referenceImages[activeTab]} alt="Reference template" className="max-w-full h-full object-contain rounded-md border border-gray-200 bg-white" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -598,7 +766,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
     );
 };
 
-const Media: React.FC<{ formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; onUploadToCloudinary: (field: string, file: File) => Promise<void>; }> = ({ formData, setFormData, onUploadToCloudinary }) => {
+const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatch<React.SetStateAction<InspectionFormData>>; onUploadToCloudinary: (field: string, file: File) => Promise<void>; }> = ({ formData, setFormData, onUploadToCloudinary }) => {
     const [showAdditional, setShowAdditional] = useState(false);
 
     const openSlideshow = (startTitle?: string) => {
