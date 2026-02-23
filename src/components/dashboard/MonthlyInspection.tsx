@@ -33,7 +33,7 @@ const YearHeader = ({ year, setYear }: { year: number; setYear: (val: number) =>
     </div>
 );
 
-const QUARTERS = ["Q1","Q2","Q3","Q4"];
+const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 
 type InspectionApi = {
     labels: string[];
@@ -182,6 +182,9 @@ export default function MonthlyInspectionChart({ data, loading }: { data?: month
                 offsetY: 0,
                 fontSize: "13px",
                 fontWeight: 500,
+                onItemClick: {
+                    toggleDataSeries: false, // 🔥 disable hide/show on click
+                },
                 markers: {
                     size: 6,
                     shape: "square" as const,

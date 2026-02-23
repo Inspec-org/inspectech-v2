@@ -25,7 +25,7 @@ function General({ type, formData, setFormData, disabledUnitId }: { type: string
         }
     }, [])
     return (
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm sm:p-6 p-3">
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Unit ID */}
                 <div className="flex flex-col lg:flex-row justify-between gap-4 items-start border-b pb-2">

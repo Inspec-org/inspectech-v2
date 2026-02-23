@@ -246,15 +246,19 @@ const FilterTrackingModal: React.FC<{
                             ) : ((["unitId", "vendor", "department"].includes(activeFilter) && searchQuery.trim().length < 2) ? (
                                 <p className="text-sm text-gray-500 px-3 py-2">write atleast 2 letters to search {activeFilter === 'unitId' ? 'ids' : activeFilter === 'vendor' ? 'vendors' : 'departments'}</p>
                             ) : (
-                                filteredOptions.map((option) => (
-                                    <CheckboxOption
-                                        key={option.id}
-                                        id={option.id}
-                                        label={option.label}
-                                        checked={currentSelectedIds.includes(option.id)}
-                                        onChange={handleToggleId}
-                                    />
-                                ))
+                                (searchQuery.trim() && filteredOptions.length === 0) ? (
+                                    <p className="text-sm text-gray-500 px-3 py-2">No matching {filterLabel.toLowerCase()} found for "{searchQuery}"</p>
+                                ) : (
+                                    filteredOptions.map((option) => (
+                                        <CheckboxOption
+                                            key={option.id}
+                                            id={option.id}
+                                            label={option.label}
+                                            checked={currentSelectedIds.includes(option.id)}
+                                            onChange={handleToggleId}
+                                        />
+                                    ))
+                                )
                             ))}
                         </div>
                     </div>

@@ -483,9 +483,7 @@ export default function BatchCreateInspections() {
                             const nd = new Date(t);
                             d = isNaN(nd.getTime()) ? null : nd;
                         }
-                        if (d && d.getTime() > Date.now()) {
-                            errors.push({ row: i + 1, field: headers[dateIndex], value: t, message: 'Date cannot be from the future' });
-                        }
+
                     }
                 }
                 rowData['Unit ID'] = effectiveId;

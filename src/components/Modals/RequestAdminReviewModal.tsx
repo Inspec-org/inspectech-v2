@@ -121,7 +121,8 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                             doc.insideTrailerImageUrl,
                             doc.doorDetailsImageUrl,
                         ].map((v: any) => String(v || '').trim());
-                        const imageStatus = imgs.some(v => !v) ? 'Incomplete Image File' : 'PASS';
+                        // const imageStatus = imgs.some(v => !v) ? 'Incomplete Image File' : 'PASS';
+                        const imageStatus= "";
                         detailsRows.push(`${unitId},${checklistStatus},${imageStatus}`);
                     } else {
                         detailsRows.push(`${unitId},N/A,N/A`);
