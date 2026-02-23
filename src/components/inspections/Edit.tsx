@@ -390,7 +390,7 @@ export default function Edit({ type }: { type: string }) {
 
 
   return (
-    <div className="bg-white p-4">
+    <div className="bg-white sm:p-4 p-2">
       {loading && (
         <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
           <ClipLoader color="#0075FF" size={40} />

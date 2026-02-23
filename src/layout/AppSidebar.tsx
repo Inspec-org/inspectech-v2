@@ -33,7 +33,7 @@ type NavItem = {
 
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const pathname = usePathname();
   const Router = useRouter();
   const { logout, user, session_id, setUser, loading } = useContext(UserContext);
@@ -476,7 +476,11 @@ const AppSidebar: React.FC = () => {
                 onClick={() => {
                   setIsHovered(false);
                   setHoverSuspended(true);
-                  toggleSidebar();
+                  if (isMobileOpen) {
+                    toggleMobileSidebar();
+                  } else {
+                    toggleSidebar();
+                  }
                 }}
                 className="text-gray-400 hover:text-white transition-colors"
               >
@@ -492,7 +496,11 @@ const AppSidebar: React.FC = () => {
                 onClick={() => {
                   setIsHovered(false);
                   setHoverSuspended(true);
-                  toggleSidebar();
+                  if (isMobileOpen) {
+                    toggleMobileSidebar();
+                  } else {
+                    toggleSidebar();
+                  }
                 }}
                 className="text-gray-400 hover:text-white transition-colors"
               >

@@ -79,7 +79,7 @@ const InspectionStatusOverview: React.FC<{ total: number; pass: number; fail: nu
     const hasData = statusData && statusData.length > 0 && statusData.some(d => d.value > 0);
 
     return (
-        <div className="bg-white rounded-lg mt-4 p-6">
+        <div className="bg-white rounded-lg mt-4">
             <div className="flex items-start gap-2 mb-4">
                 <div>
                     <Activity size={18} className="text-[#7522BB] mt-1" />
@@ -113,26 +113,28 @@ const InspectionStatusOverview: React.FC<{ total: number; pass: number; fail: nu
                         color="#EF4545"
                     />
                 </div>
-                <div className="flex flex-col items-center justify-center" style={{ minHeight: 400 }}>
+                <div className="flex flex-col items-center justify-center" >
                     {hasData ? (
                         <>
-                            <ResponsiveContainer width="100%" height={400}>
-                                <PieChart>
-                                    <Pie
-                                        data={statusData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={0}
-                                        outerRadius={150}
-                                        dataKey="value"
-                                    >
-                                        {statusData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                </PieChart>
-                            </ResponsiveContainer>
+                            <div className="w-full h-[300px] sm:h-[350px] md:h-[400px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={statusData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={0}
+                                            outerRadius="80%"
+                                            dataKey="value"
+                                        >
+                                            {statusData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
                             <div className="flex items-center justify-center gap-6 mt-4 text-sm">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-green-500"></div>
@@ -215,7 +217,7 @@ const InspectionTrends: React.FC<{
 
     return (
         <div className="bg-white mt-4 rounded-lg">
-            <div className="flex justify-between items-start gap-2 mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-4">
                 <div className="flex items-start gap-2 ">
                     <div>
                         <Activity size={18} className="text-[#7522BB] mt-1" />
@@ -350,8 +352,8 @@ const InspectionDurationAnalysis: React.FC<{ durationData: { range: string; coun
                     <p className="text-sm text-gray-600">Distribution of inspection durations</p>
                 </div>
             </div>
-            <div className="flex justify-end items-center gap-4 mb-6">
-                <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:justify-end sm:items-center gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <label className="text-sm text-gray-600">Bin Size (minutes):</label>
                     <input
                         type="text"
@@ -380,7 +382,7 @@ const InspectionDurationAnalysis: React.FC<{ durationData: { range: string; coun
 
                             // anything else is blocked
                         }}
-                        className="w-[100px] px-3 py-1 border border-gray-300 rounded-md bg-[#FAF7FF]"
+                        className="sm:w-[100px] w-full px-3 py-1 border border-gray-300 rounded-md bg-[#FAF7FF]"
                     />
                 </div>
                 <button className="px-4 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors" onClick={onApply}>Apply</button>

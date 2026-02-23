@@ -351,10 +351,12 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
     const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
     const [overlayFile, setOverlayFile] = useState<File | null>(null);
     const [alignmentScore, setAlignmentScore] = useState<number | null>(null);
+    const [evalError, setEvalError] = useState<string | null>(null);
     const [computing, setComputing] = useState(false);
     const overlayInputRef = useRef<HTMLInputElement>(null);
     const cameraVideoRef = useRef<HTMLVideoElement>(null);
     const cameraCanvasRef = useRef<HTMLCanvasElement>(null);
+    const previewRef = useRef<HTMLDivElement>(null);
     const cameraStreamRef = useRef<MediaStream | null>(null);
     const [showCamera, setShowCamera] = useState(false);
     const segCtrlRef = useRef<AbortController | null>(null);
@@ -362,65 +364,47 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
     const [cameraSize, setCameraSize] = useState<{ width: number; height: number } | null>(null);
     const startCamera = async () => {
         if (computing) return;
+
         try {
-            setShowCamera(true); // Show modal first so video element exists in DOM
+            setShowCamera(true);
 
-            await new Promise(resolve => setTimeout(resolve, 100)); // Wait for DOM to render
+            await new Promise(r => setTimeout(r, 50));
 
-            try {
-                const targetId = tabFieldMap[activeTab];
-                const el = document.querySelector(`[data-upload-area="${targetId}"]`) as HTMLElement | null;
-                if (el) {
-                    const cs = window.getComputedStyle(el);
-                    const padL = parseFloat(cs.paddingLeft || '0');
-                    const padR = parseFloat(cs.paddingRight || '0');
-                    const rawW = el.clientWidth;
-                    const contentW = Math.max(0, rawW - padL - padR);
-                    const desiredH = 224;
-                    const maxW = Math.floor(window.innerWidth * 0.95);
-                    const maxH = Math.floor(window.innerHeight * 0.8);
-                    const w = Math.min(contentW, maxW);
-                    const h = Math.min(desiredH, maxH);
-                    setCameraSize({ width: w, height: h });
-                } else {
-                    const fallbackW = Math.floor(window.innerWidth * 0.9);
-                    const fallbackH = Math.min(224, Math.floor(window.innerHeight * 0.8));
-                    setCameraSize({ width: fallbackW, height: fallbackH });
+            const preview = previewRef.current;
+
+            if (preview) {
+                const rect = preview.getBoundingClientRect();
+
+                setCameraSize({
+                    width: rect.width,
+                    height: rect.height
+                });
+            } else {
+                setCameraSize({
+                    width: 600,
+                    height: 400
+                });
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
                 }
-            } catch {
-                const fallbackW = Math.floor(window.innerWidth * 0.9);
-                const fallbackH = Math.min(224, Math.floor(window.innerHeight * 0.8));
-                setCameraSize({ width: fallbackW, height: fallbackH });
-            }
+            });
 
-            const candidates: MediaStreamConstraints[] = [
-                { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
-                { video: { facingMode: 'environment' } },
-                { video: true }
-            ];
-            let stream: MediaStream | null = null;
-            let lastErr: any = null;
-            for (const c of candidates) {
-                try { stream = await navigator.mediaDevices.getUserMedia(c); break; } catch (e) { lastErr = e; }
-            }
-            if (!stream) {
-                setShowCamera(false);
-                throw lastErr || new Error('camera_unavailable');
-            }
             cameraStreamRef.current = stream;
 
             const v = cameraVideoRef.current;
             if (v) {
                 v.srcObject = stream;
-                await new Promise<void>((resolve) => {
-                    v.onloadedmetadata = () => {
-                        v.play().then(() => resolve()).catch(() => resolve());
-                    };
-                });
+                await v.play();
             }
+
         } catch (e: any) {
             setShowCamera(false);
-            toast.error(e?.message || 'Unable to access camera');
+            toast.error("Unable to access camera");
         }
     };
     const stopCamera = () => {
@@ -448,6 +432,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
             setOverlayFile(file);
             setOverlayUrl(url);
             setAlignmentScore(null);
+            setEvalError(null);
             stopCamera();
         }, 'image/jpeg', 0.92);
     };
@@ -458,6 +443,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
         setOverlayFile(file);
         setOverlayUrl(url);
         setAlignmentScore(null);
+        setEvalError(null);
         e.target.value = '';
     };
 
@@ -486,6 +472,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
         if (!overlayFile) return;
         setComputing(true);
         setAlignmentScore(null);
+        setEvalError(null);
         let seq = 0;
         try {
             if (segCtrlRef.current) segCtrlRef.current.abort();
@@ -498,10 +485,11 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
             fd.append('file', overlayFile, overlayFile.name);
             fd.append('model', 'birefnet');
             fd.append('threshold', '0.5');
-            console.log([...fd.entries()]);
             const resp = await fetch(endpoint, { method: 'POST', body: fd, signal: ctrl.signal });
+            console.log(resp, resp.ok);
             if (!resp.ok) {
                 const errText = await resp.text().catch(() => '');
+                setComputing(false);
                 throw new Error(errText || 'segmentation_failed');
             }
             console.log("api done")
@@ -578,6 +566,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
         } catch (e: any) {
             if (e?.name === 'AbortError') return;
             setAlignmentScore(null);
+            setEvalError('Alignment scoring failed');
             toast.error('Alignment scoring failed');
         } finally {
             if (seq === segSeqRef.current) setComputing(false);
@@ -651,7 +640,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                         </div>
 
                         <div className="bg-gray-100 rounded-lg p-4 mb-6">
-                            <div className="grid grid-cols-3 gap-2 overflow-x-auto pb-2">
+                            <div className="grid sm:grid-cols-3 grid-cols-1 gap-2 overflow-x-auto pb-2">
                                 {tabs.map((tab) => (
                                     <button
                                         key={tab}
@@ -676,7 +665,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                 Choose to upload from files or take a photo directly
                             </p>
 
-                            <div className="flex justify-center gap-3 mb-6">
+                            <div className="flex flex-col sm:flex-row justify-center gap-3 mb-6">
                                 <div className={`bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700 flex items-center gap-2 cursor-pointer ${computing ? 'opacity-60 cursor-not-allowed' : ''}`} onClick={() => { if (!computing) overlayInputRef.current?.click(); }}>
                                     <input type="file" accept=".jpg,.jpeg,.png" ref={overlayInputRef} onChange={handleOverlayFileSelect} className="hidden" />
                                     Upload Image
@@ -695,12 +684,12 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                         <div
                                             className="relative bg-black rounded-lg overflow-hidden"
                                             style={{
-                                                width: cameraSize ? `${cameraSize.width}px` : '90vw',
-                                                height: cameraSize ? `${cameraSize.height}px` : '224px'
+                                                width: cameraSize?.width || 600,
+                                                height: cameraSize?.height || 400
                                             }}
                                         >
-                                            <video ref={cameraVideoRef} className="w-full h-full object-contain" playsInline autoPlay muted />
-                                            <img src={silhouetteImages[activeTab]} alt="Silhouette guide" className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-50" style={{ transform: 'scale(1.12)', transformOrigin: 'center' }} />
+                                            <video ref={cameraVideoRef} className="absolute inset-0 w-full h-full object-cover" playsInline autoPlay muted />
+                                            <img src={silhouetteImages[activeTab]} alt="Silhouette guide" className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-50" />
                                         </div>
                                         <canvas ref={cameraCanvasRef} className="hidden" />
                                         <div className="flex gap-3 mt-4 justify-center">
@@ -720,6 +709,11 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                         <>
                                             <p className="text-xl font-semibold mb-1">Ready</p>
                                             <p className="text-sm text-gray-600">Position your image to match the reference guide</p>
+                                        </>
+                                    ) : computing ? (
+                                        <>
+                                            <p className="text-xl font-semibold mb-1">Evaluating...</p>
+                                            <p className="text-sm text-gray-600">Analyzing alignment with the guide</p>
                                         </>
                                     ) : alignmentScore !== null ? (
                                         alignmentScore < 70 ? (
@@ -744,8 +738,15 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                         )
                                     ) : (
                                         <>
-                                            <p className="text-xl font-semibold mb-1">Evaluating...</p>
-                                            <p className="text-sm text-gray-600">Analyzing alignment with the guide</p>
+                                            <p className="text-xl font-semibold mb-1 text-red-600 flex items-center justify-center gap-2">
+                                                <span>⛔</span> Evaluation Failed
+                                            </p>
+                                            <p className="text-sm text-gray-600">We couldn’t score the alignment. Check your connection and try again.</p>
+                                            <div className="mt-4">
+                                                <button type="button" className="bg-purple-600 text-white px-5 py-2 rounded-full font-medium hover:bg-purple-700" onClick={computeAlignment}>
+                                                    Retry Evaluation
+                                                </button>
+                                            </div>
                                         </>
                                     )}
                                 </div>
@@ -758,7 +759,8 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                     <h3 className="font-semibold">Your Image+ Reference Overlay</h3>
                                 </div>
                                 <div className="p-6">
-                                    <div className={`relative border border-gray-200 rounded-lg h-[400px] flex items-center justify-center ${overlayUrl ? 'bg-black' : 'bg-white'}`}>
+
+                                    <div ref={previewRef} className={`relative border border-gray-200 rounded-lg h-[400px] flex items-center justify-center ${overlayUrl ? 'bg-black' : 'bg-white'}`}>
                                         {overlayUrl ? (
                                             <>
                                                 <img src={overlayUrl} alt="Uploaded" className="max-w-full h-full object-contain" />
@@ -787,9 +789,14 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                 <div className="bg-purple-600 text-white p-4 text-center">
                                     <h3 className="font-semibold">Ideal Reference Template</h3>
                                 </div>
-                                <div className="p-6 bg-gray-50 flex items-center justify-center">
-                                    <div className="h-[400px] flex items-center justify-center">
-                                        <img src={referenceImages[activeTab]} alt="Reference template" className="max-w-full h-full object-contain rounded-md border border-gray-200 bg-white" />
+
+                                <div className="p-6">
+                                    <div className="relative border border-gray-200 rounded-lg h-[400px] bg-black flex items-center justify-center">
+                                        <img
+                                            src={referenceImages[activeTab]}
+                                            alt="Reference template"
+                                            className="max-w-full h-full object-contain"
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -834,7 +841,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
     };
 
     return (
-        <div className="bg-white p-4">
+        <div className="bg-white sm:p-4">
             <div className="border-b pb-2">
                 <div className="">
                     <ImageAlignmentGuide onUploadToCloudinary={onUploadToCloudinary} />
@@ -899,7 +906,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                                 onUploadToCloudinary={(file) => onUploadToCloudinary('insideTrailerImageUrl', file)}
                                 onRemove={() => setFormData(prev => ({ ...prev, insideTrailerImageUrl: '' }))}
                                 onZoom={() => openSlideshow('Inside Trailer Image')}
-                            uploadAreaId="insideTrailerImageUrl"
+                                uploadAreaId="insideTrailerImageUrl"
                             />
                         </div>
                     </div>
@@ -913,7 +920,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                                 onUploadToCloudinary={(file) => onUploadToCloudinary('doorDetailsImageUrl', file)}
                                 onRemove={() => setFormData(prev => ({ ...prev, doorDetailsImageUrl: '' }))}
                                 onZoom={() => openSlideshow('Door Details Image')}
-                            uploadAreaId="doorDetailsImageUrl"
+                                uploadAreaId="doorDetailsImageUrl"
                             />
                         </div>
                     </div>
@@ -943,7 +950,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                 </div>
             </div>
             <div className='mt-5'>
-                <div className='flex justify-between gap-2'>
+                <div className='flex flex-col sm:flex-row justify-between gap-2'>
                     <div>
                         <h2 className="text-lg font-semibold">Additional DOT Form Attachments</h2>
                         <p className='text-xs font-semibold text-[#11182780]'>Upload additional images related to the DOT Safety Inspection form</p>

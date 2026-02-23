@@ -181,7 +181,7 @@ const UserModule: React.FC = () => {
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch users')
             }
-            
+
             setUsers(json.users || []);
             setTotalUsers(json.total || 0);
             const pagesArray = Array.from({ length: json.totalPages || 0 }, (_, i) => i + 1);
@@ -368,9 +368,9 @@ const UserModule: React.FC = () => {
                             <h1 className="text-lg md:text-xl font-semibold text-gray-900">Users</h1>
                         </div>
                     </div>
-                    <div className="flex justify-between mb-5">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between mb-5">
                         {/* Tabs */}
-                        <div className="inline-block bg-purple-100 p-2 rounded-lg ">
+                        {/* <div className="inline-block bg-purple-100 p-2 rounded-lg ">
                             {tabs.map(tab => (
                                 <button
                                     key={tab.id}
@@ -383,12 +383,26 @@ const UserModule: React.FC = () => {
                                     {tab.label}
                                 </button>
                             ))}
-                        </div>
+                        </div> */}
 
+                        <div className="flex w-full sm:w-fit  justify-between bg-purple-100 p-2 rounded-lg">
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-2 w-full rounded-lg text-md font-medium transition whitespace-nowrap ${activeTab === tab.id
+                                        ? 'bg-[#7522BB] text-white'
+                                        : 'text-gray-700'
+                                        }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
                         <button
                             onClick={() => setIsInvitationModalOpen(true)}
                             disabled={user?.role === "admin"}
-                            className="bg-[#7522BB] text-white rounded-xl  px-2 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="bg-[#7522BB] text-white rounded-xl sm:py-0 py-2 px-2 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             <Plus size={16} />
                             Send Invitation
