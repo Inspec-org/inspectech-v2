@@ -398,111 +398,112 @@ export default function Edit({ type }: { type: string }) {
       )}
       <div className="">
         {/* Header */}
-        <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl' onClick={() => Router.back()}>
-          <ArrowLeft size={20} />
-          <span>Back to Inspection</span>
-        </button>
-        {/* Title and Action Buttons */}
-        <div className="flex xl:flex-row flex-col items-start xl:items-center justify-between mb-6 mt-2">
-          {type === "edit" ? (
-            <>
-              <div>
-                <h1 className="text-lg font-semibold text-purple-600 my-4 ">Edit Inspection - {formData.unitId}</h1>
-              </div>
-              <div className={`grid grid-cols-2 sm:grid-cols-3 ${user?.role === "superadmin" ? "xl:grid-cols-4" : "xl:grid-cols-3"} gap-3`}>
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' onClick={openModal}>
-                  <Briefcase size={18} />
-                  <span>Reassign Department</span>
-                </button>
-
-                {user?.role === "superadmin" && (
-                  <button className='flex gap-2 items-center bg-[#ff3434] hover:bg-[#ff3434]/70 px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap ' onClick={handleDeleteInspection}>
-                    <Trash2 size={18} />
-                    Delete Inspection
+        <div className="mb-6 mt-2">
+          <div className="flex justify-between flex-wrap items-center gap-2 flex-nowrap overflow-x-auto">
+            <div>
+              <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl shrink-0' onClick={() => Router.back()}>
+                <ArrowLeft size={20} />
+                <span>Back to Inspection</span>
+              </button>
+            </div>
+            <div className='flex items-center gap-4 flex-wrap'>
+              {type === "edit" ? (
+                <>
+                  <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] px-3 py-2 whitespace-nowrap shrink-0' onClick={openModal}>
+                    <Briefcase size={18} />
+                    <span>Reassign Department</span>
                   </button>
-                )}
 
-                <button
-                  className="group flex gap-2 items-center bg-white hover:bg-[#0075FF] border border-[#0075FF] text-sm rounded-xl text-[#0075FF] hover:text-white w-full px-3 py-2 disabled:opacity-60"
-                  disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
-                  onClick={saveInspection}
-                >
-                  {saveLoading ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#0075FF] group-hover:text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Edit2 size={18} />
-                      <span>Save Changes</span>
-                    </>
+                  {user?.role === "superadmin" && (
+                    <button className='flex gap-2 items-center bg-[#ff3434] hover:bg-[#ff3434]/70 px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap shrink-0' onClick={handleDeleteInspection}>
+                      <Trash2 size={18} />
+                      Delete Inspection
+                    </button>
                   )}
-                </button>
 
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' onClick={processInspectionData}>
-                  <CheckCircle size={18} />
-                  <span>Process Inspection Data</span>
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
+                  <button
+                    className="group flex gap-2 items-center bg-white hover:bg-[#0075FF] border border-[#0075FF] text-sm rounded-xl text-[#0075FF] hover:text-white px-3 py-2 disabled:opacity-60 whitespace-nowrap shrink-0"
+                    disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
+                    onClick={saveInspection}
+                  >
+                    {saveLoading ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#0075FF] group-hover:text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Edit2 size={18} />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] px-3 py-2 whitespace-nowrap shrink-0' onClick={processInspectionData}>
+                    <CheckCircle size={18} />
+                    <span>Process Inspection Data</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className={`flex gap-2 items-center px-2 py-2 text-sm rounded-xl border ${!formData.unitId || formData.unitId.trim() === ''
+                      ? 'bg-purple-400 cursor-not-allowed text-white border-transparent'
+                      : 'bg-[#7522BB] border-white text-white hover:bg-[#5a1a95]'
+                      }`}
+                    disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
+                    onClick={saveInspection}
+                  >
+                    {saveLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Saving...</span>
+                      </>) : (
+                      <>
+                        <Edit2 size={18} />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+
+                  </button>
+
+                  <button className='flex gap-2 items-center bg-[#10B981] hover:bg-[#0F9D58] border px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap shrink-0' disabled={!isSaved} onClick={() => Router.push(`/${user?.role}/inspections`)}>
+                    <Check size={18} />
+                    <span>Create Inspection</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="mt-2">
+            {type === "edit" ? (
+              <h1 className="text-lg font-semibold text-purple-600 my-4 ">Edit Inspection - {formData.unitId}</h1>
+            ) : (
               <h1 className="text-lg font-semibold text-purple-600 my-2">Create New Inspection</h1>
-
-              <div className="flex gap-3">
-                <button
-                  className={`flex gap-2 items-center px-2 py-2 text-sm rounded-xl w-full border ${!formData.unitId || formData.unitId.trim() === ''
-                    ? 'bg-purple-400 cursor-not-allowed text-white border-transparent'
-                    : 'bg-[#7522BB] border-white text-white hover:bg-[#5a1a95]'
-                    }`}
-                  disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
-                  onClick={saveInspection}
-                >
-                  {saveLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Saving...</span>
-                    </>) : (
-                    <>
-                      <Edit2 size={18} />
-                      <span>Save Changes</span>
-                    </>
-                  )}
-
-                </button>
-
-
-                <button className='flex gap-2 items-center bg-[#10B981] hover:bg-[#0F9D58] border px-2 py-2 text-sm rounded-xl text-white w-full whitespace-nowrap' disabled={!isSaved} onClick={() => Router.push(`/${user?.role}/inspections`)}>
-                  <Check size={18} />
-                  <span>Create Inspection</span>
-                </button>
-              </div>
-            </>
-          )}
-
+            )}
+          </div>
         </div>
 
         {processResult && (
