@@ -359,9 +359,21 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
     const previewRef = useRef<HTMLDivElement>(null);
     const cameraStreamRef = useRef<MediaStream | null>(null);
     const [showCamera, setShowCamera] = useState(false);
+    const [showPermissionHelp, setShowPermissionHelp] = useState(false);
+    const [permissionState, setPermissionState] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
     const segCtrlRef = useRef<AbortController | null>(null);
     const segSeqRef = useRef(0);
     const [cameraSize, setCameraSize] = useState<{ width: number; height: number } | null>(null);
+
+    const queryCameraPermission = async (): Promise<'granted'|'denied'|'prompt'|'unknown'> => {
+        try {
+            const res = await (navigator as any).permissions?.query?.({ name: 'camera' as any });
+            return (res?.state as 'granted'|'denied'|'prompt') ?? 'unknown';
+        } catch {
+            return 'unknown';
+        }
+    };
+
     const startCamera = async () => {
         if (computing) return;
 
@@ -404,7 +416,18 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
 
         } catch (e: any) {
             setShowCamera(false);
-            toast.error("Unable to access camera");
+            let state: 'granted'|'denied'|'prompt'|'unknown' = 'unknown';
+            try {
+                state = await queryCameraPermission();
+                setPermissionState(state);
+            } catch {}
+            if (state === 'denied') {
+                setShowPermissionHelp(true);
+                toast.error('Camera access is blocked. Enable it in your browser settings, then retry.');
+            } else {
+                setShowPermissionHelp(true);
+                toast.error('Unable to access camera. Please grant permission when prompted.');
+            }
         }
     };
     const stopCamera = () => {
@@ -695,6 +718,27 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
                                         <div className="flex gap-3 mt-4 justify-center">
                                             <button onClick={capturePhoto} className="bg-purple-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-700">Capture</button>
                                             <button onClick={stopCamera} className="bg-gray-200 px-6 py-2.5 rounded-full font-medium hover:bg-gray-300">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {showPermissionHelp && (
+                                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                                    <div className="bg-white rounded-lg p-6 max-w-md w-[90vw]">
+                                        <h3 className="text-lg font-semibold mb-2">Enable Camera Access</h3>
+                                        <p className="text-sm text-gray-700 mb-3">
+                                            {permissionState === 'denied'
+                                                ? 'Camera access is blocked for this site. Please enable it in your browser settings, then retry.'
+                                                : 'Please grant camera permission in the prompt when it appears.'}
+                                        </p>
+                                        <div className="text-xs text-gray-500 space-y-1 mb-4">
+                                            <p>Chrome: Click the lock icon → Site settings → Camera → Allow.</p>
+                                            <p>Safari (Mac): Safari → Settings → Websites → Camera → Allow.</p>
+                                            <p>iPhone/iPad: Settings → Safari → Camera → Allow.</p>
+                                        </div>
+                                        <div className="flex gap-3 justify-end">
+                                            <button onClick={() => setShowPermissionHelp(false)} className="bg-gray-200 px-4 py-2 rounded-lg">Close</button>
+                                            <button onClick={() => { setShowPermissionHelp(false); startCamera(); }} className="bg-purple-600 text-white px-4 py-2 rounded-lg">Retry</button>
                                         </div>
                                     </div>
                                 </div>
