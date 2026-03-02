@@ -365,6 +365,7 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
     const segSeqRef = useRef(0);
     const [cameraSize, setCameraSize] = useState<{ width: number; height: number } | null>(null);
 
+    
     const queryCameraPermission = async (): Promise<'granted'|'denied'|'prompt'|'unknown'> => {
         try {
             const res = await (navigator as any).permissions?.query?.({ name: 'camera' as any });
