@@ -32,7 +32,7 @@ const InspectionSchema = new mongoose.Schema({
 
   absSensor: { type: String },
   airTankMonitor: { type: String },
-  rtbIndicator: { type: String },
+  atisregulator: { type: String },
   lightOutSensor: { type: String },
   sensorError: { type: String },
   ultrasonicCargoSensor: { type: String },
@@ -46,7 +46,7 @@ const InspectionSchema = new mongoose.Schema({
   tireModel: { type: String },
   tireBrand: { type: String },
 
-  amenikis: { type: String },
+  aerokits: { type: String },
   doorBranding: { type: String },
   doorColor: { type: String },
   doorSensor: { type: String },

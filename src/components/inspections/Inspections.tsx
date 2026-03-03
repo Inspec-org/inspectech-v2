@@ -85,7 +85,7 @@ function Inspections() {
         modelYear: '',
         absSensor: '',
         airTankMonitor: '',
-        rtbIndicator: '',
+        atisregulator: '',
         lightOutSensor: '',
         sensorError: '',
         ultrasonicCargoSensor: '',
@@ -96,7 +96,7 @@ function Inspections() {
         brakeType: '',
         suspensionType: '',
         tireModel: '',
-        amenikis: '',
+        aerokits: '',
         doorBranding: '',
         doorColor: '',
         doorSensor: '',
@@ -358,7 +358,7 @@ function Inspections() {
                     if (key === 'dateMonth' || key === 'dateYear') {
                         continue;
                     }
-                    if (key === 'rtbIndicator') {
+                    if (key === 'atisregulator') {
                         result['atisRegulator'] = value as any;
                         continue;
                     }
@@ -366,7 +366,7 @@ function Inspections() {
                         result['possessionOriginLocation'] = value as any;
                         continue;
                     }
-                    if (key === 'amenikis') {
+                    if (key === 'aerokits') {
                         result['aerokits'] = value as any;
                         continue;
                     }
