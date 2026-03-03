@@ -80,25 +80,36 @@ export default function DashboardAppHeader() {
     if (next) {
       Cookies.set('selectedDepartment', next.name || '');
       Cookies.set('selectedDepartmentId', next._id || '');
+      window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: next.name }));
     }
   }, [departments]);
 
   React.useEffect(() => {
     if (!vendors.length) return;
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+    const mapReady = !isAdmin || Object.keys(vendorEnabledMap || {}).length === vendors.length;
+    if (!mapReady) return;
+
+    const isEnabled = (id: string) => !isAdmin || vendorEnabledMap[String(id)] !== false;
+
     const cookieId = Cookies.get('selectedVendorId');
     const cookieName = Cookies.get('selectedVendor');
-    console.log(cookieId, cookieName)
-    console.log(vendors)
-    const byId = cookieId ? vendors.find(v => String(v._id) === String(cookieId)) : undefined;
-    console.log(byId)
-    const byName = !byId && cookieName ? vendors.find(v => v.name === cookieName) : undefined;
-    const next = byId || byName || vendors[0] || null;
+
+    const byId = cookieId ? vendors.find(v => String(v._id) === String(cookieId) && isEnabled(String(v._id))) : undefined;
+    const byName = !byId && cookieName ? vendors.find(v => v.name === cookieName && isEnabled(String(v._id))) : undefined;
+    const firstEnabled = vendors.find(v => isEnabled(String(v._id))) || null;
+
+    const next = byId || byName || firstEnabled;
     setSelectedVendor(next);
     if (next) {
       Cookies.set('selectedVendor', next.name || '');
       Cookies.set('selectedVendorId', next._id || '');
+      window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: next.name }));
+    } else {
+      Cookies.remove('selectedVendor');
+      Cookies.remove('selectedVendorId');
     }
-  }, [vendors]);
+  }, [vendors, vendorEnabledMap, user]);
 
   React.useEffect(() => {
     if (!(user?.role === 'admin' || user?.role === 'superadmin')) { setVendorEnabledMap({}); return; }
