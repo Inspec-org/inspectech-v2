@@ -442,9 +442,9 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         <label className="flex items-center">
                                             <input
                                                 type="radio"
-                                                name="rtbIndicator"
+                                                name="atisregulator"
                                                 value="N/A"
-                                                checked={formData.rtbIndicator === 'N/A'}
+                                                checked={formData.atisregulator === 'N/A'}
                                                 onChange={handleChange}
                                                 className="mr-2"
                                             />
@@ -453,9 +453,9 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         <label className="flex items-center">
                                             <input
                                                 type="radio"
-                                                name="rtbIndicator"
+                                                name="atisregulator"
                                                 value="Yes"
-                                                checked={formData.rtbIndicator === 'Yes'}
+                                                checked={formData.atisregulator === 'Yes'}
                                                 onChange={handleChange}
                                                 className="mr-2"
                                             />
@@ -464,9 +464,9 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         <label className="flex items-center">
                                             <input
                                                 type="radio"
-                                                name="rtbIndicator"
+                                                name="atisregulator"
                                                 value="No"
-                                                checked={formData.rtbIndicator === 'No'}
+                                                checked={formData.atisregulator === 'No'}
                                                 onChange={handleChange}
                                                 className="mr-2"
                                             />
@@ -760,9 +760,9 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="amenikis"
+                                            name="aerokits"
                                             value="N/A"
-                                            checked={formData.amenikis === 'N/A'}
+                                            checked={formData.aerokits === 'N/A'}
                                             onChange={handleChange}
                                             className="mr-2"
                                         />
@@ -771,9 +771,9 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="amenikis"
+                                            name="aerokits"
                                             value="Yes"
-                                            checked={formData.amenikis === 'Yes'}
+                                            checked={formData.aerokits === 'Yes'}
                                             onChange={handleChange}
                                             className="mr-2"
                                         />
@@ -782,9 +782,9 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     <label className="flex items-center">
                                         <input
                                             type="radio"
-                                            name="amenikis"
+                                            name="aerokits"
                                             value="No"
-                                            checked={formData.amenikis === 'No'}
+                                            checked={formData.aerokits === 'No'}
                                             onChange={handleChange}
                                             className="mr-2"
                                         />

@@ -46,7 +46,7 @@ export interface FormData {
   modelYear: string;
   absSensor: string;
   airTankMonitor: string;
-  rtbIndicator: string;
+  atisregulator: string;
   lightOutSensor: string;
   sensorError: string;
   ultrasonicCargoSensor: string;
@@ -58,7 +58,7 @@ export interface FormData {
   suspensionType: string;
   tireModel: string;
   tireBrand: string;
-  amenikis: string;
+  aerokits: string;
   conspicuityTape: string;
   doorBranding: string;
   doorColor: string;
@@ -135,7 +135,7 @@ export default function Edit({ type }: { type: string }) {
     modelYear: '',
     absSensor: '',
     airTankMonitor: '',
-    rtbIndicator: '',
+    atisregulator: '',
     lightOutSensor: '',
     sensorError: '',
     ultrasonicCargoSensor: '',
@@ -147,7 +147,7 @@ export default function Edit({ type }: { type: string }) {
     suspensionType: '',
     tireModel: '',
     tireBrand: '',
-    amenikis: '',
+    aerokits: '',
     conspicuityTape: '',
     doorBranding: '',
     doorColor: '',
