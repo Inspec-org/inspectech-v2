@@ -142,9 +142,9 @@ export async function POST(req: NextRequest) {
       rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: "mm/dd/yyyy" }) as any[];
     } else {
       const text = await file.text();
-      const wb = XLSX.read(text, { type: "string", cellDates: true });
+      const wb = XLSX.read(text, { type: "string" });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: "mm/dd/yyyy" }) as any[];
+      rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true }) as any[];
     }
     rows = rows.filter(r => Array.isArray(r) && r.some(c => c !== null && c !== undefined && String(c).trim() !== ""));
     if (rows.length < 2) {
@@ -347,12 +347,35 @@ export async function POST(req: NextRequest) {
             const day = Number(m[2]);
             d = new Date(year, month, day);
           } else {
-            const nd = new Date(t);
-            d = isNaN(nd.getTime()) ? null : nd;
+            const asNum = Number(t);
+            if (!isNaN(asNum) && isFinite(asNum)) {
+              const pd = (XLSX as any).SSF?.parse_date_code ? (XLSX as any).SSF.parse_date_code(asNum) : null;
+              if (pd && typeof pd.y === 'number' && typeof pd.m === 'number' && typeof pd.d === 'number') {
+                d = new Date(pd.y, pd.m - 1, pd.d);
+              } else {
+                const nd = new Date(t);
+                d = isNaN(nd.getTime()) ? null : nd;
+              }
+            } else {
+              const nd = new Date(t);
+              d = isNaN(nd.getTime()) ? null : nd;
+            }
           }
-          if (d && d.getTime() > Date.now()) {
-            errors.push({ row: i + 1, field: headers[dateIndex], value: t, message: "Date cannot be from the future" });
-          }
+          
+          const display = (() => {
+            const asNum = Number(t);
+            if (!isNaN(asNum) && isFinite(asNum)) {
+              const pd = (XLSX as any).SSF?.parse_date_code ? (XLSX as any).SSF.parse_date_code(asNum) : null;
+              if (pd && typeof pd.y === 'number' && typeof pd.m === 'number' && typeof pd.d === 'number') {
+                const mm = String(pd.m).padStart(2, '0');
+                const dd = String(pd.d).padStart(2, '0');
+                const yyyy = String(pd.y);
+                return `${mm}-${dd}-${yyyy}`;
+              }
+            }
+            return t;
+          })();
+          rowData[headers[dateIndex]] = display;
         }
       }
 

@@ -129,11 +129,8 @@ function Dashboard() {
             ? vendors.find(v => v.name === cookieVendorName)
             : undefined;
 
-        const nextSelected = byId || byName || vendors[0];
-        console.log("nextSelected", nextSelected);
+        const nextSelected = byId || byName || null;
         setSelectedVendor(nextSelected);
-        Cookies.set('selectedVendor', nextSelected?.name || '');
-        Cookies.set('selectedVendorId', nextSelected?._id || '');
     }, [vendors])
 
     useEffect(() => {
@@ -181,9 +178,9 @@ function Dashboard() {
         }
     }
 
-    const shouldFetch = !!selectedDepartment && !!selectedVendor;
     const vendorId = Cookies.get('selectedVendorId') || '';
     const departmentId = Cookies.get('selectedDepartmentId') || '';
+    const shouldFetch = Boolean(vendorId && departmentId);
 
     const { data: dashboardDataSWR, isLoading: statsLoading, mutate: mutateStats } = useSWR(
         shouldFetch ? ['dashboard/allData', vendorId, departmentId] : null,
@@ -216,14 +213,14 @@ function Dashboard() {
     useEffect(() => { setRecentLoading(recentLoadingSWR); setRecentData(recentDataSWR || undefined); }, [recentLoadingSWR, recentDataSWR]);
 
     useEffect(() => {
-        if (!selectedDepartment || !selectedVendor) return;
+        if (!shouldFetch) return;
         const vId = Cookies.get('selectedVendorId') || '';
         const dId = Cookies.get('selectedDepartmentId') || '';
         const es = new EventSource(`/api/dashboard/stream?vendorId=${encodeURIComponent(vId)}&departmentId=${encodeURIComponent(dId)}`);
         es.onmessage = () => { mutateStats(); mutateRecent(); };
         es.onerror = () => {};
         return () => es.close();
-    }, [selectedDepartment, selectedVendor]);
+    }, [shouldFetch]);
 
     return (
         <Suspense fallback={<div>Loading...</div>}>

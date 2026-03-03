@@ -105,7 +105,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const logout = () => {
     Cookies.remove("session_id");
-    localStorage.removeItem("session_id");
+    localStorage.clear();
     sessionStorage.clear();
     setSession_id("");
     setUser(null);
