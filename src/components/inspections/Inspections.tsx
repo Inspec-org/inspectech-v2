@@ -148,10 +148,14 @@ function Inspections() {
             setDept(id);
             setDepartment(id || '');
             setDeptName(name || '');
+            setSelectedRows([]);
+            setSelectAll(false);
         };
         const onVendor = () => {
             const id = Cookies.get('selectedVendorId') || '';
             setVendor(id);
+            setSelectedRows([]);
+            setSelectAll(false);
         };
         window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
         window.addEventListener('selectedVendorChanged', onVendor as EventListener);
@@ -467,11 +471,14 @@ function Inspections() {
                 checklistOrder = checklistOrder.filter(h => h !== 'owner' && h !== 'conspicuityTape');
             }
 
-            const generalHeaders = generalOrder.filter(h => allHeaders.includes(h));
-            const checklistHeaders = checklistOrder.filter(h => allHeaders.includes(h));
-            const mediaHeaders = imageHeaders.filter(h => allHeaders.includes(h));
+            const generalHeaders = generalOrder;
+            const checklistHeaders = checklistOrder;
+            const mediaHeaders = imageHeaders;
 
-            const headers: string[] = [...generalHeaders, ...checklistHeaders, ...mediaHeaders];
+            const baseHeaders: string[] = [...generalHeaders, ...checklistHeaders, ...mediaHeaders];
+            const seen = new Set(baseHeaders);
+            const additionalHeaders = allHeaders.filter((h) => !seen.has(h));
+            const headers: string[] = [...baseHeaders, ...additionalHeaders];
             const triggerDownload = (blob: Blob, filename: string) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -488,9 +495,9 @@ function Inspections() {
             };
             const filename = `inspections_${new Date().toISOString().slice(0, 10)}.${format === 'excel' ? 'xlsx' : format}`;
             if (format === 'json') {
-                const ordered = transformed.map(obj => {
+                const ordered = flatRows.map(row => {
                     const o: any = {};
-                    headers.forEach(h => { if (obj[h] !== undefined) o[h] = obj[h]; });
+                    headers.forEach(h => { o[h] = row[h] ?? ''; });
                     return o;
                 });
                 const blob = new Blob([JSON.stringify(ordered, null, 2)], { type: 'application/json' });
