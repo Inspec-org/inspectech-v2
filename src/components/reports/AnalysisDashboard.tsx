@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Rectangle } from 'recharts';
 import { TrendingUp, CheckCircle, XCircle, Clock, BarChart3, CalendarClock, Activity, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
@@ -36,6 +36,25 @@ const sanitizeBinSize = (v: string): number => {
 };
 
 // Components
+const MinBarShape: React.FC<any> = (props) => {
+    const { value, y, height } = props as any;
+    if (!value || value <= 0) return null;
+    const minHeight = 6;
+    const h = Math.max(height, minHeight);
+    const yAdj = y - (h - height);
+    return <Rectangle {...props} y={yAdj} height={h} />;
+};
+
+const makeNonZeroLabel = (color: string) => (props: any) => {
+    const { value, x, y, width } = props;
+    if (!value || value <= 0) return null;
+    return (
+        <text x={x + width / 2} y={y - 6} textAnchor="middle" fill={color} fontSize={12} fontWeight={600}>
+            {value}
+        </text>
+    );
+};
+
 const YearHeader = ({ year, setYear }: { year: number, setYear: (val: number) => void }) => (
     <div className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl p-4">
         <div className="flex items-center justify-center">
@@ -181,14 +200,14 @@ const InspectionStatusBreakdown: React.FC<{ data: { period: string; total: numbe
                 <YAxis label={{ value: 'Number of inspections', angle: -90, position: 'center', style: { fontSize: 14 }, dx: -15 }} tick={{ fontSize: 12 }} padding={{ top: 20 }} allowDecimals={false} />
                 <Tooltip />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="square" />
-                <Bar dataKey="total" name="Total" fill="#8B5CF6" radius={[4, 4, 0, 0]} >
-                    <LabelList dataKey="total" position="top" fill="#8B5CF6" />
+                <Bar dataKey="total" name="Total" fill="#8B5CF6" radius={[4, 4, 0, 0]} shape={<MinBarShape />}>
+                    <LabelList dataKey="total" content={makeNonZeroLabel('#8B5CF6')} />
                 </Bar>
-                <Bar dataKey="pass" name="Pass" fill="#10B981" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="pass" position="top" fill="#10B981" />
+                <Bar dataKey="pass" name="Pass" fill="#10B981" radius={[4, 4, 0, 0]} shape={<MinBarShape />}>
+                    <LabelList dataKey="pass" content={makeNonZeroLabel('#10B981')} />
                 </Bar>
-                <Bar dataKey="fail" name="Fail" fill="#ef4444" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="fail" position="top" fill="#ef4444" />
+                <Bar dataKey="fail" name="Fail" fill="#ef4444" radius={[4, 4, 0, 0]} shape={<MinBarShape />}>
+                    <LabelList dataKey="fail" content={makeNonZeroLabel('#ef4444')} />
                 </Bar>
             </BarChart>
         </ResponsiveContainer>

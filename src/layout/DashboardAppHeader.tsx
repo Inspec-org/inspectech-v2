@@ -16,6 +16,9 @@ export default function DashboardAppHeader() {
   const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(null);
   const [vendorEnabledMap, setVendorEnabledMap] = React.useState<Record<string, boolean>>({});
   const { user } = useContext(UserContext)
+  const prevVendorIdRef = React.useRef<string | null>(null);
+  const prevDeptIdRef = React.useRef<string | null>(null);
+  const lastFetchedVendorIdRef = React.useRef<string | null>(null);
 
 
   const getDepartments = async () => {
@@ -80,7 +83,11 @@ export default function DashboardAppHeader() {
     if (next) {
       Cookies.set('selectedDepartment', next.name || '');
       Cookies.set('selectedDepartmentId', next._id || '');
-      window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: next.name }));
+      const id = String(next._id || '');
+      if (prevDeptIdRef.current !== id) {
+        window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: next.name }));
+        prevDeptIdRef.current = id;
+      }
     }
   }, [departments]);
 
@@ -104,7 +111,11 @@ export default function DashboardAppHeader() {
     if (next) {
       Cookies.set('selectedVendor', next.name || '');
       Cookies.set('selectedVendorId', next._id || '');
-      window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: next.name }));
+      const id = String(next._id || '');
+      if (prevVendorIdRef.current !== id) {
+        window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: next.name }));
+        prevVendorIdRef.current = id;
+      }
     } else {
       Cookies.remove('selectedVendor');
       Cookies.remove('selectedVendorId');
@@ -132,6 +143,9 @@ export default function DashboardAppHeader() {
 
   React.useEffect(() => {
     if (!selectedVendor) return;
+    const id = String(selectedVendor._id || '');
+    if (lastFetchedVendorIdRef.current === id) return;
+    lastFetchedVendorIdRef.current = id;
     getDepartments();
   }, [selectedVendor]);
 

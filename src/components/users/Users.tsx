@@ -114,13 +114,26 @@ const UserModule: React.FC = () => {
         const onVendor = () => {
             const v = Cookies.get('selectedVendorId') || '';
             setVendorId(v);
+            const params = new URLSearchParams(searchParams);
+            let changed = false;
+            if (userCurrentPage !== 1) { isResettingUserPage.current = true; params.set('user_page', '1'); changed = true; }
+            if (invitationCurrentPage !== 1) { isResettingInvitationPage.current = true; params.set('invitation_page', '1'); changed = true; }
+            if (activeTab === 'admins' && user?.role === 'admin' && adminCurrentPage !== 1) { isResettingAdminPage.current = true; params.set('admin_page', '1'); changed = true; }
+            if (changed) {
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+            }
+            // No direct refetch here; vendorId state change will trigger effects once
         };
         const onDept = () => {
-            getUsers();
-            getInvites();
-            if (activeTab === 'admins' && user?.role === 'admin') {
-                getAdmins();
+            const params = new URLSearchParams(searchParams);
+            let changed = false;
+            if (userCurrentPage !== 1) { isResettingUserPage.current = true; params.set('user_page', '1'); changed = true; }
+            if (invitationCurrentPage !== 1) { isResettingInvitationPage.current = true; params.set('invitation_page', '1'); changed = true; }
+            if (activeTab === 'admins' && user?.role === 'admin' && adminCurrentPage !== 1) { isResettingAdminPage.current = true; params.set('admin_page', '1'); changed = true; }
+            if (changed) {
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
             }
+            // rely on useEffect watchers to refetch once
         };
         window.addEventListener('selectedVendorChanged', onVendor as EventListener);
         window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
@@ -135,7 +148,8 @@ const UserModule: React.FC = () => {
             isResettingInvitationPage.current = false;
             return;
         }
-        if (!vendorId) {
+        const vId = vendorId || Cookies.get('selectedVendorId') || '';
+        if (!vId) {
             setInvites([]);
             setTotalInvitations(0);
             setTotalInvitationsPages([]);
@@ -144,7 +158,7 @@ const UserModule: React.FC = () => {
         }
         setInvitationLoading(true);
         try {
-            const res = await apiRequest(`/api/invite/list?vendorId=${vendorId}&page=${invitationCurrentPage}&limit=${Invitationslimit}`);
+            const res = await apiRequest(`/api/invite/list?vendorId=${vId}&page=${invitationCurrentPage}&limit=${Invitationslimit}`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch invitations')
@@ -167,7 +181,8 @@ const UserModule: React.FC = () => {
             isResettingUserPage.current = false;
             return;
         }
-        if (!vendorId) {
+        const vId = vendorId || Cookies.get('selectedVendorId') || '';
+        if (!vId) {
             setUsers([]);
             setTotalUsers(0);
             setTotalUsersPages([]);
@@ -176,7 +191,7 @@ const UserModule: React.FC = () => {
         }
         setUserLoading(true);
         try {
-            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}&role=user&page=${userCurrentPage}&limit=${userlimit}`);
+            const res = await apiRequest(`/api/users/get-users?vendorId=${vId}&role=user&page=${userCurrentPage}&limit=${userlimit}`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch users')
@@ -200,14 +215,15 @@ const UserModule: React.FC = () => {
             isResettingAdminPage.current = false;
             return;
         }
-        if (!vendorId) {
+        const vId = vendorId || Cookies.get('selectedVendorId') || '';
+        if (!vId) {
             setAdmins([]);
             setAdminLoading(false);
             return;
         }
         setAdminLoading(true);
         try {
-            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}&page=${adminCurrentPage}&limit=${adminLimit}&role=admin`);
+            const res = await apiRequest(`/api/users/get-users?vendorId=${vId}&page=${adminCurrentPage}&limit=${adminLimit}&role=admin`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch admin users')
@@ -423,7 +439,7 @@ const UserModule: React.FC = () => {
                     {activeTab === 'admins' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={admins} tabs={totalAdminsPages} columns={adminColumns} pageSize={adminLimit} currentPage={adminCurrentPage} totalCount={totalAdmins} loading={adminLoading} setLoading={setAdminLoading} querykey="admin_page" emptyStateImages={{
+                                <GenericDataTable title="" data={admins} tabs={totalAdminsPages} columns={adminColumns} pageSize={adminLimit} setPageSize={setAdminLimit} currentPage={adminCurrentPage} totalCount={totalAdmins} loading={adminLoading} setLoading={setAdminLoading} querykey="admin_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />
