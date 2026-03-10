@@ -32,7 +32,7 @@ const InspectionSchema = new mongoose.Schema({
 
   absSensor: { type: String },
   airTankMonitor: { type: String },
-  rtbIndicator: { type: String },
+  atisregulator: { type: String },
   lightOutSensor: { type: String },
   sensorError: { type: String },
   ultrasonicCargoSensor: { type: String },
@@ -46,7 +46,7 @@ const InspectionSchema = new mongoose.Schema({
   tireModel: { type: String },
   tireBrand: { type: String },
 
-  amenikis: { type: String },
+  aerokits: { type: String },
   doorBranding: { type: String },
   doorColor: { type: String },
   doorSensor: { type: String },
@@ -80,10 +80,25 @@ const InspectionSchema = new mongoose.Schema({
   timestamps: true,
 })
 
+InspectionSchema.index({ unitId: 1 }, { unique: true });
+
 InspectionSchema.index(
-  { unitId: 1, departmentId: 1, vendorId: 1 },
-  { unique: true }
+  { vendorId: 1, equipmentNumber: 1 },
+  { unique: true, partialFilterExpression: { equipmentNumber: { $exists: true, $type: 'string', $nin: ['N/A', ''] } } }
 );
 
+InspectionSchema.index(
+  { vendorId: 1, vin: 1 },
+  { unique: true, partialFilterExpression: { vin: { $exists: true, $type: 'string', $nin: ['N/A', ''] } } }
+);
+
+InspectionSchema.index({ departmentId: 1, vendorId: 1, createdAt: -1 });
+InspectionSchema.index({ departmentId: 1, vendorId: 1 });
+InspectionSchema.index({ inspectionStatus: 1 });
+InspectionSchema.index({ inspector: 1 });
+InspectionSchema.index({ type: 1 });
+InspectionSchema.index({ location: 1 });
+InspectionSchema.index({ delivered: 1 });
+InspectionSchema.index({ dateYear: 1, dateMonth: 1, dateDay: 1 });
 
 export default mongoose.models.Inspection || mongoose.model('Inspection', InspectionSchema)

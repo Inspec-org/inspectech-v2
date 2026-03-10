@@ -55,6 +55,11 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'admin', 'superadmin'],
     default: 'user',
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active',
+  },
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',
@@ -63,6 +68,12 @@ const UserSchema = new mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Vendor',
+    }
+  ],
+  departmentAccess: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
     }
   ],
   verificationOTPExpires: {
@@ -106,6 +117,9 @@ UserSchema.methods.comparePassword = async function (candidatePassword) {
 UserSchema.pre('save', function (next) {
   if (this.role === 'user' && !this.vendorId) {
     return next(new Error('vendorId is required for user role'));
+  }
+  if (this.departmentAccess && this.departmentAccess.length > 0 && this.role !== 'admin') {
+    return next(new Error('departmentAccess is allowed for admin role only'));
   }
   next();
 })

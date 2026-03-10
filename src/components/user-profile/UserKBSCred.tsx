@@ -24,7 +24,7 @@ export default function UserKBSCred({ propertyDetails }: Props) {
   const { isOpen, openModal, closeModal } = useModal();
 
   const handleSave = () => {
-    console.log("Saving changes...");
+    ;
     closeModal();
   };
 

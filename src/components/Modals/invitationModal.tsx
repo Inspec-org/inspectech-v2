@@ -91,7 +91,7 @@ const InvitationModal: React.FC<Props> = ({
 
         {/* Vendor ID Badge */}
         <div className="mb-6">
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md  text-purple-700 text-sm font-medium">
+          <span className="inline-flex items-center gap-2 py-1.5 rounded-md  text-purple-700 text-sm font-medium">
             <span className="text-xs bg-[#ECE4F5] p-2 rounded-full text-[#7844AB]">{role?.charAt(0).toUpperCase() + role?.slice(1)} ID: {vendorId}</span>
             <span className="flex items-center gap-1 px-2 py-1 rounded bg-purple-600 text-white text-xs">
               <Image src="/images/users/house.svg" alt='' width="12" height="12" />

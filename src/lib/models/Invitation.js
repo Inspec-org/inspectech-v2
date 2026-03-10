@@ -24,6 +24,18 @@ const InvitationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',
   },
+  vendorAccess: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Vendor',
+    }
+  ],
+  departmentAccess: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
+    }
+  ],
   status: {
     type: String,
     default: "pending",

@@ -69,12 +69,12 @@ export default function UserDropdown() {
         const result = await response.json();
 
         if (!response.ok || result.data.status === false) {
-          console.error("Server Error:", result.message);
+          ;
           return;
         }
         logout();
       } catch (error) {
-        console.error("Network Error:", error);
+        ;
       } finally {
         setLoading(false);
       }

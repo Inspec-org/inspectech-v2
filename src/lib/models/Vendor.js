@@ -7,6 +7,17 @@ const VendorSchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
+  departmentAccess: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
+    }
+  ],
+  status: {
+    type: String,
+    default: 'active',
+    enum: ['active', 'inactive'],
+  },
 }, {
   timestamps: true,
 });

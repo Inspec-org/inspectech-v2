@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Filter } from 'lucide-react';
 import { Modal } from '../ui/modal';
+import DatePickerDropdown from '../ui/dropdown/DatePickerDropdown';
 
 // Types
 interface FilterOption {
@@ -119,6 +120,9 @@ const FilterTrackingModal: React.FC<{
     const [activeFilter, setActiveFilter] = useState('unitId');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: string[] }>(initialFilters);
+    const isDateFilter = ['dateCreated', 'reviewRequested', 'reviewCompleted'].includes(activeFilter);
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
     useEffect(() => {
         if (isOpen) {
@@ -126,12 +130,23 @@ const FilterTrackingModal: React.FC<{
         }
     }, [isOpen, initialFilters]);
 
+    useEffect(() => {
+        if (isDateFilter) {
+            const current = selectedFilters[activeFilter] || [];
+            setStartDate(current[0] || '');
+            setEndDate(current[1] || '');
+        } else {
+            setStartDate('');
+            setEndDate('');
+        }
+    }, [activeFilter, isDateFilter, selectedFilters]);
+
     const toOptions = (vals: string[]) =>
         Array.from(new Set(vals.filter(Boolean))).map(v => ({ id: v, label: v }));
 
     const dynamicOptionsMap: { [key: string]: option[] } = useMemo(() => ({
         unitId: (fullOptions?.unitId || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.id)),
-        inspectionStatus: (fullOptions?.inspectionStatus || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.status)),
+        inspectionStatus: (fullOptions?.inspectionStatus || []).map(v => ({ id: v, label: v.toUpperCase() })) || toOptions(trackingData.map(i => i.status.toUpperCase())),
         vendor: Array.from(new Set(vendors.map(v => v.name))).map(n => ({ id: n, label: n })),
         department: Array.from(new Set(departments.map(d => d.name))).map(n => ({ id: n, label: n })),
         dateCreated: (fullOptions?.dateCreated || []).map(v => ({ id: v, label: v })) || toOptions(trackingData.map(i => i.date_created)),
@@ -156,6 +171,12 @@ const FilterTrackingModal: React.FC<{
     };
 
     const handleAddSelected = () => {
+        if (isDateFilter) {
+            if (!startDate || !endDate) return;
+            const next = { ...selectedFilters, [activeFilter]: [startDate, endDate] };
+            onApply(next);
+            return;
+        }
         onApply(selectedFilters);
     };
 
@@ -192,29 +213,52 @@ const FilterTrackingModal: React.FC<{
                                 </h3>
                                 <button
                                     onClick={handleAddSelected}
-                                    disabled={totalSelected === 0}
+                                    disabled={isDateFilter ? !(startDate && endDate) : totalSelected === 0}
                                     className="px-4 py-2 bg-purple-500 text-white text-sm font-medium rounded-md hover:bg-purple-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                                 >
-                                    Add Selected ({totalSelected})
+                                    Add Selected ({isDateFilter ? ((startDate && endDate) ? 1 : 0) : totalSelected})
                                 </button>
                             </div>
-                            <SearchInput
-                                value={searchQuery}
-                                onChange={setSearchQuery}
-                                placeholder={`Search ${filterLabel} values...`}
-                            />
+                            {!isDateFilter && (
+                                <SearchInput
+                                    value={searchQuery}
+                                    onChange={setSearchQuery}
+                                    placeholder={`Search ${filterLabel} values...`}
+                                />
+                            )}
                         </div>
 
                         {/* Scrollable Options List */}
                         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-                            {filteredOptions.map((option) => (
-                                <CheckboxOption
-                                    key={option.id}
-                                    id={option.id}
-                                    label={option.label}
-                                    checked={currentSelectedIds.includes(option.id)}
-                                    onChange={handleToggleId}
-                                />
+                            {isDateFilter ? (
+                                <div className="space-y-4 px-3 py-2">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700 mb-2">From</p>
+                                            <DatePickerDropdown value={startDate} onChange={(v) => setStartDate(v)} placeholder="Select date" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700 mb-2">To</p>
+                                            <DatePickerDropdown value={endDate} onChange={(v) => setEndDate(v)} placeholder="Select date" min={startDate || undefined} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : ((["unitId", "vendor", "department"].includes(activeFilter) && searchQuery.trim().length < 2) ? (
+                                <p className="text-sm text-gray-500 px-3 py-2">write atleast 2 letters to search {activeFilter === 'unitId' ? 'ids' : activeFilter === 'vendor' ? 'vendors' : 'departments'}</p>
+                            ) : (
+                                (searchQuery.trim() && filteredOptions.length === 0) ? (
+                                    <p className="text-sm text-gray-500 px-3 py-2">No matching {filterLabel.toLowerCase()} found for "{searchQuery}"</p>
+                                ) : (
+                                    filteredOptions.map((option) => (
+                                        <CheckboxOption
+                                            key={option.id}
+                                            id={option.id}
+                                            label={option.label}
+                                            checked={currentSelectedIds.includes(option.id)}
+                                            onChange={handleToggleId}
+                                        />
+                                    ))
+                                )
                             ))}
                         </div>
                     </div>

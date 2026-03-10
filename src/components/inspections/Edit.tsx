@@ -8,6 +8,7 @@ import Media from './Media';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import { UserContext } from '@/context/authContext';
 import { ClipLoader } from 'react-spinners';
 import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
@@ -45,7 +46,7 @@ export interface FormData {
   modelYear: string;
   absSensor: string;
   airTankMonitor: string;
-  rtbIndicator: string;
+  atisregulator: string;
   lightOutSensor: string;
   sensorError: string;
   ultrasonicCargoSensor: string;
@@ -57,7 +58,7 @@ export interface FormData {
   suspensionType: string;
   tireModel: string;
   tireBrand: string;
-  amenikis: string;
+  aerokits: string;
   conspicuityTape: string;
   doorBranding: string;
   doorColor: string;
@@ -103,7 +104,7 @@ export default function Edit({ type }: { type: string }) {
   const [department, setDepartment] = useState("");
   const [processResult, setProcessResult] = useState<ProcessResult | null>(null);
   const [showProcessDetails, setShowProcessDetails] = useState(false);
-
+  const params = useParams<{ inspection_id: string }>();
   const [formData, setFormData] = useState<FormData>({
     unitId: '',
     departmentId: '',
@@ -134,7 +135,7 @@ export default function Edit({ type }: { type: string }) {
     modelYear: '',
     absSensor: '',
     airTankMonitor: '',
-    rtbIndicator: '',
+    atisregulator: '',
     lightOutSensor: '',
     sensorError: '',
     ultrasonicCargoSensor: '',
@@ -146,7 +147,7 @@ export default function Edit({ type }: { type: string }) {
     suspensionType: '',
     tireModel: '',
     tireBrand: '',
-    amenikis: '',
+    aerokits: '',
     conspicuityTape: '',
     doorBranding: '',
     doorColor: '',
@@ -176,26 +177,12 @@ export default function Edit({ type }: { type: string }) {
     additionalAttachment3: '',
   });
 
-  const params = useParams<{ inspection_id: string }>();
   useEffect(() => {
     const deptName = Cookies.get('selectedDepartment') || '';
     const deptId = Cookies.get('selectedDepartmentId') || '';
     setDepartment(deptId || '');
-    (async () => {
-      try {
-        const res = await apiRequest('/api/departments/get-departments');
-        const json = await res.json();
-        if (res.ok) {
-          const dept = (json.departments || []).find((d: any) => d.name === deptName);
-          if (dept?._id) {
-            setFormData(prev => ({ ...prev, departmentId: dept._id }));
-          }
-        }
-      } catch (e: any) { }
-    })();
+    setFormData(prev => ({ ...prev, departmentId: deptId }));
   }, []);
-
-
 
   useEffect(() => {
     const vendorName = Cookies.get('selectedVendor') || '';
@@ -230,7 +217,6 @@ export default function Edit({ type }: { type: string }) {
   }, [Router, user?.role, type]);
 
   useEffect(() => {
-    console.log("params", type)
     if (type === "edit" && params?.inspection_id) {
       const unitId = params.inspection_id as string;
       setTimeout(() => {
@@ -242,7 +228,7 @@ export default function Edit({ type }: { type: string }) {
 
             if (res.ok && data.success && data.inspection) {
               const doc = data.inspection;
-              console.log("doc", doc)
+
               const normalized: any = {
                 ...doc,
                 additionalAttachments: Array.isArray(doc.additionalAttachments) ? doc.additionalAttachments : [],
@@ -312,10 +298,44 @@ export default function Edit({ type }: { type: string }) {
       }
     } catch (error: any) {
       toast.error(error.message || 'Server error');
-      console.error(error.message);
+      ;
     }
     finally {
       setSaveLoading(false);
+    }
+  };
+
+  const handleDeleteInspection = async () => {
+    const unitId = formData.unitId || (params?.inspection_id as string) || '';
+    if (!unitId) { toast.error('Unit ID missing'); return; }
+    const result = await Swal.fire({
+      title: 'Delete Inspection',
+      text: 'Delete this inspection? This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Delete'
+    });
+    if (!result.isConfirmed) return;
+    try {
+      setLoading(true);
+      const res = await apiRequest('/api/inspections/delete-inspections', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unitId, vendorId: formData.vendorId, departmentId: formData.departmentId })
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        toast.success('Inspection deleted');
+        Router.push(`/${user?.role}/inspections`);
+      } else {
+        toast.error(json.message || 'Failed to delete inspection');
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Server error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -331,14 +351,14 @@ export default function Edit({ type }: { type: string }) {
       const res = await apiRequest('/api/uploads', { method: 'POST', body });
       const json = await res.json();
 
-      console.log('Upload response:', json);
+      ;
 
       if (!res.ok || !json.secure_url) {
         throw new Error(json.message || 'Upload failed');
       }
       const url: string = json.secure_url;
 
-      console.log(`Setting ${field} to:`, url);
+      ;
 
       setFormData(prev => {
         const updates: any = { [field]: url };
@@ -349,7 +369,7 @@ export default function Edit({ type }: { type: string }) {
         return { ...prev, ...updates };
       });
     } catch (e: any) {
-      console.error('Upload error:', e);
+      ;
       toast.error(e.message || 'Upload failed');
       throw e; // Re-throw to handle in PDFUpload component
     }
@@ -370,7 +390,7 @@ export default function Edit({ type }: { type: string }) {
 
 
   return (
-    <div className="bg-white p-4">
+    <div className="bg-white sm:p-4 p-2">
       {loading && (
         <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
           <ClipLoader color="#0075FF" size={40} />
@@ -378,108 +398,112 @@ export default function Edit({ type }: { type: string }) {
       )}
       <div className="">
         {/* Header */}
-        <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl' onClick={() => Router.back()}>
-          <ArrowLeft size={20} />
-          <span>Back to Inspection</span>
-        </button>
-        {/* Title and Action Buttons */}
-        <div className="flex xl:flex-row flex-col items-start xl:items-center justify-between mb-6 mt-2">
-          {type === "edit" ? (
-            <>
+        <div className="mb-6 mt-2">
+          <div className="flex justify-between flex-wrap items-center gap-2 flex-nowrap overflow-x-auto">
+            <div>
+              <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#F3EBFF] px-2 py-2 text-sm rounded-xl shrink-0' onClick={() => Router.back()}>
+                <ArrowLeft size={20} />
+                <span>Back to Inspection</span>
+              </button>
+            </div>
+            <div className='flex items-center gap-4 flex-wrap'>
+              {type === "edit" ? (
+                <>
+                  <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] px-3 py-2 whitespace-nowrap shrink-0' onClick={openModal}>
+                    <Briefcase size={18} />
+                    <span>Reassign Department</span>
+                  </button>
+
+                  {user?.role === "superadmin" && (
+                    <button className='flex gap-2 items-center bg-[#ff3434] hover:bg-[#ff3434]/70 px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap shrink-0' onClick={handleDeleteInspection}>
+                      <Trash2 size={18} />
+                      Delete Inspection
+                    </button>
+                  )}
+
+                  <button
+                    className="group flex gap-2 items-center bg-white hover:bg-[#0075FF] border border-[#0075FF] text-sm rounded-xl text-[#0075FF] hover:text-white px-3 py-2 disabled:opacity-60 whitespace-nowrap shrink-0"
+                    disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
+                    onClick={saveInspection}
+                  >
+                    {saveLoading ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#0075FF] group-hover:text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Edit2 size={18} />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] px-3 py-2 whitespace-nowrap shrink-0' onClick={processInspectionData}>
+                    <CheckCircle size={18} />
+                    <span>Process Inspection Data</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className={`flex gap-2 items-center px-2 py-2 text-sm rounded-xl border ${!formData.unitId || formData.unitId.trim() === ''
+                      ? 'bg-purple-400 cursor-not-allowed text-white border-transparent'
+                      : 'bg-[#7522BB] border-white text-white hover:bg-[#5a1a95]'
+                      }`}
+                    disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
+                    onClick={saveInspection}
+                  >
+                    {saveLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Saving...</span>
+                      </>) : (
+                      <>
+                        <Edit2 size={18} />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+
+                  </button>
+
+                  <button className='flex gap-2 items-center bg-[#10B981] hover:bg-[#0F9D58] border px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap shrink-0' disabled={!isSaved} onClick={() => Router.push(`/${user?.role}/inspections`)}>
+                    <Check size={18} />
+                    <span>Create Inspection</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="mt-2">
+            {type === "edit" ? (
               <h1 className="text-lg font-semibold text-purple-600 my-4 ">Edit Inspection - {formData.unitId}</h1>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' onClick={openModal}>
-                  <Briefcase size={18} />
-                  <span>Reassign Department</span>
-                </button>
-
-                <button className="flex gap-2 items-center bg-[#F49595]  text-sm rounded-xl text-white w-full px-3 py-2 cursor-not-allowed" disabled>
-                  <Trash2 size={18} />
-                  <span>Delete Inspection</span>
-                </button>
-
-                <button
-                  className="group flex gap-2 items-center bg-white hover:bg-[#0075FF] border border-[#0075FF] text-sm rounded-xl text-[#0075FF] hover:text-white w-full px-3 py-2 disabled:opacity-60"
-                  disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
-                  onClick={saveInspection}
-                >
-                  {saveLoading ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#0075FF] group-hover:text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Edit2 size={18} />
-                      <span>Save Changes</span>
-                    </>
-                  )}
-                </button>
-
-                <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] w-full px-3 py-2' onClick={processInspectionData}>
-                  <CheckCircle size={18} />
-                  <span>Process Inspection Data</span>
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
+            ) : (
               <h1 className="text-lg font-semibold text-purple-600 my-2">Create New Inspection</h1>
-
-              <div className="flex gap-3">
-                <button
-                  className={`flex gap-2 items-center px-2 py-2 text-sm rounded-xl w-full border ${!formData.unitId || formData.unitId.trim() === ''
-                    ? 'bg-purple-400 cursor-not-allowed text-white border-transparent'
-                    : 'bg-[#7522BB] border-white text-white hover:bg-[#5a1a95]'
-                    }`}
-                  disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
-                  onClick={saveInspection}
-                >
-                  {saveLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Saving...</span>
-                    </>) : (
-                    <>
-                      <Edit2 size={18} />
-                      <span>Save Changes</span>
-                    </>
-                  )}
-
-                </button>
-
-
-                <button className='flex gap-2 items-center bg-[#10B981] hover:bg-[#0F9D58] border px-2 py-2 text-sm rounded-xl text-white w-full whitespace-nowrap' disabled={!isSaved} onClick={() => Router.push(`/${user?.role}/inspections`)}>
-                  <Check size={18} />
-                  <span>Create Inspection</span>
-                </button>
-              </div>
-            </>
-          )}
-
+            )}
+          </div>
         </div>
 
         {processResult && (

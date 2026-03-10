@@ -94,17 +94,23 @@ export default function QuickActions({ role }: { role: string }) {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 w-full justify-between">
-        {quickActions.map((action) => (
+      <div className="grid grid-cols-1 sm:grid-cols-6 gap-4 w-full">
+        {quickActions.map((action, index) => (
           <button
             key={action.id}
             onClick={() => action.onClick && action.onClick()}
-            className={`w-full flex items-center gap-3 px-5 2xl:py-5 py-5.5 rounded-xl ${action.bgColor} ${action.textColor} font-medium text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
+            className={`
+        flex items-center gap-3 px-5 py-5.5 rounded-xl
+        ${action.bgColor} ${action.textColor}
+        font-medium text-left transition-all
+        hover:scale-[1.02] hover:shadow-md active:scale-[0.98]
+        ${index < 3 ? "sm:col-span-2" : "sm:col-span-3"}
+      `}
           >
             <span className={`${action.iconColor} bg-white p-2 rounded-full`}>
               {action.icon}
             </span>
-            <span>{action.label}</span>
+            <span className='text-sm sm:text-base'>{action.label}</span>
           </button>
         ))}
       </div>
@@ -113,4 +119,4 @@ export default function QuickActions({ role }: { role: string }) {
 }
 
 // Example usage:
-// <QuickActions onActionClick={(id) => console.log('Clicked:', id)} />
+// <QuickActions onActionClick={(id) => } />

@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Download, FileText, X } from 'lucide-react';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import Cookies from 'js-cookie';
 
 interface VendorData {
     name: string;
@@ -227,15 +228,16 @@ const GeneratedReport = ({ close, selectedUnitIds }: { close: () => void; select
         const fetchReport = async () => {
             try {
                 setLoading(true);
+                const vendorId = (typeof window !== 'undefined' ? (Cookies.get('selectedVendorId') || '') : '');
 
                 const res = await apiRequest('/api/reports/generateReport', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ unitIds: selectedUnitIds })
+                    body: JSON.stringify({ unitIds: selectedUnitIds, vendorId })
                 });
 
                 const json = (await res.json()) as GenerateReportResponse;
-                console.log(json);
+                ;
 
                 if (!res.ok || !json?.success) {
                     throw new Error(json?.message || 'Failed to generate report');

@@ -1,177 +1,98 @@
-# TailAdmin Next.js - Free Next.js Tailwind Admin Dashboard Template
+# InspecTech — Inspection Management Dashboard (Next.js 16 + Tailwind CSS v4)
 
-TailAdmin is a free and open-source admin dashboard template built on **Next.js and Tailwind CSS** providing developers with everything they need to create a feature-rich and data-driven: back-end, dashboard, or admin panel solution for any sort of web project.
-
-![TailAdmin - Next.js Dashboard Preview](./banner.png)
-
-With TailAdmin Next.js, you get access to all the necessary dashboard UI components, elements, and pages required to build a high-quality and complete dashboard or admin panel. Whether you're building a dashboard or admin panel for a complex web application or a simple website. 
-
-TailAdmin utilizes the powerful features of **Next.js 15** and common features of Next.js such as server-side rendering (SSR), static site generation (SSG), and seamless API route integration. Combined with the advancements of **React 19** and the robustness of **TypeScript**, TailAdmin is the perfect solution to help get your project up and running quickly.
+InspecTech is a modern admin dashboard for inspection operations: capturing aligned media, managing inspections, tracking reviews, and generating reports. It builds on TailAdmin’s UI foundation and adds domain logic for vendors, departments, and inspection workflows.
 
 ## Overview
 
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and control panels. It's built on:
+- Global vendor/department state via cookies (selectedVendor/selectedVendorId, selectedDepartment/selectedDepartmentId) with change events (selectedVendorChanged, selectedDepartmentChanged).
+- Image Alignment Guide uses segmentation masks and IoU scoring against tab-specific silhouettes; a 70% pass threshold enables “Send to Upload Area”.
+- Camera/preview overlays use an enlarged silhouette (scale 1.12) for clearer guidance; camera modal dimensions sync to the target upload area for consistent alignment.
+- Filters architecture persists in sessionStorage (inspectionFilters, trackingFilters); date ranges use DatePickerDropdown with friendly chip formatting.
 
-- Next.js 15.x
-- React 19
-- TypeScript
-- Tailwind CSS V4
+## Tech Stack
 
-### Quick Links
-- [✨ Visit Website](https://tailadmin.com)
-- [📄 Documentation](https://tailadmin.com/docs)
-- [⬇️ Download](https://tailadmin.com/download)
-- [🖌️ Figma Design File (Community Edition)](https://www.figma.com/community/file/1463141366275764364)
-- [⚡ Get PRO Version](https://tailadmin.com/pricing)
+- Next.js 16.x, React 19, TypeScript
+- Tailwind CSS v4
+- MongoDB + Mongoose
+- Firebase (Realtime DB + Admin)
+- SWR, ApexCharts, js-cookie, react-toastify
 
-### Demos
-- [Free Version](https://nextjs-free-demo.tailadmin.com)
-- [Pro Version](https://nextjs-demo.tailadmin.com)
+## Getting Started
 
-### Other Versions
-- [HTML Version](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template)
-- [React Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
+Prerequisites
+- Node.js 20.x recommended
 
-## Installation
-
-### Prerequisites
-To get started with TailAdmin, ensure you have the following prerequisites installed and set up:
-
-- Node.js 18.x or later (recommended to use Node.js 20.x or later)
-
-### Cloning the Repository
-Clone the repository using the following command:
-
+Install & run
 ```bash
-git clone https://github.com/TailAdmin/free-nextjs-admin-dashboard.git
+npm install
+npm run dev
 ```
 
-> Windows Users: place the repository near the root of your drive if you face issues while cloning.
+Build & start
+```bash
+npm run build
+npm run start
+```
 
-1. Install dependencies:
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-    > Use `--legacy-peer-deps` flag if you face peer-dependency error during installation.
+## Environment Variables
 
-2. Start the development server:
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+Create a .env.local and provide the following (placeholders shown):
+```env
+MONGO_URI=...
+JWT_SECRET=...
+EMAIL_USER=...
+EMAIL_PASS=...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_LIVE_URL=...
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
+FIREBASE_PROJECT_ID=...
+FIREBASE_CLIENT_EMAIL=...
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_STORAGE_BUCKET=...
+CRON_SECRET=...
+```
 
-## Components
+Do not commit secrets; .env files are gitignored.
 
-TailAdmin is a pre-designed starting point for building a web-based dashboard using Next.js and Tailwind CSS. The template includes:
+## Development
 
-- Sophisticated and accessible sidebar
-- Data visualization components
-- Profile management and custom 404 page
-- Tables and Charts(Line and Bar)
-- Authentication forms and input elements
-- Alerts, Dropdowns, Modals, Buttons and more
-- Can't forget Dark Mode 🕶️
+- Node.js 20.x recommended
+- Install dependencies and run the dev server in this project directory:
 
-All components are built with React and styled using Tailwind CSS for easy customization.
+```bash
+npm install
+npm run dev
+```
 
-## Feature Comparison
+Build production and start:
+```bash
+npm run build
+npm run start
+```
 
-### Free Version
-- 1 Unique Dashboard
-- 30+ dashboard components
-- 50+ UI elements
-- Basic Figma design files
-- Community support
+## Key Features
 
-### Pro Version
-- 5 Unique Dashboards: Analytics, Ecommerce, Marketing, CRM, Stocks (more coming soon)
-- 400+ dashboard components and UI elements
-- Complete Figma design file
-- Email support
+- Vendor/Department selection via cookies and window events keeps the app in sync across pages (selectedVendor/selectedVendorId, selectedDepartment/selectedDepartmentId; events: selectedVendorChanged, selectedDepartmentChanged).
+- Image Alignment Guide uses segmentation masks and IoU scoring against tab-specific silhouettes; a 70% pass threshold enables “Send to Upload Area”.
+- Camera and preview overlays use an enlarged silhouette (scale 1.12) for clearer guidance; camera modal dimensions sync to the target upload area for consistent alignment.
+- Persistent filters for inspections and tracking stored in sessionStorage (inspectionFilters, trackingFilters); date ranges presented via DatePickerDropdown with friendly chip formatting.
+- Dashboards and reporting with server-side aggregation to produce vendor/department summaries.
+- Built on TailAdmin’s UI foundation for sidebar, tables, charts, and dark mode.
 
-To learn more about pro version features and pricing, visit our [pricing page](https://tailadmin.com/pricing).
 
-## Changelog
+Markdown previews:
 
-### Version 2.0.2 - [March 25, 2025]
+![Dashboard](./public/screenshots/dashboard.png)
+![Inspections Table](./public/screenshots/inspections-table.png)
+![Camera Overlay](./public/screenshots/camera-overlay.png)
+![Reports](./public/screenshots/reports.png)
+![Vendor & Department Selection](./public/screenshots/vendor-department.png)
 
-- Upgraded to Next v15.2.3 for [CVE-2025-29927](https://nextjs.org/blog/cve-2025-29927) concerns
-- Included overrides vectormap for packages to prevent peer dependency errors during installation.
-- Migrated from react-flatpickr to flatpickr package for React 19 support
 
-### Version 2.0.1 - [February 27, 2025]
-
-#### Update Overview
-
-- Upgraded to Tailwind CSS v4 for better performance and efficiency.
-- Updated class usage to match the latest syntax and features.
-- Replaced deprecated class and optimized styles.
-
-#### Next Steps
-
-- Run npm install or yarn install to update dependencies.
-- Check for any style changes or compatibility issues.
-- Refer to the Tailwind CSS v4 [Migration Guide](https://tailwindcss.com/docs/upgrade-guide) on this release. if needed.
-- This update keeps the project up to date with the latest Tailwind improvements. 🚀
-
-### v2.0.0 (February 2025)
-A major update focused on Next.js 15 implementation and comprehensive redesign.
-
-#### Major Improvements
-- Complete redesign using Next.js 15 App Router and React Server Components
-- Enhanced user interface with Next.js-optimized components
-- Improved responsiveness and accessibility
-- New features including collapsible sidebar, chat screens, and calendar
-- Redesigned authentication using Next.js App Router and server actions
-- Updated data visualization using ApexCharts for React
-
-#### Breaking Changes
-
-- Migrated from Next.js 14 to Next.js 15
-- Chart components now use ApexCharts for React
-- Authentication flow updated to use Server Actions and middleware
-
-[Read more](https://tailadmin.com/docs/update-logs/nextjs) on this release.
-
-#### Breaking Changes
-- Migrated from Next.js 14 to Next.js 15
-- Chart components now use ApexCharts for React
-- Authentication flow updated to use Server Actions and middleware
-
-### v1.3.4 (July 01, 2024)
-- Fixed JSvectormap rendering issues
-
-### v1.3.3 (June 20, 2024)
-- Fixed build error related to Loader component
-
-### v1.3.2 (June 19, 2024)
-- Added ClickOutside component for dropdown menus
-- Refactored sidebar components
-- Updated Jsvectormap package
-
-### v1.3.1 (Feb 12, 2024)
-- Fixed layout naming consistency
-- Updated styles
-
-### v1.3.0 (Feb 05, 2024)
-- Upgraded to Next.js 14
-- Added Flatpickr integration
-- Improved form elements
-- Enhanced multiselect functionality
-- Added default layout component
-
-## License
-
-TailAdmin Next.js Free Version is released under the MIT License.
-
-## Support
-
-If you find this project helpful, please consider giving it a star on GitHub. Your support helps us continue developing and maintaining this template.
-# quatomed
-# quatomed
-# quatomed
-# quatomed

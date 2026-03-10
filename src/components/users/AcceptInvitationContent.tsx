@@ -30,7 +30,7 @@ function AcceptInvitationContent() {
             try {
                 const res = await fetch(`/api/invite/details?token=${token}`);
                 const data = await res.json();
-                console.log(data);
+                ;
                 if (data.success) {
                     setInvitation(data.invitation);
                 } else {
@@ -126,8 +126,8 @@ function AcceptInvitationContent() {
 
             <div className="w-full max-w-[600px] bg-[#F9F6FE] rounded-2xl shadow-lg overflow-hidden border border-gray-200">
                 {/* Card Header */}
-                <div className="px-8 pt-8 pb-4">
-                    <div className="flex justify-between items-start mb-6">
+                <div className="sm:px-8 px-4 pt-8 pb-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:gap-0 justify-between items-start mb-6">
                         <h2 className="text-xl font-medium text-gray-900">Complete Your Registration</h2>
                         {invitation?.vendorId && (
                             <span className="text-xs bg-[#ECE4F5] p-2 rounded-full text-[#7844AB]">
@@ -160,7 +160,10 @@ function AcceptInvitationContent() {
                             </div>
                             <div className="grid grid-cols-[80px_1fr] items-baseline">
                                 <span className="text-gray-900">Email:</span>
-                                <span className="font-medium text-gray-500">{invitation?.email}</span>
+                                <span className="font-medium text-gray-500 break-all">
+                                    {invitation?.email}
+                                </span>
+
                             </div>
                         </div>
                     </div>
@@ -178,7 +181,7 @@ function AcceptInvitationContent() {
                 <div className="border-t border-gray-100"></div>
 
                 {/* Form Section */}
-                <div className="p-8 ">
+                <div className="sm:p-8 p-4 ">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Email (Username) */}
                         <div>

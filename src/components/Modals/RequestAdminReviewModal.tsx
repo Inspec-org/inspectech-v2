@@ -6,6 +6,7 @@ import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
+import { ClipLoader } from 'react-spinners';
 import { useSearchParams } from 'next/navigation';
 import { evaluateInspectionData } from '../inspections/processing';
 
@@ -120,7 +121,8 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                             doc.insideTrailerImageUrl,
                             doc.doorDetailsImageUrl,
                         ].map((v: any) => String(v || '').trim());
-                        const imageStatus = imgs.some(v => !v) ? 'Incomplete Image File' : 'PASS';
+                        // const imageStatus = imgs.some(v => !v) ? 'Incomplete Image File' : 'PASS';
+                        const imageStatus= "";
                         detailsRows.push(`${unitId},${checklistStatus},${imageStatus}`);
                     } else {
                         detailsRows.push(`${unitId},N/A,N/A`);
@@ -130,7 +132,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
                 }
             }));
 
-            const detailsCsv = `Unit ID,Inspection Checklist Status,Inspection Image Status\n${detailsRows.join('\n')}`;
+            const detailsCsv = `Unit ID,Inspection Checklist,Inspection Media Central\n${detailsRows.join('\n')}`;
 
             const res = await apiRequest('/api/admin-review/send', {
                 method: 'POST',
@@ -156,155 +158,164 @@ const RequestAdminReviewModal: React.FC<Props> = ({
     };
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-[1100px] max-h-[90vh]">
-            <div className="p-6 bg-[#F9F6FE] max-h-[90vh]">
-                <h2 className="text-2xl font-semibold mb-6">Request Admin Review</h2>
+            <div className="flex flex-col bg-[#F9F6FE] max-h-[90vh]">
+                <div className="flex-1 overflow-y-auto p-6">
+                    <h2 className="text-2xl font-semibold mb-6">Request Admin Review</h2>
 
-                {/* Email Recipients */}
-                <div className="mb-6 border bg-white p-4">
-                    <label className="block text-base font-medium mb-2">Email Recipients</label>
-                    <input
-                        type="text"
-                        placeholder="Enter comma-separated emails (e.g. a@b.com, c@d.com)"
-                        value={recipientsInput}
-                        onChange={(e) => setRecipientsInput(e.target.value)}
-                        className="w-full bg-[#F9F6FE] rounded-lg p-3 text-sm text-gray-700 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-2">Add team members who should receive this review request</p>
-                </div>
-
-                {/* Search */}
-                <div className="mb-4 flex items-center gap-4">
-                    <input
-                        type="text"
-                        placeholder="Search Unit IDs...."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-                    <span className="text-sm text-gray-500 whitespace-nowrap">
-                        {totalInspections} inspections
-                    </span>
-                </div>
-
-
-                {/* Inspections List */}
-                <div className="border border-gray-200 rounded-lg mb-4 max-h-[30vh] overflow-y-auto">
-                    {inspections.map((inspection, index) => (
-                        <div
-                            key={`${inspection.unitId}-${index}`}
-                            className={`flex items-center px-4 py-4 ${index !== inspections.length - 1 ? "border-b border-gray-200" : ""
-                                } hover:bg-gray-50 transition-colors`}
-                        >
-                            {/* LEFT */}
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedInspections.includes(inspection.unitId)}
-                                    onChange={() => toggleInspection(inspection.unitId)}
-                                    className="circle-checkbox"
-                                />
-
-                                <span className="text-sm font-medium truncate">
-                                    {inspection.unitId}
-                                </span>
-                            </div>
-
-                            {/* CENTER (LOCKED CENTER) */}
-                            <div className="flex justify-center w-32">
-                                <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                                    {(inspection.inspectionStatus || "complete").toUpperCase()}
-                                </span>
-                            </div>
-
-                            {/* RIGHT (SPACER TO BALANCE CENTER) */}
-                            <div className="flex-1" />
-                        </div>
-                    ))}
-                </div>
-
-
-                {/* Pagination */}
-                <div className="flex sm:flex-row flex-col-reverse justify-between items-center mt-4 bg-white p-4 sm:gap-0 gap-2 mb-6">
-                    {/* Left side: Showing results */}
-                    <div className="flex sm:flex-row flex-col sm:items-center sm:gap-4">
-                        <div className="text-sm text-gray-600">
-                            Showing {startIndex + 1} to {endIndex} of {totalInspections} results
-                        </div>
-                        <div className="h-5 w-0.5 bg-black sm:block hidden" />
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <span>Row per page:</span>
-                            <select
-                                className="border rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 bg-white"
-                                value={rowsPerPage}
-                                onChange={(e) => {
-                                    setRowsPerPage(Number(e.target.value));
-                                    setCurrentPage(1);
-                                }}
-                            >
-                                <option value={10}>10</option>
-                                <option value={15}>15</option>
-                                <option value={20}>20</option>
-                                <option value={50}>50</option>
-                            </select>
-                        </div>
+                    {/* Email Recipients */}
+                    <div className="mb-6 border bg-white p-4">
+                        <label className="block text-base font-medium mb-2">Email Recipients</label>
+                        <input
+                            type="text"
+                            placeholder="Enter comma-separated emails (e.g. a@b.com, c@d.com)"
+                            value={recipientsInput}
+                            onChange={(e) => setRecipientsInput(e.target.value)}
+                            className="w-full bg-[#F9F6FE] rounded-lg p-3 text-sm text-gray-700 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-2">Add team members who should receive this review request</p>
                     </div>
 
-                    {/* Right: Page navigation */}
-                    <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => setCurrentPage(1)}
-                            disabled={currentPage <= 1}
-                            className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
-                        >
-                            <ChevronsLeft className="w-4 h-4" color="#7522BB" />
-                        </button>
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage <= 1}
-                            className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
-                        >
-                            <ChevronLeft className="w-4 h-4" color="#7522BB" />
-                        </button>
-                        {pageTabs.map((tab, index) => (
+                    {/* Search */}
+                    <div className="mb-4 flex items-center gap-4">
+                        <input
+                            type="text"
+                            placeholder="Search Unit IDs...."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                        <span className="text-sm text-gray-500 whitespace-nowrap">
+                            {totalInspections} inspections
+                        </span>
+                    </div>
+
+
+                    {/* Inspections List */}
+                    <div className="border border-gray-200 rounded-lg mb-4 max-h-[30vh] overflow-y-auto">
+                        {tableLoading ? (
+                            <div className="flex items-center justify-center py-10">
+                                <ClipLoader color="#9333EA" size={28} />
+                            </div>
+                        ) : inspections.length === 0 ? (
+                            <div className="flex items-center justify-center py-10">
+                                <p className="text-sm text-gray-500">No Completed Inspections</p>
+                            </div>
+                        ) : (
+                            inspections.map((inspection, index) => (
+                                <div
+                                    key={`${inspection.unitId}-${index}`}
+                                    className={`flex items-center px-4 py-4 ${index !== inspections.length - 1 ? "border-b border-gray-200" : ""}
+                                    hover:bg-gray-50 transition-colors`}
+                                >
+                                    {/* LEFT */}
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedInspections.includes(inspection.unitId)}
+                                            onChange={() => toggleInspection(inspection.unitId)}
+                                            className="circle-checkbox"
+                                        />
+                                        <span className="text-sm font-medium truncate">
+                                            {inspection.unitId}
+                                        </span>
+                                    </div>
+                                    {/* CENTER (LOCKED CENTER) */}
+                                    <div className="flex justify-center w-32">
+                                        <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                                            {(inspection.inspectionStatus || "complete").toUpperCase()}
+                                        </span>
+                                    </div>
+                                    {/* RIGHT (SPACER TO BALANCE CENTER) */}
+                                    <div className="flex-1" />
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+
+                    {/* Pagination */}
+                    <div className="flex sm:flex-row flex-col-reverse justify-between items-center mt-4 bg-white p-4 sm:gap-0 gap-2 mb-6">
+                        {/* Left side: Showing results */}
+                        <div className="flex sm:flex-row flex-col sm:items-center sm:gap-4">
+                            <div className="text-sm text-gray-600">
+                                Showing {startIndex + 1} to {endIndex} of {totalInspections} results
+                            </div>
+                            <div className="h-5 w-0.5 bg-black sm:block hidden" />
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <span>Row per page:</span>
+                                <select
+                                    className="border rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 bg-white"
+                                    value={rowsPerPage}
+                                    onChange={(e) => {
+                                        setRowsPerPage(Number(e.target.value));
+                                        setCurrentPage(1);
+                                    }}
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={15}>15</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Right: Page navigation */}
+                        <div className="flex items-center gap-1">
                             <button
-                                key={index}
-                                onClick={() => goToPage(Number(tab))}
-                                className={`w-6 h-6 rounded text-xs font-medium ${currentPage === Number(tab)
-                                    ? "bg-purple-600 text-white"
-                                    : "text-gray-700 hover:bg-gray-100"
-                                    }`}
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage <= 1}
+                                className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
                             >
-                                {tab}
+                                <ChevronsLeft className="w-4 h-4" color="#7522BB" />
                             </button>
-                        ))}
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage <= 1}
+                                className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
+                            >
+                                <ChevronLeft className="w-4 h-4" color="#7522BB" />
+                            </button>
+                            {pageTabs.map((tab, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => goToPage(Number(tab))}
+                                    className={`w-6 h-6 rounded text-xs font-medium ${currentPage === Number(tab)
+                                        ? "bg-purple-600 text-white"
+                                        : "text-gray-700 hover:bg-gray-100"
+                                        }`}
+                                >
+                                    {tab}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage >= totalPages}
+                                className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
+                            >
+                                <ChevronRight className="w-4 h-4" color="#7522BB" />
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={currentPage >= totalPages}
+                                className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
+                            >
+                                <ChevronsRight className="w-4 h-4" color="#7522BB" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Process Button */}
+                    <div className='mb-2'>
+                        {err && <div className="text-red-500 text-sm">{err}</div>}
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage >= totalPages}
-                            className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
+                            onClick={handleProcessRequest}
+                            disabled={loading || selectedInspections.length === 0}
+                            className={`w-full bg-green-400 hover:bg-green-500 text-white font-medium py-3.5 rounded-lg transition-colors flex items-center justify-center gap-2 ${selectedInspections.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                            <ChevronRight className="w-4 h-4" color="#7522BB" />
-                        </button>
-                        <button
-                            onClick={() => setCurrentPage(totalPages)}
-                            disabled={currentPage >= totalPages}
-                            className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-30 hover:bg-gray-100 bg-[#9333EA1A]"
-                        >
-                            <ChevronsRight className="w-4 h-4" color="#7522BB" />
+                            <span className="text-lg">🚀</span>
+                            {loading ? 'Processing...' : `Process & Send Request (${selectedInspections.length})`}
                         </button>
                     </div>
-                </div>
-
-                {/* Process Button */}
-                <div>
-                    {err && <div className="text-red-500 text-sm mb-2">{err}</div>}
-                    <button
-                        onClick={handleProcessRequest}
-                        disabled={loading || selectedInspections.length === 0}
-                        className={`w-full bg-green-400 hover:bg-green-500 text-white font-medium py-3.5 rounded-lg transition-colors flex items-center justify-center gap-2 ${selectedInspections.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        <span className="text-lg">🚀</span>
-                        {loading ? 'Processing...' : `Process & Send Request (${selectedInspections.length})`}
-                    </button>
                 </div>
             </div>
         </Modal>

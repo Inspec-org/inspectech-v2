@@ -1,10 +1,12 @@
 'use client';
-import React, { useContext, useState } from 'react';
-import { ChevronDown, Folder, Building2 } from 'lucide-react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
+import { ChevronDown, Folder, Building2, ChevronLeft } from 'lucide-react';
 import { Department } from '../departments/DepartmentCard';
 import { Vendor } from './Dashboard';
 import { UserContext } from '@/context/authContext';
 import Cookies from 'js-cookie';
+import { useSidebar } from '@/context/SidebarContext';
+import { Menu } from 'lucide-react';
 
 function Header({
   departments,
@@ -13,6 +15,7 @@ function Header({
   vendors,
   setSelectedVendor,
   selectedVendor,
+  vendorEnabledMap,
 }: {
   departments: Department[];
   setSelectedDepartment: React.Dispatch<React.SetStateAction<Department | null>>;
@@ -20,20 +23,33 @@ function Header({
   vendors?: Vendor[] | null;
   setSelectedVendor: React.Dispatch<React.SetStateAction<Vendor | null>>;
   selectedVendor?: Vendor | null;
+  vendorEnabledMap?: Record<string, boolean>;
 }) {
   const [departmentOpen, setDepartmentOpen] = useState(false);
   const [vendorOpen, setVendorOpen] = useState(false);
   const { user } = useContext(UserContext);
+  const deptRef = React.useRef<HTMLDivElement>(null);
+  const vendorRef = React.useRef<HTMLDivElement>(null);
+  const { toggleSidebar, toggleMobileSidebar, isExpanded, isMobileOpen } = useSidebar();
+  React.useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (departmentOpen && deptRef.current && !deptRef.current.contains(t)) setDepartmentOpen(false);
+      if (vendorOpen && vendorRef.current && !vendorRef.current.contains(t)) setVendorOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => { document.removeEventListener('mousedown', handle); };
+  }, [departmentOpen, vendorOpen]);
 
   return (
-    <div className="w-full bg-gradient-to-br from-purple-700 to-purple-800 px-6 py-3 border-b border-purple-100">
+    <div className="w-full bg-gradient-to-br from-purple-700 to-purple-800 px-6 py-3 border-b border-purple-100 flex">
       {/* Department Section */}
       <div className='mx-auto max-w-6xl w-full md:px-6 flex flex-col md:flex-row flex-wrap md:items-center gap-6'>
         <div className="flex xl:flex-row flex-col xl:items-center gap-3">
           <span className="text-sm font-semibold text-white tracking-wide">
             DEPARTMENT
           </span>
-          <div className="relative">
+          <div className="relative" ref={deptRef}>
             <button
               onClick={() => setDepartmentOpen(!departmentOpen)}
               className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[220px]"
@@ -50,15 +66,16 @@ function Header({
                   {departments.map((dept) => (
                     <button
                       key={dept._id}
+                      disabled={String(dept.status ?? (dept.isActive ? 'active' : 'inactive')).toLowerCase() !== 'active'}
                       onClick={() => {
-                        console.log('Selected department:', dept);
+                        if (String(dept.status ?? (dept.isActive ? 'active' : 'inactive')).toLowerCase() !== 'active') return;
                         setSelectedDepartment(dept);
                         setDepartmentOpen(false);
                         Cookies.set('selectedDepartment', dept.name || '');
                         Cookies.set('selectedDepartmentId', dept._id || '');
                         window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: dept.name }));
                       }}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Folder className="w-4 h-4 text-purple-600" />
                       {dept.name}
@@ -78,41 +95,45 @@ function Header({
           <span className="text-sm font-semibold text-white tracking-wide">
             VENDOR
           </span>
-          <div className="relative">
+          <div className="relative" ref={vendorRef}>
             <button
-              onClick={() => user?.role === 'admin' && setVendorOpen(!vendorOpen)}
-              className={`flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[200px] ${user?.role === 'admin' ? 'cursor-pointer' : 'cursor-auto'}`}
+              onClick={() => (user?.role === 'admin' || user?.role === 'superadmin') && setVendorOpen(!vendorOpen)}
+              className={`flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors min-w-[200px] ${(user?.role === 'admin' || user?.role === 'superadmin') ? 'cursor-pointer' : 'cursor-auto'}`}
             >
               <Building2 className="w-4 h-4 text-purple-600" />
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
               <span className="text-sm text-gray-700 flex-1 text-left">
                 {selectedVendor?.name || 'ABC Vendor'}
               </span>
-              {user?.role === 'admin' && (
+              {(user?.role === 'admin' || user?.role === 'superadmin') && (
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               )}
             </button>
             {vendorOpen && (
               <div className="absolute top-full mt-1 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 <div className="py-1">
-                  {vendors?.map((vendor) => (
-                    <button
-                      key={vendor._id}
-                      onClick={() => {
-                        console.log('Selected vendor:', vendor);
-                        setSelectedVendor(vendor);
-                        setVendorOpen(false);
-                        console.log('Vendor ID:', vendor._id);
-                        Cookies.set('selectedVendor', vendor.name || '');
-                        Cookies.set('selectedVendorId', vendor._id || '');
-                        window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: vendor.name }));
-                      }}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2"
-                    >
-                      <Building2 className="w-4 h-4 text-purple-600" />
-                      {vendor.name}
-                    </button>
-                  ))}
+                  {vendors?.map((vendor) => {
+                    const canSelect = (user?.role === 'admin' || user?.role === 'superadmin');
+                    const isDisabled = canSelect ? (vendorEnabledMap && vendorEnabledMap[String(vendor._id)] === false) : true;
+                    return (
+                      <button
+                        key={vendor._id}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          setSelectedVendor(vendor);
+                          setVendorOpen(false);
+                          Cookies.set('selectedVendor', vendor.name || '');
+                          Cookies.set('selectedVendorId', vendor._id || '');
+                          window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: vendor.name }));
+                        }}
+                        disabled={isDisabled}
+                        className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Building2 className="w-4 h-4 text-purple-600" />
+                        {vendor.name}
+                      </button>
+                    );
+                  })}
                   {/* <button className="w-full px-4 py-2 text-sm text-left hover:bg-purple-50 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-purple-600" />
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>

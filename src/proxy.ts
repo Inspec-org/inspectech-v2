@@ -13,6 +13,7 @@ export async function proxy(req: NextRequest) {
 
   if (
     pathname.startsWith("/api") ||
+    pathname.startsWith("/mobile-api") ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico" ||
     pathname.startsWith("/images")

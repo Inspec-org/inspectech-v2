@@ -114,13 +114,26 @@ const UserModule: React.FC = () => {
         const onVendor = () => {
             const v = Cookies.get('selectedVendorId') || '';
             setVendorId(v);
+            const params = new URLSearchParams(searchParams);
+            let changed = false;
+            if (userCurrentPage !== 1) { isResettingUserPage.current = true; params.set('user_page', '1'); changed = true; }
+            if (invitationCurrentPage !== 1) { isResettingInvitationPage.current = true; params.set('invitation_page', '1'); changed = true; }
+            if (activeTab === 'admins' && user?.role === 'admin' && adminCurrentPage !== 1) { isResettingAdminPage.current = true; params.set('admin_page', '1'); changed = true; }
+            if (changed) {
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+            }
+            // No direct refetch here; vendorId state change will trigger effects once
         };
         const onDept = () => {
-            getUsers();
-            getInvites();
-            if (activeTab === 'admins' && user?.role === 'admin') {
-                getAdmins();
+            const params = new URLSearchParams(searchParams);
+            let changed = false;
+            if (userCurrentPage !== 1) { isResettingUserPage.current = true; params.set('user_page', '1'); changed = true; }
+            if (invitationCurrentPage !== 1) { isResettingInvitationPage.current = true; params.set('invitation_page', '1'); changed = true; }
+            if (activeTab === 'admins' && user?.role === 'admin' && adminCurrentPage !== 1) { isResettingAdminPage.current = true; params.set('admin_page', '1'); changed = true; }
+            if (changed) {
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
             }
+            // rely on useEffect watchers to refetch once
         };
         window.addEventListener('selectedVendorChanged', onVendor as EventListener);
         window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
@@ -135,7 +148,8 @@ const UserModule: React.FC = () => {
             isResettingInvitationPage.current = false;
             return;
         }
-        if (!vendorId) {
+        const vId = vendorId || Cookies.get('selectedVendorId') || '';
+        if (!vId) {
             setInvites([]);
             setTotalInvitations(0);
             setTotalInvitationsPages([]);
@@ -144,7 +158,7 @@ const UserModule: React.FC = () => {
         }
         setInvitationLoading(true);
         try {
-            const res = await apiRequest(`/api/invite/list?vendorId=${vendorId}&page=${invitationCurrentPage}&limit=${Invitationslimit}`);
+            const res = await apiRequest(`/api/invite/list?vendorId=${vId}&page=${invitationCurrentPage}&limit=${Invitationslimit}`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch invitations')
@@ -167,7 +181,8 @@ const UserModule: React.FC = () => {
             isResettingUserPage.current = false;
             return;
         }
-        if (!vendorId) {
+        const vId = vendorId || Cookies.get('selectedVendorId') || '';
+        if (!vId) {
             setUsers([]);
             setTotalUsers(0);
             setTotalUsersPages([]);
@@ -176,12 +191,12 @@ const UserModule: React.FC = () => {
         }
         setUserLoading(true);
         try {
-            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}&page=${userCurrentPage}&limit=${userlimit}`);
+            const res = await apiRequest(`/api/users/get-users?vendorId=${vId}&role=user&page=${userCurrentPage}&limit=${userlimit}`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch users')
             }
-            console.log('json.users', json.users || [])
+
             setUsers(json.users || []);
             setTotalUsers(json.total || 0);
             const pagesArray = Array.from({ length: json.totalPages || 0 }, (_, i) => i + 1);
@@ -200,14 +215,15 @@ const UserModule: React.FC = () => {
             isResettingAdminPage.current = false;
             return;
         }
-        if (!vendorId) {
+        const vId = vendorId || Cookies.get('selectedVendorId') || '';
+        if (!vId) {
             setAdmins([]);
             setAdminLoading(false);
             return;
         }
         setAdminLoading(true);
         try {
-            const res = await apiRequest(`/api/users/get-users?vendorId=${vendorId}&page=${adminCurrentPage}&limit=${adminLimit}&role=admin`);
+            const res = await apiRequest(`/api/users/get-users?vendorId=${vId}&page=${adminCurrentPage}&limit=${adminLimit}&role=admin`);
             const json = await res.json();
             if (!res.ok) {
                 throw new Error(json.message || 'Failed to fetch admin users')
@@ -368,9 +384,9 @@ const UserModule: React.FC = () => {
                             <h1 className="text-lg md:text-xl font-semibold text-gray-900">Users</h1>
                         </div>
                     </div>
-                    <div className="flex justify-between mb-5">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between mb-5">
                         {/* Tabs */}
-                        <div className="inline-block bg-purple-100 p-2 rounded-lg ">
+                        {/* <div className="inline-block bg-purple-100 p-2 rounded-lg ">
                             {tabs.map(tab => (
                                 <button
                                     key={tab.id}
@@ -383,12 +399,26 @@ const UserModule: React.FC = () => {
                                     {tab.label}
                                 </button>
                             ))}
-                        </div>
+                        </div> */}
 
+                        <div className="flex w-full sm:w-fit  justify-between bg-purple-100 p-2 rounded-lg">
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-2 w-full rounded-lg text-md font-medium transition whitespace-nowrap ${activeTab === tab.id
+                                        ? 'bg-[#7522BB] text-white'
+                                        : 'text-gray-700'
+                                        }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
                         <button
                             onClick={() => setIsInvitationModalOpen(true)}
                             disabled={user?.role === "admin"}
-                            className="bg-[#7522BB] text-white rounded-xl  px-2 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="bg-[#7522BB] text-white rounded-xl sm:py-0 py-2 px-2 font-medium hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             <Plus size={16} />
                             Send Invitation
@@ -409,7 +439,7 @@ const UserModule: React.FC = () => {
                     {activeTab === 'admins' && (
                         <div className="">
                             <div className="h-full">
-                                <GenericDataTable title="" data={admins} tabs={totalAdminsPages} columns={adminColumns} pageSize={adminLimit} currentPage={adminCurrentPage} totalCount={totalAdmins} loading={adminLoading} setLoading={setAdminLoading} querykey="admin_page" emptyStateImages={{
+                                <GenericDataTable title="" data={admins} tabs={totalAdminsPages} columns={adminColumns} pageSize={adminLimit} setPageSize={setAdminLimit} currentPage={adminCurrentPage} totalCount={totalAdmins} loading={adminLoading} setLoading={setAdminLoading} querykey="admin_page" emptyStateImages={{
                                     "All Users": "/images/No Users.svg"
                                 }}
                                 />
@@ -437,7 +467,7 @@ const UserModule: React.FC = () => {
                 onUpdated={() => {
                     getInvites();
                 }}
-                role={user?.role === "user" ? "vendor" : "admin"}
+                role={user?.role === "superadmin" ? "vendor" : user?.role === "admin" ? "admin" : "vendor"}
                 vendorId={vendorId}
             />
         </Suspense>

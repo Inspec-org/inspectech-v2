@@ -70,7 +70,7 @@ function Inspections() {
         durationSec: "00",
         dateDay: "01",
         dateMonth: "01",
-        dateYear: "2925",
+        dateYear: "2025",
         notes: '',
         delivered_status: '',
         poNumber: '',
@@ -85,7 +85,7 @@ function Inspections() {
         modelYear: '',
         absSensor: '',
         airTankMonitor: '',
-        rtbIndicator: '',
+        atisregulator: '',
         lightOutSensor: '',
         sensorError: '',
         ultrasonicCargoSensor: '',
@@ -96,7 +96,7 @@ function Inspections() {
         brakeType: '',
         suspensionType: '',
         tireModel: '',
-        amenikis: '',
+        aerokits: '',
         doorBranding: '',
         doorColor: '',
         doorSensor: '',
@@ -114,7 +114,7 @@ function Inspections() {
         trailerHeightDecal: '',
     });
     // Count total selected filters
-    const totalFiltersCount = Object.values(selectedFilters).reduce((sum, arr) => sum + arr.length, 0);
+    const totalFiltersCount = Object.entries(selectedFilters).reduce((sum, [key, arr]) => sum + (key === 'date' ? (arr.length > 0 ? 1 : 0) : arr.length), 0);
     const [dept, setDept] = useState<string | null>(null);
     const [vendor, setVendor] = useState<string | null>(null);
     const [deptName, setDeptName] = useState<string | null>(null);
@@ -148,10 +148,14 @@ function Inspections() {
             setDept(id);
             setDepartment(id || '');
             setDeptName(name || '');
+            setSelectedRows([]);
+            setSelectAll(false);
         };
         const onVendor = () => {
             const id = Cookies.get('selectedVendorId') || '';
             setVendor(id);
+            setSelectedRows([]);
+            setSelectAll(false);
         };
         window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
         window.addEventListener('selectedVendorChanged', onVendor as EventListener);
@@ -170,6 +174,25 @@ function Inspections() {
             [name]: value
         }));
     };
+    const buildServerFilter = (filters: { [key: string]: string[] }): any => {
+        const f: any = {};
+        if (filters.unitId?.length) f.unitIds = filters.unitId;
+        if (filters.inspectionStatus?.length) f.inspectionStatuses = filters.inspectionStatus.map(s => s.toLowerCase());
+        if (filters.type?.length) f.types = filters.type;
+        if (filters.inspector?.length) f.inspectors = filters.inspector;
+        if (filters.vendor?.length) f.vendors = filters.vendor;
+        if (filters.location?.length) f.locations = filters.location;
+        if (filters.delivered?.length) f.deliveredStatuses = filters.delivered.map(d => d.toLowerCase());
+        if (filters.duration?.length) f.duration = filters.duration;
+        if ((filters.date || []).length >= 2) {
+            const [s, e] = filters.date;
+            const sm = String(s).slice(0, 7);
+            const em = String(e).slice(0, 7);
+            f.dateMonthRange = [sm, em];
+            f.dateRange = [String(s), String(e)];
+        }
+        return f;
+    };
 
     const handleSelectAll = async () => {
         if (selectAll) {
@@ -185,7 +208,7 @@ function Inspections() {
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idsOnly: true, filter: selectedFilters, vendorId: vendor, department: dept }),
+                body: JSON.stringify({ idsOnly: true, filter: buildServerFilter(selectedFilters), vendorId: vendor, department: dept }),
             });
             const json = await res.json();
             if (res.ok && json.success) {
@@ -212,6 +235,36 @@ function Inspections() {
         setSelectAll(false);
         getInspections();
     };
+    const handleDeleteSelected = async () => {
+        if (!dept || !vendor) {
+            toast.error('Please select department and vendor first');
+            return;
+        }
+        if (selectedRows.length === 0) return;
+        const ok = typeof window !== 'undefined' ? window.confirm(`Delete ${selectedRows.length} inspection(s)? This cannot be undone.`) : true;
+        if (!ok) return;
+        try {
+            setLoading(true);
+            const res = await apiRequest(`/api/inspections/delete-inspections`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ unitIds: selectedRows, vendorId: vendor, departmentId: dept }),
+            });
+            const json = await res.json();
+            if (res.ok && json.success) {
+                toast.success(`Deleted ${json.deleted?.inspections ?? selectedRows.length} inspection(s)`);
+                setSelectedRows([]);
+                setSelectAll(false);
+                getInspections();
+            } else {
+                toast.error(json.message || 'Failed to delete');
+            }
+        } catch (e: any) {
+            toast.error(e?.message || 'Server error');
+        } finally {
+            setLoading(false);
+        }
+    };
     const handleExportInspections = async (format: string) => {
         try {
             if (!dept || !vendor) {
@@ -224,7 +277,7 @@ function Inspections() {
                 limit: totalInspections || 1000,
                 department: dept,
                 vendorId: vendor,
-                filter: selectedRows.length > 0 ? { unitIds: selectedRows } : selectedFilters,
+                filter: selectedRows.length > 0 ? { unitIds: selectedRows } : buildServerFilter(selectedFilters),
             };
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
@@ -309,7 +362,7 @@ function Inspections() {
                     if (key === 'dateMonth' || key === 'dateYear') {
                         continue;
                     }
-                    if (key === 'rtbIndicator') {
+                    if (key === 'atisregulator') {
                         result['atisRegulator'] = value as any;
                         continue;
                     }
@@ -317,7 +370,7 @@ function Inspections() {
                         result['possessionOriginLocation'] = value as any;
                         continue;
                     }
-                    if (key === 'amenikis') {
+                    if (key === 'aerokits') {
                         result['aerokits'] = value as any;
                         continue;
                     }
@@ -418,11 +471,14 @@ function Inspections() {
                 checklistOrder = checklistOrder.filter(h => h !== 'owner' && h !== 'conspicuityTape');
             }
 
-            const generalHeaders = generalOrder.filter(h => allHeaders.includes(h));
-            const checklistHeaders = checklistOrder.filter(h => allHeaders.includes(h));
-            const mediaHeaders = imageHeaders.filter(h => allHeaders.includes(h));
+            const generalHeaders = generalOrder;
+            const checklistHeaders = checklistOrder;
+            const mediaHeaders = imageHeaders;
 
-            const headers: string[] = [...generalHeaders, ...checklistHeaders, ...mediaHeaders];
+            const baseHeaders: string[] = [...generalHeaders, ...checklistHeaders, ...mediaHeaders];
+            const seen = new Set(baseHeaders);
+            const additionalHeaders = allHeaders.filter((h) => !seen.has(h));
+            const headers: string[] = [...baseHeaders, ...additionalHeaders];
             const triggerDownload = (blob: Blob, filename: string) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -439,9 +495,9 @@ function Inspections() {
             };
             const filename = `inspections_${new Date().toISOString().slice(0, 10)}.${format === 'excel' ? 'xlsx' : format}`;
             if (format === 'json') {
-                const ordered = transformed.map(obj => {
+                const ordered = flatRows.map(row => {
                     const o: any = {};
-                    headers.forEach(h => { if (obj[h] !== undefined) o[h] = obj[h]; });
+                    headers.forEach(h => { o[h] = row[h] ?? ''; });
                     return o;
                 });
                 const blob = new Blob([JSON.stringify(ordered, null, 2)], { type: 'application/json' });
@@ -470,12 +526,12 @@ function Inspections() {
             return;
         }
         try {
-            console.log("api running")
+
             setLoading(true);
             const res = await apiRequest(`/api/inspections/get-inspections`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ page: currentPage, limit, filter: selectedFilters, department: dept, vendorId: vendor }),
+                body: JSON.stringify({ page: currentPage, limit, filter: buildServerFilter(selectedFilters), department: dept, vendorId: vendor }),
             });
             const json = await res.json();
             if (res.ok && json.success) {
@@ -487,10 +543,10 @@ function Inspections() {
                     vendor: doc.vendor || '',
                     location: doc.location || '',
                     duration: `${doc.durationMin || ''}m ${doc.durationSec || ''}s`,
-                    date: `${doc.dateDay || ''}-${doc.dateMonth || ''}-${doc.dateYear || ''}`,
+                    date: `${String(doc.dateMonth || '').padStart(2, '0')}/${String(doc.dateDay || '').padStart(2, '0')}/${doc.dateYear || ''}`,
                     delivered: doc.delivered === 'yes' ? 'Yes' : doc.delivered === 'no' ? 'No' : '',
                 }));
-                console.log(json)
+
                 setTotalInspections(json.total);
                 setInspections(mapped);
             } else {
@@ -518,7 +574,7 @@ function Inspections() {
                 const res = await apiRequest(`/api/inspections/get-filters`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ department: dept }),
+                    body: JSON.stringify({ department: dept, vendorId: vendor }),
                 });
                 const json = await res.json();
                 if (res.ok && json.success) {
@@ -544,9 +600,11 @@ function Inspections() {
             }
         };
 
-        getfilters();
+        if (dept && vendor) {
+            getfilters();
+        }
 
-    }, [dept])
+    }, [dept, vendor])
 
     useEffect(() => {
         // Load filters from sessionStorage on mount
@@ -556,13 +614,21 @@ function Inspections() {
                 const parsedFilters = JSON.parse(storedFilters);
                 setSelectedFilters(parsedFilters);
             } catch (e) {
-                console.error('Failed to parse filters from sessionStorage', e);
+                ;
             }
         }
     }, []);
 
+
+
     // Update handleApplyFilters to save to sessionStorage
     const handleApplyFilters = (filters: { [key: string]: string[] }) => {
+        const params = new URLSearchParams(searchParams);
+        if (currentPage !== 1) {
+            isResettingInspectionPage.current = true;
+            params.set('inspection_page', '1');
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        }
         setSelectedFilters(filters);
         sessionStorage.setItem('inspectionFilters', JSON.stringify(filters));
         closeEFilterModal();
@@ -686,16 +752,16 @@ function Inspections() {
 
     return (
         <div>
-           
+
             <div className='bg-white p-4'>
                 <div className="flex items-center gap-3 p-2 border-b border-purple-100 bg-gradient-to-r from-[#FAF5FF] from-[0%] to-[#ded1eb] to-[100%] rounded-xl mb-4">
-                <div className="p-1.5 rounded-md ">
-                    <CheckSquare className="w-4 h-4 text-purple-600" />
+                    <div className="p-1.5 rounded-md ">
+                        <CheckSquare className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div>
+                        <h1 className="text-lg md:text-xl font-semibold text-gray-900">Inspections</h1>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-lg md:text-xl font-semibold text-gray-900">Inspections</h1>
-                </div>
-            </div>
                 {/* header */}
                 <div className='flex flex-col sm:flex-row gap-3 justify-between'>
                     <div className='flex flex-wrap gap-2'>
@@ -718,12 +784,12 @@ function Inspections() {
                                     <Briefcase className='w-4 h-4' />
                                     Reassign Department ({selectedRows.length})
                                 </button>
-                                <button className='flex gap-2 items-center bg-[#F49595] px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap cursor-not-allowed*' disabled>
-                                    <X className='w-4 h-4' />
-                                    Delete Inspection ({selectedRows.length})
-
-                                </button>
-
+                                {user?.role === "superadmin" && (
+                                    <button className='flex gap-2 items-center bg-[#ff3434] hover:bg-[#ff3434]/70 px-2 py-2 text-sm rounded-xl text-white whitespace-nowrap ' onClick={handleDeleteSelected}>
+                                        <X className='w-4 h-4' />
+                                        Delete Inspection ({selectedRows.length})
+                                    </button>
+                                )}
                             </>
                         )}
                     </div>
@@ -736,7 +802,7 @@ function Inspections() {
                             <Edit className='w-4 h-4' />
                             Batch Edit ({selectedRows.length})
                         </button>
-                        {user?.role === "user" && (
+                        {/* {user?.role === "user" && ( */}
                             <>
                                 <button className='flex gap-2 items-center bg-[#7522BB] px-2 py-2 text-sm rounded-xl whitespace-nowrap' onClick={() => router.push(`/${user?.role}/inspections/new-inspection`)} >
                                     <Plus className='w-4 h-4' />
@@ -747,7 +813,7 @@ function Inspections() {
                                     Batch Create
                                 </button>
                             </>
-                        )}
+                        {/* )} */}
 
 
                     </div>
@@ -756,8 +822,9 @@ function Inspections() {
                 {totalFiltersCount > 0 && (
                     <div className='flex items-center gap-2 mt-4 flex-wrap'>
                         {Object.entries(selectedFilters).map(([filterKey, valueIds]) =>
-                            valueIds.map(valueId => {
-                                const filterLabel = filterOptions.find(f => f.key === filterKey)?.label || filterKey;
+                            valueIds.map((valueId, idx) => {
+                                const isDate = filterKey === 'date';
+                                const filterLabel = isDate ? (idx === 0 ? 'From Date' : 'To Date') : (filterOptions.find(f => f.key === filterKey)?.label || filterKey);
                                 const filterOptionsMap: any = {
                                     unitId: unitIdOptions,
                                     inspectionStatus: inspectionStatusOptions,
@@ -769,7 +836,15 @@ function Inspections() {
                                     date: dateOptions,
                                     delivered: deliveredOptions
                                 };
-                                const valueLabel = filterOptionsMap[filterKey]?.find((opt: any) => opt.id === valueId)?.label || valueId;
+                                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                                const formatPretty = (iso: string) => {
+                                    const [yy, mm, dd] = String(iso).split('-');
+                                    const mi = Math.max(0, parseInt(mm || '1', 10) - 1);
+                                    const name = monthNames[mi] || mm;
+                                    return yy && mm && dd ? `${name} ${dd}, ${yy}` : iso;
+                                };
+                                const rawLabel = filterOptionsMap[filterKey]?.find((opt: any) => opt.id === valueId)?.label || valueId;
+                                const valueLabel = isDate ? formatPretty(valueId) : rawLabel;
 
                                 return (
                                     <div key={`${filterKey}-${valueId}`} className='flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg'>

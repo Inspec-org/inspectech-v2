@@ -5,11 +5,31 @@ import User from "@/lib/models/User";
 import { sendEmail } from "@/lib/sendEmail";
 import crypto from "crypto";
 import Vendor from "@/lib/models/Vendor";
+import Department from "@/lib/models/Departments";
+import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { email, name, role, vendorId } = body;
+        const { email, name, role, vendorId, vendorAccess = [], departmentAccess = [] } = body;
+        console.log(body);
+
+        const authHeader = req.headers.get("Authorization");
+        const authToken = authHeader?.split(" ")[1];
+        if (!authToken) {
+            return NextResponse.json({ success: false, message: "No token provided" }, { status: 401 });
+        }
+        const actor = await getUserFromToken(authToken);
+        if (!actor) {
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+        }
+        if (role === "admin" && actor.role !== "superadmin") {
+            return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+        }
+        // if (role === "vendor" && !(actor.role === "admin" || actor.role === "superadmin")) {
+        //     console.log(actor.role);
+        //     return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+        // }
 
         if (!email || !name || !role) {
             return NextResponse.json(
@@ -29,14 +49,41 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const vendor=await Vendor.findById(vendorId);
-        if(!vendor){
-            return NextResponse.json(
-                { success: false, message: "Vendor not found" },
-                { status: 400 }
-            );
+        let vendorName: string | undefined = undefined;
+        if (role === "vendor") {
+            const vendor = await Vendor.findById(vendorId);
+            if (!vendor) {
+                return NextResponse.json(
+                    { success: false, message: "Vendor not found" },
+                    { status: 400 }
+                );
+            }
+            vendorName = vendor.name;
+        } else if (role === "admin") {
+            if (!Array.isArray(vendorAccess) || vendorAccess.length === 0) {
+                return NextResponse.json({ success: false, message: "vendorAccess must include at least one vendor id" }, { status: 400 });
+            }
+            if (!Array.isArray(departmentAccess) || departmentAccess.length === 0) {
+                return NextResponse.json({ success: false, message: "departmentAccess must include at least one department id" }, { status: 400 });
+            }
+            const validVendorIds = vendorAccess.filter((v: string) => v && v.length === 24);
+            const validDeptIds = departmentAccess.filter((d: string) => d && d.length === 24);
+            if (validVendorIds.length !== vendorAccess.length) {
+                return NextResponse.json({ success: false, message: "Invalid vendor ids" }, { status: 400 });
+            }
+            if (validDeptIds.length !== departmentAccess.length) {
+                return NextResponse.json({ success: false, message: "Invalid department ids" }, { status: 400 });
+            }
+            const vendors = await Vendor.find({ _id: { $in: validVendorIds } }).select("_id name").lean();
+            const depts = await Department.find({ _id: { $in: validDeptIds } }).select("_id").lean();
+            if (vendors.length !== validVendorIds.length) {
+                return NextResponse.json({ success: false, message: "One or more vendors not found" }, { status: 404 });
+            }
+            if (depts.length !== validDeptIds.length) {
+                return NextResponse.json({ success: false, message: "One or more departments not found" }, { status: 404 });
+            }
+            vendorName = vendors.map(v => v.name).join(", ");
         }
-        const vendorName=vendor.name;
 
         // Check if invitation already exists
         let invitation = await Invitation.findOne({ email });
@@ -47,8 +94,13 @@ export async function POST(req: NextRequest) {
                 invitation.token = token;
                 invitation.name = name;
                 invitation.role = role;
-                invitation.vendorId = vendorId || undefined;
+                invitation.vendorId = role === "vendor" ? (vendorId || undefined) : undefined;
                 invitation.vendorName = vendorName || undefined;
+                if (role === "admin") {
+                    invitation.vendorAccess = vendorAccess;
+                    invitation.departmentAccess = departmentAccess;
+                }
+                invitation.invitedBy = actor._id;
                 invitation.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
                 invitation.status = "pending";
                 await invitation.save();
@@ -72,8 +124,11 @@ export async function POST(req: NextRequest) {
                 email,
                 name,
                 role,
-                vendorId: vendorId || undefined,
+                vendorId: role === "vendor" ? (vendorId || undefined) : undefined,
+                vendorAccess: role === "admin" ? vendorAccess : undefined,
+                departmentAccess: role === "admin" ? departmentAccess : undefined,
                 vendorName: vendorName || undefined,
+                invitedBy: actor._id,
                 token,
             });
         }
@@ -171,7 +226,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error("INVITE ERROR:", error);
+        ;
         return NextResponse.json(
             { success: false, message: error.message || "Server error" },
             { status: 500 }
