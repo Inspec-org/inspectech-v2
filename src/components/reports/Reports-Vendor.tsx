@@ -247,7 +247,7 @@ const Reports: React.FC = () => {
     }, [user])
 
     const handleFilterClick = () => {
-        console.log('Filter clicked');
+        ;
     };
 
     const handleGenerateReport = () => {
@@ -255,15 +255,15 @@ const Reports: React.FC = () => {
     };
 
     const handleBatchEdit = () => {
-        console.log('Batch edit clicked');
+        ;
     };
 
     const handleSendNotification = () => {
-        console.log('Send notification clicked');
+        ;
     };
 
     const handleRemoveFromHistory = () => {
-        console.log('Remove from history clicked');
+        ;
     };
 
     const handleClearSelection = () => {

@@ -4,6 +4,7 @@ import { Modal } from '../ui/modal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
+import { ModalDropdown } from '../ui/dropdown/ModalDropdown';
 
 type Props = {
   isOpen: boolean;
@@ -109,7 +110,7 @@ const ReassignDepartmentModal: React.FC<Props> = ({
 
         <div className="flex flex-col justify-between gap-2 mb-5">
           <label className="block text-sm font-medium text-gray-700">Department</label>
-          <CustomDropdown
+          <ModalDropdown
             options={options}
             width="w-full"
             value={department}

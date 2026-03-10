@@ -21,7 +21,7 @@ const labelMap: Record<string, string> = {
     suspensionType: 'Suspension Type',
     tireModel: 'Tire Model',
     tireBrand: 'Tire Brand',
-    amenikis: 'Aerokits',
+    aerokits: 'Aerokits',
     doorBranding: 'Door Branding',
     doorColor: 'Door Color',
     doorSensor: 'Door Sensor',
@@ -40,7 +40,7 @@ const labelMap: Record<string, string> = {
     conspicuityTape: 'Conspicuity Tape',
     absSensor: 'ABS Sensor',
     airTankMonitor: 'Air Tank Monitor',
-    rtbIndicator: 'ATIS Regulator',
+    atisregulator: 'ATIS Regulator',
     lightOutSensor: 'Light Out Sensor',
     sensorError: 'Sensor Error',
     ultrasonicCargoSensor: 'Ultrasonic Cargo Sensor',
@@ -56,7 +56,7 @@ export const evaluateInspectionData = (formData: any): ProcessResult => {
     const require = (key: string) => { if (!get(formData, key)) { missing.push(label(key)); missingKeys.push(key); } };
 
     ['poNumber', 'equipmentNumber', 'vin', 'licensePlateId', 'licensePlateCountry', 'licensePlateExpiration', 'licensePlateState', 'possessionOrigin'].forEach(require);
-    ['manufacturer', 'modelYear', 'length', 'height', 'grossAxleWeightRating', 'axleType', 'brakeType', 'suspensionType', 'tireModel', 'tireBrand', 'amenikis', 'doorBranding', 'doorColor', 'doorSensor', 'doorType', 'lashSystem', 'mudFlapType', 'panelBranding', 'noseBranding', 'skirted', 'skirtColor', 'captiveBeam', 'cargoCameras', 'cartbars', 'tpms', 'trailerHeightDecal'].forEach(require);
+    ['manufacturer', 'modelYear', 'length', 'height', 'grossAxleWeightRating', 'axleType', 'brakeType', 'suspensionType', 'tireModel', 'tireBrand', 'aerokits', 'doorBranding', 'doorColor', 'doorSensor', 'doorType', 'lashSystem', 'mudFlapType', 'panelBranding', 'noseBranding', 'skirted', 'skirtColor', 'captiveBeam', 'cargoCameras', 'cartbars', 'tpms', 'trailerHeightDecal'].forEach(require);
     if (isCanadaTrailers) ['owner', 'conspicuityTape'].forEach(require);
 
     const status: 'pass' | 'fail' = missing.length ? 'fail' : 'pass';
@@ -72,8 +72,8 @@ export const openDetailedResults = (formData: any): void => {
     const sections: Array<{ name: string; keys: string[] }> = [
         { name: 'Identification & Registration', keys: ['poNumber', 'equipmentNumber', 'vin', 'licensePlateId', 'licensePlateCountry', 'licensePlateExpiration', 'licensePlateState', 'possessionOrigin'].concat(isCanadaTrailers ? ['owner'] : []) },
         { name: 'Physical Dimensions & Components', keys: ['length', 'height', 'grossAxleWeightRating', 'axleType', 'brakeType', 'suspensionType', 'tireModel', 'tireBrand'] },
-        { name: 'Features & Appearance', keys: ['amenikis', 'doorBranding', 'doorColor', 'doorSensor', 'doorType', 'lashSystem', 'mudFlapType', 'panelBranding', 'noseBranding', 'skirted', 'skirtColor', 'captiveBeam', 'cargoCameras', 'cartbars', 'tpms', 'trailerHeightDecal'].concat(isCanadaTrailers ? ['conspicuityTape'] : []) },
-        { name: 'Sensors & Electrical', keys: ['absSensor', 'airTankMonitor', 'rtbIndicator', 'lightOutSensor', 'sensorError', 'ultrasonicCargoSensor'] },
+        { name: 'Features & Appearance', keys: ['aerokits', 'doorBranding', 'doorColor', 'doorSensor', 'doorType', 'lashSystem', 'mudFlapType', 'panelBranding', 'noseBranding', 'skirted', 'skirtColor', 'captiveBeam', 'cargoCameras', 'cartbars', 'tpms', 'trailerHeightDecal'].concat(isCanadaTrailers ? ['conspicuityTape'] : []) },
+        { name: 'Sensors & Electrical', keys: ['absSensor', 'airTankMonitor', 'atisregulator', 'lightOutSensor', 'sensorError', 'ultrasonicCargoSensor'] },
     ];
 
     const sectionResults = sections.map(s => {

@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
@@ -17,10 +17,11 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
-import { BarChart, BarChart2, BarChart4, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
+import { ArrowLeft, BarChart, BarChart2, BarChart4, ChevronLeft, ChevronRight, CircleQuestionMark, Clipboard, ClipboardCheck, Home, Mail, Signal, Users } from "lucide-react";
 import { UserContext } from "@/context/authContext";
 import RequestAdminReviewModal from "@/components/Modals/RequestAdminReviewModal";
 import Cookies from 'js-cookie';
+import Swal from 'sweetalert2';
 
 type NavItem = {
   name: string;
@@ -32,8 +33,9 @@ type NavItem = {
 
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const pathname = usePathname();
+  const Router = useRouter();
   const { logout, user, session_id, setUser, loading } = useContext(UserContext);
   const roleFromPath = React.useMemo(() => {
     const seg = (pathname || "").split("/")[1];
@@ -43,6 +45,7 @@ const AppSidebar: React.FC = () => {
   const [dept, setDept] = useState("");
   const [isRequestAdminReviewModalOpen, setIsRequestAdminReviewModalOpen] = useState(false);
   const [hoverSuspended, setHoverSuspended] = useState(false);
+  const menuItemRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const navItems: NavItem[] = [
     {
@@ -65,18 +68,34 @@ const AppSidebar: React.FC = () => {
       name: "Users",
       path: currentRole ? `/${currentRole}/users` : undefined,
     },
-    currentRole === "vendor" || currentRole === "user"
-      ? {
+
+    // Request Admin Review → vendor, user, superadmin
+    ...(currentRole === "vendor" ||
+      currentRole === "user" ||
+      currentRole === "superadmin"
+      ? [
+        {
           icon: <Mail />,
           name: "Request Admin Review",
           onClick: () => setIsRequestAdminReviewModalOpen(true),
-        }
-      : {
+        },
+      ]
+      : []),
+
+    // Inspection Vendor Tracker → admin + superadmin
+    ...(currentRole === "admin" || currentRole === "superadmin"
+      ? [
+        {
           icon: <CircleQuestionMark />,
           name: "Inspection Vendor Tracker",
-          path: currentRole ? `/${currentRole}/inspection-vendor-tracker` : undefined,
+          path: currentRole
+            ? `/${currentRole}/inspection-vendor-tracker`
+            : undefined,
         },
+      ]
+      : []),
   ];
+
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -84,7 +103,13 @@ const AppSidebar: React.FC = () => {
   ) => (
     <ul className="font-raleway flex flex-col gap-1">
       {navItems.map((nav, index) => (
-        <li key={nav.name}>
+        <li
+          key={nav.name}
+          className="relative group"
+          ref={(el) => {
+            menuItemRefs.current[`${menuType}-${index}`] = el;
+          }}
+        >
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
@@ -150,6 +175,18 @@ const AppSidebar: React.FC = () => {
               </button>
             ) : null
           )}
+          {(!isExpanded && !isMobileOpen && !isHovered) && (
+            <span
+              className="sidebar-tooltip"
+              style={{
+                top: menuItemRefs.current[`${menuType}-${index}`]?.offsetTop
+                  ? `${menuItemRefs.current[`${menuType}-${index}`]!.offsetTop + 12}px`
+                  : '50%'
+              }}
+            >
+              {nav.name}
+            </span>
+          )}
           {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
             <div
               ref={(el) => {
@@ -202,6 +239,7 @@ const AppSidebar: React.FC = () => {
 
   const isActive = useCallback(
     (path: string) => {
+
       return pathname === path || pathname.startsWith(`${path}/`);
     },
     [pathname]
@@ -298,7 +336,7 @@ const AppSidebar: React.FC = () => {
     font-size: 0.9375rem;
     font-weight: 500;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .menu-item-dark-inactive {
@@ -372,27 +410,39 @@ const AppSidebar: React.FC = () => {
     background-color: rgba(255, 255, 255, 0.1);
     color: #ffffff;
   }
+
+  .sidebar-tooltip {
+  position: fixed;
+  left: 66px;
+  background-color: rgba(62, 44, 151, 0.95);
+  border: 1px solid #7C3AED;
+  color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+  li:hover .sidebar-tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
 `}</style>
 
       <aside
         className={`fixed flex flex-col lg:mt-0 top-0 px-4 left-0 bg-[#0A0F1E] text-gray-300 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-800
-          ${isExpanded || isMobileOpen
-            ? 'w-[280px]'
-            : isHovered
-              ? 'w-[280px]'
-              : 'w-[90px]'
-          }
+          ${isExpanded || isMobileOpen ? 'w-[280px]' : 'w-[90px]'}
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}
-        onMouseEnter={() => {
-          if (!isExpanded && !hoverSuspended) setIsHovered(true);
-        }}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          setHoverSuspended(false);
-        }}
-
+        style={{ overflow: 'visible' }}
       >
         {/* User Profile Section */}
         <div
@@ -426,31 +476,42 @@ const AppSidebar: React.FC = () => {
                 onClick={() => {
                   setIsHovered(false);
                   setHoverSuspended(true);
-                  toggleSidebar();
+                  if (isMobileOpen) {
+                    toggleMobileSidebar();
+                  } else {
+                    toggleSidebar();
+                  }
                 }}
                 className="text-gray-400 hover:text-white transition-colors"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M15 18l-6-6 6-6" />
-                </svg>
+                <ChevronLeft width={20} height={20} />
               </button>
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
-              AB
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsHovered(false);
+                  setHoverSuspended(true);
+                  if (isMobileOpen) {
+                    toggleMobileSidebar();
+                  } else {
+                    toggleSidebar();
+                  }
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <ChevronRight width={20} height={20} />
+              </button>
             </div>
           )}
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar py-6">
+        <div className="flex-1 flex flex-col py-6" style={{ overflowY: 'auto', overflowX: 'visible' }}>
           <nav className="flex-1">
             <div className="flex flex-col gap-4">
               <div>{renderMenuItems(navItems, "main")}</div>
@@ -459,12 +520,40 @@ const AppSidebar: React.FC = () => {
 
           {/* Logout Button */}
           <div className="mt-auto pt-4">
+            {currentRole === "superadmin" && (
+              <button
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#92400e] hover:bg-[#b45309] text-white transition-colors mb-4 ${!isExpanded && !isHovered && !isMobileOpen
+                  ? "justify-center"
+                  : "justify-start"
+                  }`}
+                onClick={() => {
+                  Router.push("/superadmin");
+                }}
+              >
+                <ArrowLeft width={20} height={20} />
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <span className="font-medium">Go Back</span>
+                )}
+              </button>
+            )}
             <button
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#92400e] hover:bg-[#b45309] text-white transition-colors ${!isExpanded && !isHovered && !isMobileOpen
                 ? "justify-center"
                 : "justify-start"
                 }`}
-              onClick={logout}
+              onClick={async () => {
+                const result = await Swal.fire({
+                  title: 'Logout?',
+                  text: 'Are you sure you want to logout?',
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#EF4444',
+                  cancelButtonColor: '#6B7280',
+                  confirmButtonText: 'Logout',
+                  cancelButtonText: 'Cancel'
+                });
+                if (result.isConfirmed) logout();
+              }}
             >
               <svg
                 width="20"

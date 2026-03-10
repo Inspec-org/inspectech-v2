@@ -11,9 +11,9 @@ import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
 import { Department } from '../departments/DepartmentCard';
 import { useSearchParams } from 'next/navigation';
-import { set } from 'mongoose';
 import { UserContext } from '@/context/authContext';
 import Cookies from 'js-cookie';
+import useSWR from 'swr';
 
 export interface Vendor {
     _id: string;
@@ -66,19 +66,7 @@ interface recentData {
 function Dashboard() {
 
     const [departments, setDepartments] = React.useState<Department[]>([]);
-    const readCache = (key: string) => {
-      try {
-        const raw = sessionStorage.getItem(key);
-        if (!raw) return null;
-        const obj = JSON.parse(raw);
-        if (!obj || typeof obj !== 'object') return null;
-        if (!obj.ts || obj.ts + 300000 < Date.now()) return null;
-        return obj.data;
-      } catch { return null; }
-    };
-    const writeCache = (key: string, data: any) => {
-      try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
-    };
+
     const [vendors, setVendors] = React.useState<Vendor[]>([]);
     const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
     const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(null);
@@ -88,68 +76,45 @@ function Dashboard() {
     const [recentloading, setRecentLoading] = React.useState(true);
     const { user } = useContext(UserContext);
 
-    useEffect(() => {
-        const vendorId = Cookies.get('selectedVendorId') || '';
-        const departmentId = Cookies.get('selectedDepartmentId') || '';
-        if (vendorId && departmentId) {
-            const cachedStats = readCache(`stats:${vendorId}:${departmentId}`);
-            if (cachedStats) {
-                setDashboardData(cachedStats);
-                setLoading(false);
-            }
-            const cachedRecent = readCache(`recent:${vendorId}:${departmentId}`);
-            if (cachedRecent) {
-                setRecentData(cachedRecent);
-                setRecentLoading(false);
-            }
-        }
-    }, []);
+
 
     useEffect(() => {
         const department = Cookies.get("selectedDepartment");
         if (departments.length > 0) {
-            console.log(department)
+
             const dept = departments.find(d => d.name === department) ?? null;
-            console.log(dept);
+            ;
             setSelectedDepartment(dept);
 
         }
     }, [departments]);
-    const getDepartments = async () => {
-        try {
+    const { data: departmentsData } = useSWR(
+        'departments',
+        async () => {
             const res = await apiRequest("/api/departments/get-departments");
-            if (res.ok) {
-                const json = await res.json();
-                setDepartments(json.departments);
-            }
-        } catch (error) {
-            console.error('Error fetching departments:', error);
-            const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-            toast.error(errorMessage);
-            setDepartments([]);
-        }
-    };
+            const json = await res.json().catch(() => ({}));
+            return Array.isArray(json?.departments) ? json.departments : [];
+        },
+        { revalidateOnFocus: false, revalidateIfStale: false, revalidateOnReconnect: false }
+    );
+    useEffect(() => { if (departmentsData) setDepartments(departmentsData); }, [departmentsData]);
 
-    const getVendors = async () => {
-        try {
-            const res = await apiRequest("/api/vendors/get-vendors");
-            if (res.ok) {
-                const json = await res.json();
-                console.log(json)
-                setVendors(json.vendors);
-            }
-        } catch (error) {
-            console.error('Error fetching departments:', error);
-            const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-            toast.error(errorMessage);
-            setDepartments([]);
-        }
-    };
-
-    useEffect(() => {
-        getVendors();
-        getDepartments();
-    }, []);
+    const { data: vendorsData } = useSWR(
+        'vendors:all',
+        async () => {
+            const res1 = await apiRequest('/api/vendors/get-vendors?page=1&limit=1');
+            if (!res1.ok) return [];
+            const json1 = await res1.json().catch(() => ({}));
+            const total = Number(json1?.total ?? json1?.totalCount ?? (Array.isArray(json1?.vendors) ? json1.vendors.length : 0));
+            const limit = Math.max(total, 1);
+            const res2 = await apiRequest(`/api/vendors/get-vendors?page=1&limit=${limit}`);
+            if (!res2.ok) return [];
+            const json2 = await res2.json().catch(() => ({}));
+            return Array.isArray(json2?.vendors) ? json2.vendors : [];
+        },
+        { revalidateOnFocus: false, revalidateIfStale: false, revalidateOnReconnect: false }
+    );
+    useEffect(() => { if (vendorsData) setVendors(vendorsData); }, [vendorsData]);
     useEffect(() => {
         if (!vendors.length) return;
 
@@ -164,11 +129,8 @@ function Dashboard() {
             ? vendors.find(v => v.name === cookieVendorName)
             : undefined;
 
-        const nextSelected = byId || byName || vendors[0];
-
+        const nextSelected = byId || byName || null;
         setSelectedVendor(nextSelected);
-        Cookies.set('selectedVendor', nextSelected?.name || '');
-        Cookies.set('selectedVendorId', nextSelected?._id || '');
     }, [vendors])
 
     useEffect(() => {
@@ -193,13 +155,7 @@ function Dashboard() {
     const getRecent = async () => {
         const vendorId = Cookies.get('selectedVendorId') || ''
         const departmentId = Cookies.get('selectedDepartmentId') || ''
-        const key = `recent:${vendorId}:${departmentId}`;
-        const cached = readCache(key);
-        if (cached) {
-            setRecentData(cached);
-            setRecentLoading(false);
-            return;
-        }
+
         try {
             setRecentLoading(true)
             const res = await apiRequest(("/api/dashboard/get_recent_inspections"), {
@@ -212,7 +168,6 @@ function Dashboard() {
             if (res.ok) {
                 const json = await res.json();
                 setRecentData(json.dashboard);
-                writeCache(key, json.dashboard);
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'An error occurred';
@@ -223,44 +178,49 @@ function Dashboard() {
         }
     }
 
+    const vendorId = Cookies.get('selectedVendorId') || '';
+    const departmentId = Cookies.get('selectedDepartmentId') || '';
+    const shouldFetch = Boolean(vendorId && departmentId);
+
+    const { data: dashboardDataSWR, isLoading: statsLoading, mutate: mutateStats } = useSWR(
+        shouldFetch ? ['dashboard/allData', vendorId, departmentId] : null,
+        async ([, vId, dId]) => {
+            const res = await apiRequest("/api/dashboard/allData", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ vendorId: vId, departmentId: dId })
+            });
+            const json = await res.json().catch(() => ({}));
+            return json?.dashboard || null;
+        },
+        { revalidateOnFocus: false, revalidateIfStale: false, revalidateOnReconnect: false }
+    );
+    useEffect(() => { setDashboardData(dashboardDataSWR || undefined); setLoading(statsLoading || (shouldFetch && !dashboardDataSWR)); }, [statsLoading, dashboardDataSWR, shouldFetch]);
+
+    const { data: recentDataSWR, isLoading: recentLoadingSWR, mutate: mutateRecent } = useSWR(
+        shouldFetch ? ['dashboard/recent', vendorId, departmentId] : null,
+        async ([, vId, dId]) => {
+            const res = await apiRequest("/api/dashboard/get_recent_inspections", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ vendorId: vId, departmentId: dId })
+            });
+            const json = await res.json().catch(() => ({}));
+            return json?.dashboard || null;
+        },
+        { revalidateOnFocus: false, revalidateIfStale: false, revalidateOnReconnect: false }
+    );
+    useEffect(() => { setRecentLoading(recentLoadingSWR); setRecentData(recentDataSWR || undefined); }, [recentLoadingSWR, recentDataSWR]);
+
     useEffect(() => {
-        const getStats = async () => {
-            const vendorId = Cookies.get('selectedVendorId') || ''
-            const departmentId = Cookies.get('selectedDepartmentId') || ''
-            const key = `stats:${vendorId}:${departmentId}`;
-            const cached = readCache(key);
-            if (cached) {
-                setDashboardData(cached);
-                setLoading(false);
-                return;
-            }
-            try {
-                const res = await apiRequest(("/api/dashboard/allData"), {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ vendorId, departmentId })
-                });
-                if (res.ok) {
-                    const json = await res.json();
-                    setDashboardData(json.dashboard);
-                    writeCache(key, json.dashboard);
-                }
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-                toast.error(errorMessage);
-            }
-            finally {
-                setLoading(false)
-            }
-        }
-        console.log(selectedDepartment, selectedVendor)
-        if (selectedDepartment && selectedVendor) {
-            getStats();
-            getRecent();
-        }
-    }, [selectedDepartment, selectedVendor]);
+        if (!shouldFetch) return;
+        const vId = Cookies.get('selectedVendorId') || '';
+        const dId = Cookies.get('selectedDepartmentId') || '';
+        const es = new EventSource(`/api/dashboard/stream?vendorId=${encodeURIComponent(vId)}&departmentId=${encodeURIComponent(dId)}`);
+        es.onmessage = () => { mutateStats(); mutateRecent(); };
+        es.onerror = () => {};
+        return () => es.close();
+    }, [shouldFetch]);
 
     return (
         <Suspense fallback={<div>Loading...</div>}>
@@ -272,7 +232,7 @@ function Dashboard() {
                     </div>
                     <div>
                         <h1 className="text-lg md:text-xl font-semibold text-gray-900">Dashboard</h1>
-                       
+
                     </div>
                 </div>
                 {/* <Header departments={departments} setSelectedDepartment={setSelectedDepartment} selectedDepartment={departments.find(d => d.name === selectedDepartment?.name)} vendors={vendors} setSelectedVendor={setSelectedVendor} selectedVendor={vendors.find(v => v.name === selectedVendor?.name)}
@@ -304,7 +264,7 @@ function Dashboard() {
                     </div> */}
                     <div className="xl:col-span-4 col-span-12 h-full">
                         <div className="h-full">
-                            <QuickActions role={user?.role || ''}/>
+                            <QuickActions role={user?.role || ''} />
                         </div>
                     </div>
                 </div>

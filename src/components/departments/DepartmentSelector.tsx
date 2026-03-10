@@ -35,25 +35,25 @@ export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
             </div>
           </div>
 
-          <button
+          {/* <button
             className="self-end sm:self-auto flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-[#F4EEFC] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             onClick={getDepartments}
           >
             <Image src="/images/departments/refresh.svg" alt="Refresh" width={16} height={16} />
             Refresh Page
-          </button>
+          </button> */}
 
         </div>
 
         {/* Company Label */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <div className="flex items-center gap-3">
             <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
               {company}
             </p>
             <span className="flex-1 border-t border-gray-300"></span>
           </div>
-        </div>
+        </div> */}
 
 
         {/* Department Grid */}

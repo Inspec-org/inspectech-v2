@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error("RESET ERROR:", error);
+        ;
         return NextResponse.json(
             { success: false, message: error.message || "Server error" },
             { status: 500 }

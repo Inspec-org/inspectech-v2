@@ -87,7 +87,7 @@ export default function NotificationDropdown() {
       });
 
       const result = await response.json();
-      console.log(result)
+      
       if (!response.ok || result.data.status === false) {
         throw new Error(result.data?.message || result.error)
       }
@@ -98,7 +98,7 @@ export default function NotificationDropdown() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       // toast.error(errorMessage);
-      console.log("error", err);
+      ;
     } finally {
       setLoading(false)
     }
@@ -133,7 +133,7 @@ export default function NotificationDropdown() {
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.log("error", err);
+      ;
     } finally {
       setLoading(false)
     }

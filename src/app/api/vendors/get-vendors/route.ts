@@ -15,23 +15,43 @@ export async function GET(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
+    const url = new URL(req.url);
+    const pageParam = url.searchParams.get("page");
+    const limitParam = url.searchParams.get("limit");
+    const page = pageParam && /^\d+$/.test(pageParam) ? Math.max(parseInt(pageParam, 10), 1) : 1;
+    const limit = limitParam && /^\d+$/.test(limitParam) ? Math.max(parseInt(limitParam, 10), 1) : 10;
     let vendors: any[] = [];
+    let total = 0;
     if (user.role === "admin") {
       if (user.vendorAccess && user.vendorAccess.length > 0) {
-        // Only fetch vendors the admin has access to
-        const vendorIds = user.vendorAccess.map((v: any) => v.$oid || v); // handle ObjectId or plain strings
-        vendors = await Vendor.find({ _id: { $in: vendorIds } }).select("_id name");
+        const vendorIds = user.vendorAccess.map((v: any) => v.$oid || v);
+        total = await Vendor.countDocuments({ _id: { $in: vendorIds }, status: 'active' });
+        vendors = await Vendor.find({ _id: { $in: vendorIds }, status: 'active' })
+          .select("_id name")
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
       }
     }
     else if (user.role === "vendor" || user.role === "user") {
-      vendors = await Vendor.find({_id: user.vendorId}).select("_id name");
+      vendors = await Vendor.find({ _id: user.vendorId, status: 'active' }).select("_id name");
+    }
+    else if (user.role === "superadmin") {
+      total = await Vendor.countDocuments();
+      vendors = await Vendor.find()
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
     }
 
-    return NextResponse.json(
-      { status: "success", vendors },
-      { status: 200 }
-    );
+    const payload: any = { status: "success", vendors };
+    if (user.role === "superadmin" || user.role === "admin") {
+      payload.total = total;
+      payload.page = page;
+      payload.limit = limit;
+      payload.totalPages = Math.ceil(total / limit);
+    }
+    return NextResponse.json(payload, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },

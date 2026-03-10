@@ -10,6 +10,7 @@ import { set } from 'mongoose';
 import { UserContext } from '@/context/authContext';
 
 
+
 type Props = {
   isOpen: boolean;
   onClose: () => void;
@@ -36,12 +37,13 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
     if (formData.durationSec) updates.durationSec = formData.durationSec;
     if (formData.delivered_status) updates.delivered = formData.delivered_status;
 
+    const excluded = new Set(['status', 'delivered_status', 'date', 'duration', 'dateMonth', 'dateDay', 'dateYear', 'createdAt', 'dateCreated']);
     Object.keys(formData).forEach((key) => {
       const val = formData[key];
-      if (val !== '' && val !== undefined && val !== null) {
-        if (!(key in updates) && !['status', 'delivered_status', 'date', 'duration'].includes(key)) {
-          updates[key] = val;
-        }
+      if (val === '' || val === undefined || val === null) return;
+      if (excluded.has(key) || key.startsWith('date')) return;
+      if (!(key in updates)) {
+        updates[key] = val;
       }
     });
 

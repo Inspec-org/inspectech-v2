@@ -1,22 +1,33 @@
 'use client';
 
-import React from 'react';
+import React, { useContext } from 'react';
 import Header from '@/components/dashboard/Header';
 import { Department } from '@/components/departments/DepartmentCard';
 import { Vendor } from '@/components/dashboard/Dashboard';
 import { apiRequest } from '@/utils/apiWrapper';
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
+import { UserContext } from '@/context/authContext';
 
 export default function DashboardAppHeader() {
   const [departments, setDepartments] = React.useState<Department[]>([]);
   const [vendors, setVendors] = React.useState<Vendor[]>([]);
   const [selectedDepartment, setSelectedDepartment] = React.useState<Department | null>(null);
   const [selectedVendor, setSelectedVendor] = React.useState<Vendor | null>(null);
+  const [vendorEnabledMap, setVendorEnabledMap] = React.useState<Record<string, boolean>>({});
+  const { user } = useContext(UserContext)
+  const prevVendorIdRef = React.useRef<string | null>(null);
+  const prevDeptIdRef = React.useRef<string | null>(null);
+  const lastFetchedVendorIdRef = React.useRef<string | null>(null);
+
 
   const getDepartments = async () => {
     try {
-      const res = await apiRequest('/api/departments/get-departments');
+      const selectedVendorId = Cookies.get('selectedVendorId') || '';
+      const endpoint = selectedVendorId && (user?.role === 'admin' || user?.role === 'superadmin')
+        ? `/api/departments/get-departments?vendorId=${encodeURIComponent(selectedVendorId)}`
+        : "/api/departments/get-departments";
+      const res = await apiRequest(endpoint);
       if (res.ok) {
         const json = await res.json();
         setDepartments(json.departments || []);
@@ -30,13 +41,23 @@ export default function DashboardAppHeader() {
 
   const getVendors = async () => {
     try {
-      const res = await apiRequest('/api/vendors/get-vendors');
-      if (res.ok) {
-        const json = await res.json();
-        setVendors(json.vendors || []);
+      const res1 = await apiRequest('/api/vendors/get-vendors?page=1&limit=1');
+      if (!res1.ok) {
+        setVendors([]);
+        return;
+      }
+      const json1 = await res1.json();
+      const total = Number(json1?.total ?? json1?.totalCount ?? (Array.isArray(json1?.vendors) ? json1.vendors.length : 0));
+      const limit = Math.max(total, 1);
+      const res2 = await apiRequest(`/api/vendors/get-vendors?page=1&limit=${limit}`);
+      if (res2.ok) {
+        const json2 = await res2.json();
+        setVendors(Array.isArray(json2?.vendors) ? json2.vendors : []);
+      } else {
+        setVendors([]);
       }
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Failed to fetch vendors';
+      const msg = error instanceof Error ? error.message : 'An error occurred';
       toast.error(msg);
       setVendors([]);
     }
@@ -48,32 +69,85 @@ export default function DashboardAppHeader() {
   }, []);
 
   React.useEffect(() => {
-    if (!departments.length) return;
+    if (!departments.length) {
+      return;
+    }
+    const isActive = (d: Department) => String(d.status ?? (d.isActive ? 'active' : 'inactive')).toLowerCase() === 'active';
+    const active = departments.filter(isActive);
     const cookieId = Cookies.get('selectedDepartmentId');
     const cookieName = Cookies.get('selectedDepartment');
-    const byId = cookieId ? departments.find(d => String(d._id) === String(cookieId)) : undefined;
-    const byName = !byId && cookieName ? departments.find(d => d.name === cookieName) : undefined;
-    const next = byId || byName || departments[0] || null;
+    const byId = cookieId ? active.find(d => String(d._id) === String(cookieId)) : undefined;
+    const byName = !byId && cookieName ? active.find(d => d.name === cookieName) : undefined;
+    const next = byId || byName || active[0] || null;
     setSelectedDepartment(next);
     if (next) {
       Cookies.set('selectedDepartment', next.name || '');
       Cookies.set('selectedDepartmentId', next._id || '');
+      const id = String(next._id || '');
+      if (prevDeptIdRef.current !== id) {
+        window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: next.name }));
+        prevDeptIdRef.current = id;
+      }
     }
   }, [departments]);
 
   React.useEffect(() => {
     if (!vendors.length) return;
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+    const mapReady = !isAdmin || Object.keys(vendorEnabledMap || {}).length === vendors.length;
+    if (!mapReady) return;
+
+    const isEnabled = (id: string) => !isAdmin || vendorEnabledMap[String(id)] !== false;
+
     const cookieId = Cookies.get('selectedVendorId');
     const cookieName = Cookies.get('selectedVendor');
-    const byId = cookieId ? vendors.find(v => String(v._id) === String(cookieId)) : undefined;
-    const byName = !byId && cookieName ? vendors.find(v => v.name === cookieName) : undefined;
-    const next = byId || byName || vendors[0] || null;
+
+    const byId = cookieId ? vendors.find(v => String(v._id) === String(cookieId) && isEnabled(String(v._id))) : undefined;
+    const byName = !byId && cookieName ? vendors.find(v => v.name === cookieName && isEnabled(String(v._id))) : undefined;
+    const firstEnabled = vendors.find(v => isEnabled(String(v._id))) || null;
+
+    const next = byId || byName || firstEnabled;
     setSelectedVendor(next);
     if (next) {
       Cookies.set('selectedVendor', next.name || '');
       Cookies.set('selectedVendorId', next._id || '');
+      const id = String(next._id || '');
+      if (prevVendorIdRef.current !== id) {
+        window.dispatchEvent(new CustomEvent("selectedVendorChanged", { detail: next.name }));
+        prevVendorIdRef.current = id;
+      }
+    } else {
+      Cookies.remove('selectedVendor');
+      Cookies.remove('selectedVendorId');
     }
-  }, [vendors]);
+  }, [vendors, vendorEnabledMap, user]);
+
+  React.useEffect(() => {
+    if (!(user?.role === 'admin' || user?.role === 'superadmin')) { setVendorEnabledMap({}); return; }
+    if (!vendors.length) { setVendorEnabledMap({}); return; }
+    (async () => {
+      try {
+        const entries = await Promise.all(vendors.map(async (v) => {
+          const res = await apiRequest(`/api/departments/get-departments?vendorId=${encodeURIComponent(v._id)}&limit=1`);
+          if (!res.ok) return [String(v._id), false] as [string, boolean];
+          const j = await res.json().catch(() => ({}));
+          const has = Array.isArray(j.departments) && j.departments.length > 0;
+          return [String(v._id), has] as [string, boolean];
+        }));
+        setVendorEnabledMap(Object.fromEntries(entries));
+      } catch {
+        setVendorEnabledMap({});
+      }
+    })();
+  }, [vendors, user]);
+
+  React.useEffect(() => {
+    if (!selectedVendor) return;
+    const id = String(selectedVendor._id || '');
+    if (lastFetchedVendorIdRef.current === id) return;
+    lastFetchedVendorIdRef.current = id;
+    getDepartments();
+  }, [selectedVendor]);
 
   return (
     <div className="sticky top-0 flex w-full z-40 ">
@@ -84,6 +158,7 @@ export default function DashboardAppHeader() {
         vendors={vendors}
         setSelectedVendor={setSelectedVendor}
         selectedVendor={selectedVendor || null}
+        vendorEnabledMap={vendorEnabledMap}
       />
     </div>
   );

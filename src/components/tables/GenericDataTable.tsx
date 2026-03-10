@@ -32,7 +32,7 @@ interface GenericDataTableProps<T> {
   loading: boolean,
   setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   querykey?: string
-  min_height?:string
+  min_height?: string
   search?: string
   setSearch?: React.Dispatch<React.SetStateAction<string>>
   onRowClick?: (row: T) => void
@@ -115,8 +115,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
         className={`flex items-center justify-between flex-wrap gap-4 ${custom_tabs?.length ? "mb-4" : "mb-6"
           }`}
       > */}
-        {/* Title*/}
-        {/* <div className={`flex ${tabs?.length ? "flex-col gap-2" : "items-center gap-4"}`}>
+      {/* Title*/}
+      {/* <div className={`flex ${tabs?.length ? "flex-col gap-2" : "items-center gap-4"}`}>
           {title && (
             <h1 className={`${title_font_size ? title_font_size : 'text-2xl font-weight-600'}  text-gray-800  font-raleway`}>
               {title}
@@ -140,8 +140,8 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
           )}
         </div> */}
 
-        {/* Search bar */}
-        {/* <div className="relative w-72">
+      {/* Search bar */}
+      {/* <div className="relative w-72">
           <input
             type="text"
             placeholder="Search..."
@@ -179,7 +179,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                 </tr>
               </thead>
               <tbody>
-                {currentData.map((row,index) => (
+                {currentData.map((row, index) => (
                   <tr key={index} className={`border-b hover:bg-gray-50  ${onRowClick ? "cursor-pointer" : ""}`} onClick={() => onRowClick?.(row)}>
                     {columns.map((col, i) => (
                       <td key={i} className="py-3 px-4 font-raleway">
@@ -221,7 +221,7 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                       className="border rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 bg-white"
                       value={pageSize}
                       onChange={(e) => {
-                        setPageSize &&  setPageSize(Number(e.target.value));
+                        setPageSize && setPageSize(Number(e.target.value));
                       }}
                     >
                       <option value={10}>10</option>
@@ -248,18 +248,94 @@ function GenericDataTable<T extends { id: string; tab?: string }>({
                   >
                     <ChevronLeft className="w-4 h-4" color="#7522BB" />
                   </button>
-                  {tabs.map((tab,index) => (
-                    <button
-                      key={index}
-                      onClick={() => goToPage(Number(tab))}
-                      className={`w-6 h-6 rounded text-xs font-medium ${currentPage === Number(tab)
-                        ? "bg-purple-600 text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                        }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
+
+                  {/* Page numbers with ellipsis */}
+                  {(() => {
+                    const pageButtons = [];
+                    const showEllipsis = totalPages > 7;
+
+                    if (!showEllipsis) {
+                      // Show all pages if 7 or fewer
+                      return tabs.map((tab, index) => (
+                        <button
+                          key={index}
+                          onClick={() => goToPage(Number(tab))}
+                          className={`w-6 h-6 rounded text-xs font-medium ${currentPage === Number(tab)
+                              ? "bg-purple-600 text-white"
+                              : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                        >
+                          {tab}
+                        </button>
+                      ));
+                    }
+
+                    // Always show first page
+                    pageButtons.push(
+                      <button
+                        key={1}
+                        onClick={() => goToPage(1)}
+                        className={`w-6 h-6 rounded text-xs font-medium ${currentPage === 1
+                            ? "bg-purple-600 text-white"
+                            : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                      >
+                        1
+                      </button>
+                    );
+
+                    if (currentPage > 3) {
+                      pageButtons.push(
+                        <span key="ellipsis-1" className="w-6 h-6 flex items-center justify-center text-gray-500">
+                          ...
+                        </span>
+                      );
+                    }
+
+                    // Show pages around current page
+                    const startPage = Math.max(2, currentPage - 1);
+                    const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+                    for (let i = startPage; i <= endPage; i++) {
+                      pageButtons.push(
+                        <button
+                          key={i}
+                          onClick={() => goToPage(i)}
+                          className={`w-6 h-6 rounded text-xs font-medium ${currentPage === i
+                              ? "bg-purple-600 text-white"
+                              : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                        >
+                          {i}
+                        </button>
+                      );
+                    }
+
+                    if (currentPage < totalPages - 2) {
+                      pageButtons.push(
+                        <span key="ellipsis-2" className="w-6 h-6 flex items-center justify-center text-gray-500">
+                          ...
+                        </span>
+                      );
+                    }
+
+                    // Always show last page
+                    pageButtons.push(
+                      <button
+                        key={totalPages}
+                        onClick={() => goToPage(totalPages)}
+                        className={`w-6 h-6 rounded text-xs font-medium ${currentPage === totalPages
+                            ? "bg-purple-600 text-white"
+                            : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                      >
+                        {totalPages}
+                      </button>
+                    );
+
+                    return pageButtons;
+                  })()}
+
                   <button
                     onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage >= totalPages}

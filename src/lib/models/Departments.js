@@ -8,6 +8,21 @@ const DepartmentSchema = new mongoose.Schema({
     unique: true,
     required: true
   },
+  status: {
+    type: String,
+    default: "active",
+    enum: ["active", "inactive"]
+  },
+  color: {
+    type: String,
+    default: ""
+  },
+  icon: {
+    type: String,
+    default: ""
+  }
+}, {
+  timestamps: true
 })
 
 

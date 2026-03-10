@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Department from "@/lib/models/Departments";
+import Vendor from "@/lib/models/Vendor";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function GET(req: NextRequest) {
@@ -15,38 +16,89 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const url = new URL(req.url);
+    const pageParam = url.searchParams.get("page");
+    const limitParam = url.searchParams.get("limit");
+    const page = pageParam && /^\d+$/.test(pageParam) ? Math.max(parseInt(pageParam, 10), 1) : 1;
+    const limit = limitParam && /^\d+$/.test(limitParam) ? Math.max(parseInt(limitParam, 10), 1) : 10;
     let departments = [];
+    let total = 0;
 
-    if (user.role === "admin") {
-      departments = await Department.find();
+    if (user.role === "superadmin") {
+      const vendorId = url.searchParams.get("vendorId");
+      if (vendorId) {
+        const vendor = await Vendor.findById(vendorId).select("departmentAccess").lean();
+        if (!vendor) {
+          return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+        }
+        const allowedDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => String(id));
+        total = await Department.countDocuments({ _id: { $in: allowedDeptIds } });
+        departments = await Department.find({ _id: { $in: allowedDeptIds } })
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+      } else {
+        total = await Department.countDocuments();
+        departments = await Department.find()
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+      }
+    } else if (user.role === "admin") {
+      const vendorId = url.searchParams.get("vendorId");
+      const adminDeptIds = (user.departmentAccess || []).map((id: any) => id.toString());
+      if (adminDeptIds.length === 0) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      let allowedDeptIds = adminDeptIds;
+      if (vendorId) {
+        const vendor = await Vendor.findById(vendorId).select("departmentAccess").lean();
+        if (!vendor) {
+          return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+        }
+        const vDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => id.toString());
+        allowedDeptIds = allowedDeptIds.filter((id: string) => vDeptIds.includes(id));
+      }
+      departments = await Department.find({ _id: { $in: allowedDeptIds } })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
     } else if (user.role === "user") {
-      departments = await Department.find({
-        name: { $regex: "trailers", $options: "i" }
-      });
+      const vendorIds = [
+        ...(user.vendorAccess || []),
+        ...(user.vendorId ? [user.vendorId] : []),
+      ];
+      if (vendorIds.length === 0) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
 
-      departments.sort((a, b) => {
-        const aIsUS = a.name.toLowerCase().includes("us");
-        const bIsUS = b.name.toLowerCase().includes("us");
+      const vendors = await Vendor.find({ _id: { $in: vendorIds } }).select("departmentAccess");
+      const allowedDeptIds = Array.from(
+        new Set(
+          vendors.flatMap((v: any) => (v.departmentAccess || []).map((id: any) => id.toString()))
+        )
+      );
 
-        if (aIsUS && !bIsUS) return -1;
-        if (!aIsUS && bIsUS) return 1;
-        return a.name.localeCompare(b.name);
-      });
+      departments = await Department.find({ _id: { $in: allowedDeptIds } });
+
+      // departments.sort((a, b) => {
+      //   const aIsUS = a.name.toLowerCase().includes("us");
+      //   const bIsUS = b.name.toLowerCase().includes("us");
+
+      //   if (aIsUS && !bIsUS) return -1;
+      //   if (!aIsUS && bIsUS) return 1;
+      //   return a.name.localeCompare(b.name);
+      // });
     }
 
-    // Add color field based on department name
-    const departmentsWithColor = departments.map(dept => {
-      let color = "";
-      const nameLower = dept.name.toLowerCase();
-
-      if (nameLower.includes("us")) color = "purple";
-      else if (nameLower.includes("canada")) color = "blue";
-      else if (nameLower.includes("maintenance")) color = "red";
-      else if (nameLower.includes("campaign")) color = "green";
-
-      return { ...dept.toObject(), color };
-    });
-    return NextResponse.json({ message: "success", departments: departmentsWithColor });
+    const plainDepartments = departments.map((dept: any) => (
+      (dept && typeof (dept as any).toObject === 'function') ? (dept as any).toObject() : dept
+    ));
+    const payload: any = { message: "success", departments: plainDepartments };
+    if (user.role === "superadmin") {
+      payload.pagination = { page, limit, total, totalPages: Math.ceil(total / limit) };
+    }
+    return NextResponse.json(payload);
 
   } catch (error: any) {
     return NextResponse.json(

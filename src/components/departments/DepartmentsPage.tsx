@@ -15,25 +15,34 @@ export default function DepartmentsPage() {
 
   const getDepartments = async () => {
     try {
-      const res = await apiRequest("/api/departments/get-departments");
+      const selectedVendorId = Cookies.get('selectedVendorId') || '';
+      const endpoint = selectedVendorId && user?.role === 'superadmin'
+        ? `/api/departments/get-departments?vendorId=${encodeURIComponent(selectedVendorId)}`
+        : "/api/departments/get-departments";
+      const res = await apiRequest(endpoint);
       if (res.ok) {
         const json = await res.json();
-        // Map departments with images based on name
-        const departmentsWithImages = json.departments.map((dept: Department) => {
-          const lowerName = dept.name.toLowerCase();
-          if (lowerName.includes('trailer')) {
-            return { ...dept, image: '/images/departments/van.svg', imageType: 'svg' };
-          } else if (lowerName.includes('maintenance')) {
-            return { ...dept, image: 'wrench', imageType: 'icon' };
-          } else if (lowerName.includes('campaign')) {
-            return { ...dept, image: 'bar-chart', imageType: 'icon' };
-          }
-          return { ...dept, image: '/images/departments/van.svg', imageType: 'svg' }; // default
+        // Use color and icon from DB; apply minimal fallback only if missing
+        const departmentsWithImages = json.departments.map((dept: any) => {
+          const icon = String(dept.icon || '');
+          const base = icon === 'wrench' ? { image: 'wrench', imageType: 'icon' }
+            : icon === 'bar-chart' ? { image: 'bar-chart', imageType: 'icon' }
+            : icon === 'truck' ? { image: 'truck', imageType: 'icon' }
+            : icon === 'building' ? { image: 'building', imageType: 'icon' }
+            : icon === 'clipboard-list' ? { image: 'clipboard-list', imageType: 'icon' }
+            : icon === 'cog' ? { image: 'cog', imageType: 'icon' }
+            : icon === 'camera' ? { image: 'camera', imageType: 'icon' }
+            : icon === 'package' ? { image: 'package', imageType: 'icon' }
+            : icon === 'shield' ? { image: 'shield', imageType: 'icon' }
+            : icon === 'layers' ? { image: 'layers', imageType: 'icon' }
+            : { image: '/images/departments/van.svg', imageType: 'svg' };
+          const color = String((dept.color || '').trim() || '#7C3AED');
+          return { ...dept, ...base, color };
         });
         setDepartments(departmentsWithImages);
       }
     } catch (error) {
-      console.error('Error fetching departments:', error);
+      ;
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       toast.error(errorMessage);
       setDepartments([]);
@@ -45,11 +54,12 @@ export default function DepartmentsPage() {
   }, []);
 
   const handleDepartmentSelect = (department: Department) => {
-    console.log('Selected department:', department);
-    router.push(`dashboard?department=${department.name}`);
+    const role = String(user?.role || 'superadmin');
+    const target = `/${role}/dashboard`;
     Cookies.set('selectedDepartment', department.name || '');
     Cookies.set('selectedDepartmentId', department._id || '');
     window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: department.name }));
+    router.push(target);
   };
 
   return (

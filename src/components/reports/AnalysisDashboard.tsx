@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
-import { TrendingUp, CheckCircle, XCircle, Clock, BarChart3, CalendarClock, Activity, CheckSquare } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Rectangle } from 'recharts';
+import { TrendingUp, CheckCircle, XCircle, Clock, BarChart3, CalendarClock, Activity, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { apiRequest } from '@/utils/apiWrapper';
 import { toast } from 'react-toastify';
@@ -16,81 +16,7 @@ interface StatCardProps {
     color: string;
 }
 
-// Data
-const inspectionStatusData = [
-    { name: 'Passed', value: 9512, percentage: 91, color: '#10b981' },
-    { name: 'Failed', value: 512, percentage: 9, color: '#ef4444' }
-];
 
-const statusBreakdownData = [
-    { period: 'Last 3 months', total: 42, pass: 22, fail: 20 },
-];
-
-export const trendsData = {
-    monthly: {
-        passRate: [
-            { date: "Jan '25", passRate: 82 },
-            { date: "Feb '25", passRate: 85 },
-            { date: "Mar '25", passRate: 88 },
-            { date: "Apr '25", passRate: 90 },
-            { date: "May '25", passRate: 92 },
-            { date: "Jun '25", passRate: 94 },
-            { date: "Jul '25", passRate: 85 },
-            { date: "Aug '25", passRate: 92 },
-            { date: "Sep '25", passRate: 95 },
-            { date: "Oct '25", passRate: 98 },
-            { date: "Nov '25", passRate: 96 },
-            { date: "Dec '25", passRate: 97 }
-        ],
-
-        volume: [
-            { date: "Jan '25", inspections: 22 },
-            { date: "Feb '25", inspections: 25 },
-            { date: "Mar '25", inspections: 27 },
-            { date: "Apr '25", inspections: 29 },
-            { date: "May '25", inspections: 31 },
-            { date: "Jun '25", inspections: 33 },
-            { date: "Jul '25", inspections: 28 },
-            { date: "Aug '25", inspections: 35 },
-            { date: "Sep '25", inspections: 32 },
-            { date: "Oct '25", inspections: 30 },
-            { date: "Nov '25", inspections: 34 },
-            { date: "Dec '25", inspections: 36 }
-        ]
-    },
-
-    quarterly: {
-        passRate: [
-            { date: "Q1 '25", passRate: 85 },
-            { date: "Q2 '25", passRate: 91 },
-            { date: "Q3 '25", passRate: 92 },
-            { date: "Q4 '25", passRate: 97 }
-        ],
-
-        volume: [
-            { date: "Q1 '25", inspections: 74 },
-            { date: "Q2 '25", inspections: 93 },
-            { date: "Q3 '25", inspections: 95 },
-            { date: "Q4 '25", inspections: 100 }
-        ]
-    },
-
-    yearly: {
-        passRate: [
-            { date: "2022", passRate: 76 },
-            { date: "2023", passRate: 83 },
-            { date: "2024", passRate: 88 },
-            { date: "2025", passRate: 95 }
-        ],
-
-        volume: [
-            { date: "2022", inspections: 245 },
-            { date: "2023", inspections: 289 },
-            { date: "2024", inspections: 315 },
-            { date: "2025", inspections: 352 }
-        ]
-    }
-};
 
 
 const sanitizeBinSize = (v: string): number => {
@@ -110,26 +36,47 @@ const sanitizeBinSize = (v: string): number => {
 };
 
 // Components
-const DashboardHeader = ({ time, setTime }: { time: string, setTime: (val: string) => void }) => (
-    <div className="bg-white border-gray-200">
-        <div className="flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-gray-800">Analytics Dashboard</h1>
-            <CustomDropdown
-                options={[
-                    { value: "All Time", label: "All Time" },
-                    { value: "Last Month", label: "Last Month" },
-                    { value: "Last 3 Months", label: "Last 3 Months" },
-                    { value: "Last 6 Months", label: "Last 6 Months" },
-                    { value: "Last Year", label: "Last Year" },
+const MinBarShape: React.FC<any> = (props) => {
+    const { value, y, height } = props as any;
+    if (!value || value <= 0) return null;
+    const minHeight = 6;
+    const h = Math.max(height, minHeight);
+    const yAdj = y - (h - height);
+    return <Rectangle {...props} y={yAdj} height={h} />;
+};
 
-                ]}
-                icon={<CalendarClock className="w-5 h-5" color='#9333EA' />}
-                width="200px"
-                value={time}
-                onChange={(val) => setTime(val)}
-            />
+const makeNonZeroLabel = (color: string) => (props: any) => {
+    const { value, x, y, width } = props;
+    if (!value || value <= 0) return null;
+    return (
+        <text x={x + width / 2} y={y - 6} textAnchor="middle" fill={color} fontSize={12} fontWeight={600}>
+            {value}
+        </text>
+    );
+};
+
+const YearHeader = ({ year, setYear }: { year: number, setYear: (val: number) => void }) => (
+    <div className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl p-4">
+        <div className="flex items-center justify-center">
+            <div className="flex items-center gap-3 bg-white/10 rounded-full px-6 py-2 text-white">
+                <button className="px-2 py-1 rounded-full hover:bg-white/20" onClick={() => setYear(year - 1)}>
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-2">
+                    <CalendarClock className="w-5 h-5" />
+                    <span className="text-sm">Year</span>
+                    <span className="text-lg font-semibold">{year}</span>
+                </div>
+                <button
+                    className="px-2 py-1 rounded-full hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setYear(Math.min(new Date().getFullYear(), year + 1))}
+                    disabled={year >= new Date().getFullYear()}
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
         </div>
-    </div >
+    </div>
 );
 
 const StatCard: React.FC<StatCardProps> = ({ icon, title, value, subtitle, color }) => (
@@ -151,7 +98,7 @@ const InspectionStatusOverview: React.FC<{ total: number; pass: number; fail: nu
     const hasData = statusData && statusData.length > 0 && statusData.some(d => d.value > 0);
 
     return (
-        <div className="bg-white rounded-lg mt-4 p-6">
+        <div className="bg-white rounded-lg mt-4">
             <div className="flex items-start gap-2 mb-4">
                 <div>
                     <Activity size={18} className="text-[#7522BB] mt-1" />
@@ -185,26 +132,28 @@ const InspectionStatusOverview: React.FC<{ total: number; pass: number; fail: nu
                         color="#EF4545"
                     />
                 </div>
-                <div className="flex flex-col items-center justify-center" style={{ minHeight: 400 }}>
+                <div className="flex flex-col items-center justify-center" >
                     {hasData ? (
                         <>
-                            <ResponsiveContainer width="100%" height={400}>
-                                <PieChart>
-                                    <Pie
-                                        data={statusData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={0}
-                                        outerRadius={150}
-                                        dataKey="value"
-                                    >
-                                        {statusData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                </PieChart>
-                            </ResponsiveContainer>
+                            <div className="w-full h-[300px] sm:h-[350px] md:h-[400px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={statusData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={0}
+                                            outerRadius="80%"
+                                            dataKey="value"
+                                        >
+                                            {statusData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
                             <div className="flex items-center justify-center gap-6 mt-4 text-sm">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-green-500"></div>
@@ -251,14 +200,14 @@ const InspectionStatusBreakdown: React.FC<{ data: { period: string; total: numbe
                 <YAxis label={{ value: 'Number of inspections', angle: -90, position: 'center', style: { fontSize: 14 }, dx: -15 }} tick={{ fontSize: 12 }} padding={{ top: 20 }} allowDecimals={false} />
                 <Tooltip />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="square" />
-                <Bar dataKey="total" name="Total" fill="#8B5CF6" radius={[4, 4, 0, 0]} >
-                    <LabelList dataKey="total" position="top" fill="#8B5CF6" />
+                <Bar dataKey="total" name="Total" fill="#8B5CF6" radius={[4, 4, 0, 0]} shape={<MinBarShape />}>
+                    <LabelList dataKey="total" content={makeNonZeroLabel('#8B5CF6')} />
                 </Bar>
-                <Bar dataKey="pass" name="Pass" fill="#10B981" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="pass" position="top" fill="#10B981" />
+                <Bar dataKey="pass" name="Pass" fill="#10B981" radius={[4, 4, 0, 0]} shape={<MinBarShape />}>
+                    <LabelList dataKey="pass" content={makeNonZeroLabel('#10B981')} />
                 </Bar>
-                <Bar dataKey="fail" name="Fail" fill="#ef4444" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="fail" position="top" fill="#ef4444" />
+                <Bar dataKey="fail" name="Fail" fill="#ef4444" radius={[4, 4, 0, 0]} shape={<MinBarShape />}>
+                    <LabelList dataKey="fail" content={makeNonZeroLabel('#ef4444')} />
                 </Bar>
             </BarChart>
         </ResponsiveContainer>
@@ -287,7 +236,7 @@ const InspectionTrends: React.FC<{
 
     return (
         <div className="bg-white mt-4 rounded-lg">
-            <div className="flex justify-between items-start gap-2 mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-4">
                 <div className="flex items-start gap-2 ">
                     <div>
                         <Activity size={18} className="text-[#7522BB] mt-1" />
@@ -422,8 +371,8 @@ const InspectionDurationAnalysis: React.FC<{ durationData: { range: string; coun
                     <p className="text-sm text-gray-600">Distribution of inspection durations</p>
                 </div>
             </div>
-            <div className="flex justify-end items-center gap-4 mb-6">
-                <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:justify-end sm:items-center gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <label className="text-sm text-gray-600">Bin Size (minutes):</label>
                     <input
                         type="text"
@@ -452,7 +401,7 @@ const InspectionDurationAnalysis: React.FC<{ durationData: { range: string; coun
 
                             // anything else is blocked
                         }}
-                        className="w-[100px] px-3 py-1 border border-gray-300 rounded-md bg-[#FAF7FF]"
+                        className="sm:w-[100px] w-full px-3 py-1 border border-gray-300 rounded-md bg-[#FAF7FF]"
                     />
                 </div>
                 <button className="px-4 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors" onClick={onApply}>Apply</button>
@@ -474,7 +423,7 @@ const InspectionDurationAnalysis: React.FC<{ durationData: { range: string; coun
 
 // Main App
 const AnalysisDashboard: React.FC = () => {
-    const [time, setTime] = useState('All Time');
+    const [year, setYear] = useState(new Date().getFullYear());
     const [statusData, setStatusData] = useState<{ name: string; value: number; percentage: number; color: string }[]>([]);
     const [totals, setTotals] = useState<{ total: number; pass: number; fail: number }>({ total: 0, pass: 0, fail: 0 });
     const [breakdownData, setBreakdownData] = useState<{ period: string; total: number; pass: number; fail: number }[]>([]);
@@ -520,7 +469,7 @@ const AnalysisDashboard: React.FC = () => {
             const res = await apiRequest('/api/reports/get-duration-analysis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ vendorId: vendor, departmentId: dept, timeRange: time, binSize: bin })
+                body: JSON.stringify({ vendorId: vendor, departmentId: dept, year, binSize: bin })
             });
             const json = await res.json();
             if (!res.ok || !json?.success) throw new Error(json?.message || 'Failed to load duration');
@@ -545,15 +494,15 @@ const AnalysisDashboard: React.FC = () => {
             const res = await apiRequest('/api/reports/get-analytics', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ vendorId: vendor, departmentId: dept, timeRange: time })
+                body: JSON.stringify({ vendorId: vendor, departmentId: dept, year })
             });
             const json = await res.json();
-            console.log(json);
+            ;
             if (!res.ok || !json?.success) throw new Error(json?.message || 'Failed to load analytics');
             const a = json.analytics;
             setTotals({ total: a.status.total, pass: a.status.pass, fail: a.status.fail });
             setStatusData(a.status.pie);
-            setBreakdownData([{ period: a.breakdown.period, total: a.breakdown.total, pass: a.breakdown.pass, fail: a.breakdown.fail }]);
+            setBreakdownData((a.trends?.quarterly?.volume || []).map((q: any) => ({ period: q.date, total: q.inspections, pass: q.pass, fail: q.fail })));
             setTrends(a.trends);
         } catch (e: any) {
             toast.error(e?.message || 'Error loading analytics');
@@ -567,7 +516,7 @@ const AnalysisDashboard: React.FC = () => {
         if (!vendor || !dept) return;
         fetchAnalytics();
         fetchDuration();
-    }, [time, vendor, dept]);
+    }, [year, vendor, dept]);
 
     // 🔹 Handle Apply button click
     const handleApply = () => {
@@ -587,7 +536,7 @@ const AnalysisDashboard: React.FC = () => {
                     <ClipLoader color="#0075FF" size={40} />
                 </div>
             )}
-            <DashboardHeader time={time} setTime={setTime} />
+            <YearHeader year={year} setYear={setYear} />
             <div className="space-y-10">
                 <InspectionStatusOverview total={totals.total} pass={totals.pass} fail={totals.fail} statusData={statusData} />
                 <InspectionStatusBreakdown data={breakdownData} />

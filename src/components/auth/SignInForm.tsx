@@ -45,15 +45,20 @@ export default function SignInForm() {
       });
 
       const result = await response.json();
-      console.log(result)
+      
 
       if (!response.ok) {
         throw new Error(result?.message || result.error)
       }
       const role=result.user.role
-
-      router.push(`/${role}/departments`);
       login(result.token)
+      
+      if(role==="superadmin")
+      {
+        router.push(`/${role}`);
+      }
+      else
+        router.push(`/${role}/departments`);
 
       // const sessionId = result.data.data.session_id;
       // if (sessionId) {
@@ -67,15 +72,15 @@ export default function SignInForm() {
       //   // Redirect after successful login
       //   // router.push("/");
 
-      //   console.log("Login successful");
+      //   ;
       // } else {
-      //   console.error("No session_id found in response");
+      //   ;
       // }
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       toast.error(errorMessage);
-      console.error("Network Error:", error);
+      ;
     } finally {
       setIsLoading(false);
     }
