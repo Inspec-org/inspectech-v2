@@ -945,7 +945,7 @@ const Media: React.FC<{ formData: InspectionFormData; setFormData: React.Dispatc
                         <h2 className="text-lg font-semibold mb-4">3. Inside Trailer</h2>
                         <div className="">
                             <UploadCard
-                                title="Inside Traier Image"
+                                title="Inside Trailer Image"
                                 description="Upload an image showing the inside of the trailer"
                                 currentUrl={formData.insideTrailerImageUrl}
                                 onUploadToCloudinary={(file) => onUploadToCloudinary('insideTrailerImageUrl', file)}
