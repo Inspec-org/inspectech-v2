@@ -9,10 +9,16 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
     const user = await getUserFromToken(token);
-    if (!user) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    if (!user)
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
 
     const body = await req.json();
-    
+
     const page = parseInt(body.page ?? 1, 10);
     const limit = parseInt(body.limit ?? 10, 10);
     const idsOnly: boolean = Boolean(body.idsOnly);
@@ -20,7 +26,7 @@ export async function POST(req: NextRequest) {
     const vendorId = body.vendorId ?? undefined;
 
     const filter = body.filter ?? {};
-    
+
     const unitId = filter.unitId ?? undefined;
     const unitIds: string[] | undefined = Array.isArray(filter.unitIds) ? filter.unitIds : undefined;
     const inspectionStatus = filter.inspectionStatus ?? undefined;
@@ -43,7 +49,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const query: any = {};
-    
+
     if (unitIds && unitIds.length) query.unitId = { $in: unitIds };
     else if (unitId) query.unitId = unitId;
 
@@ -92,7 +98,7 @@ export async function POST(req: NextRequest) {
         query.durationSec = m[2];
       }
     }
-    
+
     if (dateRange && dateRange.length >= 2) {
       const [startStr, endStr] = dateRange;
       const start = new Date(startStr);
@@ -106,7 +112,7 @@ export async function POST(req: NextRequest) {
           day: { $toInt: "$dateDay" }
         }
       };
-      const expr = { $and: [ { $gte: [dateExpr, start] }, { $lte: [dateExpr, end] } ] };
+      const expr = { $and: [{ $gte: [dateExpr, start] }, { $lte: [dateExpr, end] }] };
       if (query.$or) {
         const prevOr = query.$or;
         delete query.$or;
@@ -149,7 +155,7 @@ export async function POST(req: NextRequest) {
         }
       }
     }
-    
+
     if (search) {
       query.$or = [
         { unitId: new RegExp(search, "i") },
@@ -159,16 +165,24 @@ export async function POST(req: NextRequest) {
         { type: new RegExp(search, "i") },
       ];
     }
-    
+
     if (department) query.departmentId = department;
     if (vendorId) query.vendorId = vendorId;
 
     const total = await Inspection.countDocuments(query);
-    
+
     if (idsOnly) {
       const all = await Inspection.find(query).select('unitId').lean();
       const allUnitIds = all.map((d: any) => d.unitId);
-      return NextResponse.json({ success: true, allUnitIds, total });
+      return NextResponse.json({
+        status: 200,
+        success: true,
+        message: "Unit IDs fetched successfully",
+        data: {
+          allUnitIds,
+          total
+        }
+      }, { status: 200 });
     }
 
     const result = await Inspection.find(query)
@@ -183,13 +197,26 @@ export async function POST(req: NextRequest) {
       ...item,
       vendor: item.vendorId?.name || null
     }));
-
-    return NextResponse.json({ success: true, inspections, total, page, limit });
+    const totalPages = Math.ceil(total / limit);
+    return NextResponse.json({
+      status: 200,
+      success: true,
+      message: "Inspections fetched successfully",
+      data: {
+        inspections,
+        total,
+        page,
+        limit,
+        totalPages
+      }
+    }, { status: 200 });
   } catch (error: any) {
     console.error("❌ Error in POST /inspections:", error);
-    return NextResponse.json(
-      { success: false, message: error?.message || "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error?.message || "Internal Server Error",
+      data: null
+    }, { status: 500 });
   }
 }

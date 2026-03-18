@@ -3,23 +3,41 @@ import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
+    // 🔐 Auth
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
     const user = await getUserFromToken(token);
+
     if (!user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { departmentId, vendorId } = body;
+    // 📥 Query params
+    const { searchParams } = new URL(req.url);
+    const departmentId = searchParams.get("departmentId");
+    const vendorId = searchParams.get("vendorId");
+
+    if (!departmentId || !vendorId) {
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "departmentId and vendorId are required",
+        data: null
+      }, { status: 400 });
+    }
 
     await connectDB();
 
-    // ---------- RECENT INSPECTIONS (BASED ON USER + DEPT) ----------
+    // ---------- RECENT INSPECTIONS ----------
     const recentDocs = await Inspection.find({
-      vendorId: vendorId,
+      vendorId,
       departmentId,
     })
       .sort({ createdAt: -1 })
@@ -27,7 +45,7 @@ export async function POST(req: NextRequest) {
       .select(
         "unitId inspectionStatus vendor location inspector type durationMin durationSec dateDay dateMonth dateYear createdAt"
       )
-      .lean(); 
+      .lean();
 
     const recent = recentDocs.map((i) => ({
       ...i,
@@ -36,15 +54,20 @@ export async function POST(req: NextRequest) {
     }));
 
     return NextResponse.json({
+      status: 200,
       success: true,
-      dashboard: {
+      message: "Recent inspections fetched successfully",
+      data: {
         recent
       }
-    });
+    }, { status: 200 });
+
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error?.message || "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error?.message || "Internal Server Error",
+      data: null
+    }, { status: 500 });
   }
 }
