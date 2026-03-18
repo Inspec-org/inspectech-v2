@@ -8,6 +8,7 @@ const PUBLIC_PATHS = new Set([
   "/accept-invitation",
 ]);
 
+
 export async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
 
