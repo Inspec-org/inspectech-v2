@@ -5,24 +5,47 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db/db";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
-// Middleware to get user from JWT
-
-
 export async function GET(req: Request) {
   try {
     // Get token from Authorization header: "Bearer <token>"
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
 
+    if (!token) {
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Token is required",
+        data: null
+      }, { status: 401 });
+    }
+
     const user = await getUserFromToken(token);
 
     if (!user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
     }
 
-    return NextResponse.json({ success: true, user });
+    return NextResponse.json({
+      status: 200,
+      success: true,
+      message: "User fetched successfully",
+      data: user
+    }, { status: 200 });
+
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ success: false, message }, { status: 500 });
+
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message,
+      data: null
+    }, { status: 500 });
   }
 }
