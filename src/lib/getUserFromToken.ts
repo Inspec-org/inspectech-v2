@@ -4,9 +4,9 @@ import { connectDB } from "@/lib/db/db";
 
 export async function getUserFromToken(token: string | undefined) {
   if (!token) return null;
-
   try {
     const JWT_SECRET = process.env.JWT_SECRET;
+    console.log(JWT_SECRET);
     if (!JWT_SECRET) throw new Error("JWT_SECRET is missing");
 
     const decoded = jwt.verify(token, JWT_SECRET) as {
@@ -14,15 +14,14 @@ export async function getUserFromToken(token: string | undefined) {
       userId?: string;
       email?: string;
     };
+    console.log(decoded);
 
     const id = decoded.id || decoded.userId;
     if (!id) return null;
 
     await connectDB();
 
-    const user = await User.findById(id).select(
-      "firstName lastName email avatar _id role vendorAccess vendorId departmentAccess" 
-    );
+    const user = await User.findById(id)
 
     if (!user) return null;
 
@@ -33,7 +32,8 @@ export async function getUserFromToken(token: string | undefined) {
       ...user.toObject(),
       username,
     };
-  } catch {
+  } catch (error) {
+    console.error("Error in getUserFromToken:", error);
     return null;
   }
 }
