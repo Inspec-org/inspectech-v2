@@ -8,8 +8,22 @@ const PUBLIC_PATHS = new Set([
   "/accept-invitation",
 ]);
 
+/**
+ * Resolves the base URL for internal API calls.
+ *
+ * - On Vercel, `origin` from req.nextUrl works perfectly.
+ * - On GCP (Docker/Cloud Run), the container's origin is something like
+ *   http://0.0.0.0:3000 which is unreachable from within the middleware runtime.
+ *   Set the APP_URL environment variable (e.g. https://your-gcp-domain.com)
+ *   to override this.
+ */
+function getBaseUrl(origin: string): string {
+  return process.env.APP_URL || origin;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
+  const baseUrl = getBaseUrl(origin);
 
   if (
     pathname.startsWith("/api") ||
@@ -29,43 +43,66 @@ export async function middleware(req: NextRequest) {
   const hasRefresh = !!req.cookies.get("refreshToken")?.value;
 
   if (pathname === "/") {
+    // Try session_id first
     if (sessionId) {
-      const userRes = await fetch(new URL("/api/auth/fetch_user", origin), {
-        headers: {
-          Authorization: "Bearer " + sessionId,
-          cookie: req.headers.get("cookie") || "",
-        },
-      });
-      if (userRes.ok) {
-        const { user } = await userRes.json();
-        const role = user?.role || "vendor";
-        const url = req.nextUrl.clone();
-        url.pathname = `/${role}/dashboard`;
-        return NextResponse.redirect(url);
+      try {
+        const userRes = await fetch(new URL("/api/auth/fetch_user", baseUrl), {
+          headers: {
+            Authorization: "Bearer " + sessionId,
+            cookie: req.headers.get("cookie") || "",
+          },
+        });
+        if (userRes.ok) {
+          const { user } = await userRes.json();
+          const role = user?.role || "vendor";
+          const url = req.nextUrl.clone();
+          url.pathname = `/${role}/dashboard`;
+          return NextResponse.redirect(url);
+        }
+      } catch {
+        // Internal fetch failed (e.g. bad origin on GCP) — fall through to refresh or signin
       }
     }
 
+    // Try refresh token
     if (hasRefresh) {
-      const refreshRes = await fetch(new URL("/api/auth/refresh", origin), {
-        headers: { cookie: req.headers.get("cookie") || "" },
-      });
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        if (data?.success && data?.accessToken) {
-          const roleRes = await fetch(new URL("/api/auth/fetch_user", origin), {
-            headers: { Authorization: "Bearer " + data.accessToken },
-          });
-          if (roleRes.ok) {
-            const { user } = await roleRes.json();
-            const role = user?.role || "vendor";
-            const res = NextResponse.redirect(new URL(`/${role}/dashboard`, origin));
-            res.cookies.set("session_id", data.accessToken, { path: "/", sameSite: "lax" });
-            return res;
+      try {
+        const refreshRes = await fetch(new URL("/api/auth/refresh", baseUrl), {
+          headers: { cookie: req.headers.get("cookie") || "" },
+        });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          if (data?.success && data?.accessToken) {
+            try {
+              const roleRes = await fetch(
+                new URL("/api/auth/fetch_user", baseUrl),
+                {
+                  headers: { Authorization: "Bearer " + data.accessToken },
+                }
+              );
+              if (roleRes.ok) {
+                const { user } = await roleRes.json();
+                const role = user?.role || "vendor";
+                const res = NextResponse.redirect(
+                  new URL(`/${role}/dashboard`, baseUrl)
+                );
+                res.cookies.set("session_id", data.accessToken, {
+                  path: "/",
+                  sameSite: "lax",
+                });
+                return res;
+              }
+            } catch {
+              // fetch_user failed — fall through to signin
+            }
           }
         }
+      } catch {
+        // refresh fetch failed — fall through to signin
       }
     }
 
+    // Not authenticated — redirect to signin
     const to = req.nextUrl.clone();
     to.pathname = "/signin";
     return NextResponse.redirect(to);
@@ -79,17 +116,24 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const refreshRes = await fetch(new URL("/api/auth/refresh", origin), {
-    headers: { cookie: req.headers.get("cookie") || "" },
-  });
+  try {
+    const refreshRes = await fetch(new URL("/api/auth/refresh", baseUrl), {
+      headers: { cookie: req.headers.get("cookie") || "" },
+    });
 
-  if (refreshRes.ok) {
-    const data = await refreshRes.json();
-    if (data?.success && data?.accessToken) {
-      const res = NextResponse.next();
-      res.cookies.set("session_id", data.accessToken, { path: "/", sameSite: "lax" });
-      return res;
+    if (refreshRes.ok) {
+      const data = await refreshRes.json();
+      if (data?.success && data?.accessToken) {
+        const res = NextResponse.next();
+        res.cookies.set("session_id", data.accessToken, {
+          path: "/",
+          sameSite: "lax",
+        });
+        return res;
+      }
     }
+  } catch {
+    // refresh fetch failed — redirect to signin
   }
 
   const url = req.nextUrl.clone();
@@ -97,4 +141,4 @@ export async function middleware(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-export const config = { matcher: ["/(.*)"] };
+export const config = { matcher: ["/(.*)" ] };

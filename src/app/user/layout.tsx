@@ -25,7 +25,7 @@ export default function AdminLayout({
       return;
     }
     if (user.role !== "user") {
-      router.replace(`/${user.role}`);
+      router.replace(`/${user.role}/dashboard`);
     }
   }, [user, loading, router]);
 
