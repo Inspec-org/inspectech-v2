@@ -8,15 +8,7 @@ const PUBLIC_PATHS = new Set([
   "/accept-invitation",
 ]);
 
-/**
- * Resolves the base URL for internal API calls.
- *
- * - On Vercel, `origin` from req.nextUrl works perfectly.
- * - On GCP (Docker/Cloud Run), the container's origin is something like
- *   http://0.0.0.0:3000 which is unreachable from within the middleware runtime.
- *   Set the APP_URL environment variable (e.g. https://your-gcp-domain.com)
- *   to override this.
- */
+
 function getBaseUrl(origin: string): string {
   return process.env.APP_URL || origin;
 }
