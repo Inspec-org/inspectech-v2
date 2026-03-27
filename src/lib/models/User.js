@@ -50,6 +50,26 @@ const UserSchema = new mongoose.Schema({
     type: String,
     select: false
   },
+  verificationOTPExpires: {
+    type: Date,
+    select: false
+  },
+  enable2Factor: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorOTP: {
+    type: String,
+    select: false
+  },
+  twoFactorOTPExpires: {
+    type: Date,
+    select: false
+  },
+  pending2FactorState: {
+    type: Boolean,
+    default: null
+  },
   role: {
     type: String,
     enum: ['user', 'admin', 'superadmin'],
@@ -76,10 +96,6 @@ const UserSchema = new mongoose.Schema({
       ref: 'Department',
     }
   ],
-  verificationOTPExpires: {
-    type: Date,
-    select: false
-  },
   avatar: {
     type: String,
 

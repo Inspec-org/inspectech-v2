@@ -4,33 +4,30 @@ import User from "@/lib/models/User";
 import Vendor from "@/lib/models/Vendor";
 import Department from "@/lib/models/Departments";
 import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
-import { sendEmail } from "@/lib/sendEmail";
-
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, password, rememberMe = false } = await req.json();
+        const { email, otp } = await req.json();
 
-        if (!email || !password) {
+        if (!email || !otp) {
             return NextResponse.json({
                 status: 400,
                 success: false,
-                message: "Email and password are required",
+                message: "Email and OTP are required",
                 data: null
             }, { status: 400 });
         }
 
-        await connectDB();   // <-- CONNECT SAFELY (prevents errors)
+        await connectDB();
 
-        const user = await User.findOne({ email, isDeleted: false }).select("+password");
+        const user = await User.findOne({ email, isDeleted: false }).select("+twoFactorOTP +twoFactorOTPExpires +pending2FactorState");
         if (!user) {
             return NextResponse.json({
-                status: 401,
+                status: 404,
                 success: false,
                 message: "User not found",
                 data: null
-            }, { status: 401 });
+            }, { status: 404 });
         }
 
         if (user.status !== 'active') {
@@ -42,47 +39,25 @@ export async function POST(req: NextRequest) {
             }, { status: 403 });
         }
 
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
+        if (!user.twoFactorOTP || user.twoFactorOTP !== otp) {
             return NextResponse.json({
                 status: 401,
                 success: false,
-                message: "Invalid credentials",
+                message: "Invalid OTP",
                 data: null
             }, { status: 401 });
         }
 
-        // If 2FA is enabled, send OTP and return immediately
-        if (user.enable2Factor) {
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-            user.twoFactorOTP = otp;
-            user.twoFactorOTPExpires = otpExpires;
-            await user.save();
-
-            // Send email
-            const emailHtml = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Two-Factor Authentication</h2>
-                    <p>Your OTP for login is: <strong style="font-size: 24px; color: #10b981;">${otp}</strong></p>
-                    <p>This OTP will expire in 10 minutes.</p>
-                </div>
-            `;
-            await sendEmail(user.email, "Your 2FA Login OTP", emailHtml);
-
+        if (new Date() > user.twoFactorOTPExpires) {
             return NextResponse.json({
-                status: 200,
-                success: true,
-                message: "OTP sent to your email",
-                data: {
-                    twoFactorRequired: true,
-                    email: user.email
-                }
-            }, { status: 200 });
+                status: 401,
+                success: false,
+                message: "OTP expired",
+                data: null
+            }, { status: 401 });
         }
 
-        // If 2FA is false, perform original functionality (role/vendor checks)
+        // OTP is valid, perform role/vendor checks before finalizing login
         if (user.role !== 'superadmin') {
             if (user.role === 'user') {
                 const vendorId = user.vendorId;
@@ -179,6 +154,17 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // If this was a 2FA toggle request, update the state
+        if (user.pending2FactorState !== undefined && user.pending2FactorState !== null) {
+            user.enable2Factor = user.pending2FactorState;
+            user.pending2FactorState = undefined;
+        }
+
+        // OTP is valid and user is allowed to log in, clear it
+        user.twoFactorOTP = undefined;
+        user.twoFactorOTPExpires = undefined;
+        await user.save();
+
         const JWT_SECRET = process.env.JWT_SECRET!;
         const access_token = jwt.sign(
             { id: user._id, email: user.email },
@@ -189,7 +175,7 @@ export async function POST(req: NextRequest) {
         const refreshToken = jwt.sign(
             { userId: user._id },
             JWT_SECRET,
-            { expiresIn: rememberMe ? "30d" : "1d" }
+            { expiresIn: "1d" } // Default to 1 day for 2FA login
         );
 
         return NextResponse.json({
@@ -210,9 +196,8 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         return NextResponse.json(
-            { success: false, message: error.message || "Server error" },
+            { status: 500, success: false, message: error.message || "Server error", data: null },
             { status: 500 }
         );
     }
 }
-
