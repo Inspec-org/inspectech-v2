@@ -33,7 +33,7 @@ const Reports: React.FC = () => {
     ];
 
     useEffect(() => {
-        if (user && user?.role === "vendor" || role === "user") {
+        if (user && user?.role === "vendor" || user?.role === "user") {
             setActiveTab('analytics')
         }
     }, [user])
