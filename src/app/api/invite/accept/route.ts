@@ -45,11 +45,13 @@ export async function POST(req: NextRequest) {
         const payload: any = {
             email: invitation.email,
             password,
-            role: invitation.role === "vendor" ? "user" : "admin",
+            role: invitation.role === "vendor" || invitation.role === "user" ? "user" : "admin",
             vendorId: invitation.vendorId,
             firstName,
             lastName,
         };
+        console.log(payload);
+        console.log(invitation);
         if (invitation.role === "admin") {
             payload.vendorAccess = Array.isArray((invitation as any).vendorAccess) ? (invitation as any).vendorAccess : [];
             payload.departmentAccess = Array.isArray((invitation as any).departmentAccess) ? (invitation as any).departmentAccess : [];

@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
         let vendorName: string | undefined = undefined;
 
-        if (role === "vendor") {
+        if (role === "vendor" || role === "user") {
             const vendor = await Vendor.findById(vendorId);
             if (!vendor) {
                 return NextResponse.json(
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
                 invitation.token = token;
                 invitation.name = name;
                 invitation.role = role;
-                invitation.vendorId = role === "vendor" ? vendorId : undefined;
+                invitation.vendorId = role === "vendor" || role === "user" ? vendorId : undefined;
                 invitation.vendorName = vendorName || undefined;
                 if (role === "admin") {
                     invitation.vendorAccess = vendorAccess;
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
                 email,
                 name,
                 role,
-                vendorId: role === "vendor" ? vendorId : undefined,
+                vendorId: role === "vendor" || role === "user" ? vendorId : undefined,
                 vendorAccess: role === "admin" ? vendorAccess : undefined,
                 departmentAccess: role === "admin" ? departmentAccess : undefined,
                 vendorName: vendorName || undefined,

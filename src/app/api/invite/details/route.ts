@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
         let vendorName: string | null = null;
         let vendorIdStr: string | undefined = undefined;
-        if (invitation.role === "vendor" && invitation.vendorId) {
+        if (invitation.role === "vendor" || invitation.role === "user" && invitation.vendorId) {
             vendorName = invitation.vendorId?.name || null;
             vendorIdStr = String(invitation.vendorId?._id || "");
         } else if (invitation.role === "admin") {

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         const payload: any = {
             email: invitation.email,
             password,
-            role: invitation.role === "vendor" ? "user" : "admin",
+            role: invitation.role === "vendor" || invitation.role === "user" ? "user" : "admin",
             vendorId: invitation.vendorId,
             firstName,
             lastName,
