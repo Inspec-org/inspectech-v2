@@ -12,6 +12,7 @@ function getBaseUrl(origin: string): string {
   return process.env.APP_URL || origin;
 }
 
+
 export async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
   const baseUrl = getBaseUrl(origin);
