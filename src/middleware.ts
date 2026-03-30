@@ -8,7 +8,6 @@ const PUBLIC_PATHS = new Set([
   "/accept-invitation",
 ]);
 
-
 function getBaseUrl(origin: string): string {
   return process.env.APP_URL || origin;
 }
