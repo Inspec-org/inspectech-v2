@@ -14,6 +14,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
         sensors: true,
         dimensions: true,
         features: true,
+        tireLocation: true,
     });
 
     const isCanadaTrailers = ((Cookies.get('selectedDepartment') || '').toLowerCase() === 'canada trailers');
@@ -58,7 +59,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
     };
 
     const handleDropdownChange = (name: string, value: string) => {
-        
+
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -595,151 +596,313 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                         )}
                     </div>
                 </div>
-                {/* Physical Dimensions & Components */}
-                <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full mb-5" : "w-full px-4"}`}>
-                    <button
-                        onClick={() => toggleSection('dimensions')}
-                        className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
-                    >
-                        <h2 className={`text-sm  font-semibold text-gray-900`}>Physical Dimensions & Components</h2>
-                        <span className="text-gray-400">{expandedSections.dimensions ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
-                    </button>
 
-                    {expandedSections.dimensions && (
-                        <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Length</label>
-                                <CustomDropdown name="length"
-                                    options={isCanadaTrailers ? [
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "28 ft", label: "28 ft" },
-                                        { value: "53 ft", label: "53 ft" },
-                                    ] : [
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "28 ft", label: "28 ft" },
-                                        { value: "48 ft", label: "48 ft" },
-                                        { value: "53 ft", label: "53 ft" },
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.length}
-                                    onChange={(val) => handleDropdownChange("length", val)}
-                                />
-                            </div>
+                <div className={`flex  ${prop === "single" ? `md:flex-row flex-col ${expandedSections.dimensions || expandedSections.tireLocation ? "mb-5" : ""}` : "flex-col px-4"} justify-between items-start gap-2 `}>
+                    {/* Physical Dimensions & Components */}
+                    <div className={`rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full"}`}>
+                        <button
+                            onClick={() => toggleSection('dimensions')}
+                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
+                        >
+                            <h2 className={`text-sm  font-semibold text-gray-900`}>Physical Dimensions & Components</h2>
+                            <span className="text-gray-400">{expandedSections.dimensions ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
+                        </button>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Height</label>
-                                <CustomDropdown name="height"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "13 ft 6 in", label: "13 ft 6 in" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.height}
-                                    onChange={(val) => handleDropdownChange("height", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Gross Axle Weight Rating</label>
-                                <CustomDropdown name="grossAxleWeightRating"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "20000 lbs", label: "20000 lbs" },
-                                        { value: "34000 lbs", label: "34000 lbs" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.grossAxleWeightRating}
-                                    onChange={(val) => handleDropdownChange("grossAxleWeightRating", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Axle Type</label>
-                                <CustomDropdown name="axleType"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Dual Axle", label: "Dual Axle" },
-                                        { value: "Single Axle", label: "Single Axle" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.axleType}
-                                    onChange={(val) => handleDropdownChange("axleType", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Brake Type</label>
-                                <CustomDropdown name="brakeType"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Disc", label: "Disc" },
-                                        { value: "Drum", label: "Drum" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.brakeType}
-                                    onChange={(val) => handleDropdownChange("brakeType", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
-                                <CustomDropdown name="suspensionType"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Air", label: "Air" },
-                                        { value: "Spring", label: "Spring" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.suspensionType}
-                                    onChange={(val) => handleDropdownChange("suspensionType", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Tire Model</label>
-                                <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                    <input
-                                        type="text"
-                                        name="tireModel"
-                                        value={formData.tireModel}
-                                        onChange={handleChange}
-                                        placeholder="Enter value or click N/A"
-                                        className="w-full px-3 py-2 border pr-12 border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                        {expandedSections.dimensions && (
+                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Length</label>
+                                    <CustomDropdown name="length"
+                                        options={isCanadaTrailers ? [
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "28 ft", label: "28 ft" },
+                                            { value: "53 ft", label: "53 ft" },
+                                        ] : [
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "28 ft", label: "28 ft" },
+                                            { value: "48 ft", label: "48 ft" },
+                                            { value: "53 ft", label: "53 ft" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.length}
+                                        onChange={(val) => handleDropdownChange("length", val)}
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSetNA("tireModel")}
-                                        className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                    >
-                                        N/A
-                                    </button>
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Height</label>
+                                    <CustomDropdown name="height"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "13 ft 6 in", label: "13 ft 6 in" },
+
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.height}
+                                        onChange={(val) => handleDropdownChange("height", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Gross Axle Weight Rating</label>
+                                    <CustomDropdown name="grossAxleWeightRating"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "20000 lbs", label: "20000 lbs" },
+                                            { value: "34000 lbs", label: "34000 lbs" },
+
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.grossAxleWeightRating}
+                                        onChange={(val) => handleDropdownChange("grossAxleWeightRating", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Axle Type</label>
+                                    <CustomDropdown name="axleType"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "Dual Axle", label: "Dual Axle" },
+                                            { value: "Single Axle", label: "Single Axle" },
+
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.axleType}
+                                        onChange={(val) => handleDropdownChange("axleType", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Brake Type</label>
+                                    <CustomDropdown name="brakeType"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "Disc", label: "Disc" },
+                                            { value: "Drum", label: "Drum" },
+
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.brakeType}
+                                        onChange={(val) => handleDropdownChange("brakeType", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
+                                    <CustomDropdown name="suspensionType"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "Air", label: "Air" },
+                                            { value: "Spring", label: "Spring" },
+
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.suspensionType}
+                                        onChange={(val) => handleDropdownChange("suspensionType", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tire Model</label>
+                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
+                                        <input
+                                            type="text"
+                                            name="tireModel"
+                                            value={formData.tireModel}
+                                            onChange={handleChange}
+                                            placeholder="Enter value or click N/A"
+                                            className="w-full px-3 py-2 border pr-12 border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSetNA("tireModel")}
+                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
+                                        >
+                                            N/A
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tire Brand</label>
+                                    <CustomDropdown name="tireBrand"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "Bridgestone", label: "Bridgestone" },
+                                            { value: "Continental", label: "Continental" },
+                                            { value: "Firestone", label: "Firestone" },
+                                            { value: "Goodyear", label: "Goodyear" },
+                                            { value: "Michelin", label: "Michelin" },
+
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.tireBrand}
+                                        onChange={(val) => handleDropdownChange("tireBrand", val)}
+                                    />
                                 </div>
                             </div>
+                        )}
+                    </div>
+                    {/* Tire Location */}
+                    <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full mb-4"}`}>
+                        <button
+                            onClick={() => toggleSection('tireLocation')}
+                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
+                        >
+                            <h2 className={`text-sm  font-semibold text-gray-900`}>Tire Location</h2>
+                            <span className="text-gray-400">{expandedSections.tireLocation ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
+                        </button>
 
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Tire Brand</label>
-                                <CustomDropdown name="tireBrand"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Bridgestone", label: "Bridgestone" },
-                                        { value: "Continental", label: "Continental" },
-                                        { value: "Firestone", label: "Firestone" },
-                                        { value: "Goodyear", label: "Goodyear" },
-                                        { value: "Michelin", label: "Michelin" },
+                        {expandedSections.tireLocation && (
+                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Left Front Outer</label>
+                                    <CustomDropdown name="leftFrontOuter"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "15/32", label: "15/32" },
+                                            { value: "14/32", label: "14/32" },
+                                            { value: "13/32", label: "13/32" },
+                                            { value: "12/32", label: "12/32" },
+                                            { value: "11/32", label: "11/32" },
+                                            { value: "10/32", label: "10/32" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.leftFrontOuter}
+                                        onChange={(val) => handleDropdownChange("leftFrontOuter", val)}
+                                    />
+                                </div>
 
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.tireBrand}
-                                    onChange={(val) => handleDropdownChange("tireBrand", val)}
-                                />
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Left Front Inner</label>
+                                    <CustomDropdown name="leftFrontInner"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "15/32", label: "15/32" },
+                                            { value: "14/32", label: "14/32" },
+                                            { value: "13/32", label: "13/32" },
+                                            { value: "12/32", label: "12/32" },
+                                            { value: "11/32", label: "11/32" },
+                                            { value: "10/32", label: "10/32" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.leftFrontInner}
+                                        onChange={(val) => handleDropdownChange("leftFrontInner", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Left Rear Outer</label>
+                                    <CustomDropdown name="leftRearOuter"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "15/32", label: "15/32" },
+                                            { value: "14/32", label: "14/32" },
+                                            { value: "13/32", label: "13/32" },
+                                            { value: "12/32", label: "12/32" },
+                                            { value: "11/32", label: "11/32" },
+                                            { value: "10/32", label: "10/32" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.leftRearOuter}
+                                        onChange={(val) => handleDropdownChange("leftRearOuter", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Left Rear Inner</label>
+                                    <CustomDropdown name="leftRearInner"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "15/32", label: "15/32" },
+                                            { value: "14/32", label: "14/32" },
+                                            { value: "13/32", label: "13/32" },
+                                            { value: "12/32", label: "12/32" },
+                                            { value: "11/32", label: "11/32" },
+                                            { value: "10/32", label: "10/32" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.leftRearInner}
+                                        onChange={(val) => handleDropdownChange("leftRearInner", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Right Front Outer</label>
+                                    <CustomDropdown name="rightFrontOuter"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "15/32", label: "15/32" },
+                                            { value: "14/32", label: "14/32" },
+                                            { value: "13/32", label: "13/32" },
+                                            { value: "12/32", label: "12/32" },
+                                            { value: "11/32", label: "11/32" },
+                                            { value: "10/32", label: "10/32" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.rightFrontOuter}
+                                        onChange={(val) => handleDropdownChange("rightFrontOuter", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Right Front Inner</label>
+                                    <CustomDropdown name="rightFrontInner"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "15/32", label: "15/32" },
+                                            { value: "14/32", label: "14/32" },
+                                            { value: "13/32", label: "13/32" },
+                                            { value: "12/32", label: "12/32" },
+                                            { value: "11/32", label: "11/32" },
+                                            { value: "10/32", label: "10/32" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.rightFrontInner}
+                                        onChange={(val) => handleDropdownChange("rightFrontInner", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Right Rear Outer</label>
+                                    <CustomDropdown name="rightRearOuter"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "15/32", label: "15/32" },
+                                            { value: "14/32", label: "14/32" },
+                                            { value: "13/32", label: "13/32" },
+                                            { value: "12/32", label: "12/32" },
+                                            { value: "11/32", label: "11/32" },
+                                            { value: "10/32", label: "10/32" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.rightRearOuter}
+                                        onChange={(val) => handleDropdownChange("rightRearOuter", val)}
+                                    />
+                                </div>
+
+                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Right Rear Inner</label>
+                                    <CustomDropdown name="rightRearInner"
+                                        options={[
+                                            { value: "N/A", label: "N/A" },
+                                            { value: "15/32", label: "15/32" },
+                                            { value: "14/32", label: "14/32" },
+                                            { value: "13/32", label: "13/32" },
+                                            { value: "12/32", label: "12/32" },
+                                            { value: "11/32", label: "11/32" },
+                                            { value: "10/32", label: "10/32" },
+                                        ]}
+                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        value={formData.rightRearInner}
+                                        onChange={(val) => handleDropdownChange("rightRearInner", val)}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
+
                 </div>
 
                 {/* Features & Appearance */}

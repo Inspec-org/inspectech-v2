@@ -42,6 +42,14 @@ const FIELD_CATEGORIES = {
     "suspensionType",
     "tireModel",
     "tireBrand",
+    "leftFrontOuter",
+    "leftFrontInner",
+    "leftRearOuter",
+    "leftRearInner",
+    "rightFrontOuter",
+    "rightFrontInner",
+    "rightRearOuter",
+    "rightRearInner",
   ],
   feature: [
     "aerokits",
@@ -67,21 +75,29 @@ const FIELD_CATEGORIES = {
 const getDropdownAllowed = (key?: string, isCanadaTrailers?: boolean): string[] => {
   if (!key) return [];
   const base: Record<string, string[]> = {
-    manufacturer: ["N/A","Atro","Cartwright","DiMond","Don-Bur","Great Dane","Hyundai","Lufkin","Manac","Operbus","Stoughton","Strick","Tiger","TrailerMobile","Unity","Vanguard","Wabash"],
-    length: isCanadaTrailers ? ["N/A","28 ft","53 ft"] : ["N/A","28 ft","48 ft","53 ft"],
-    height: ["N/A","13 ft 6 in"],
-    grossaxleweightrating: ["N/A","20000 lbs","34000 lbs"],
-    axletype: ["N/A","Dual Axle","Single Axle"],
-    braketype: ["N/A","Disc","Drum"],
-    suspensiontype: ["N/A","Air","Spring"],
-    tirebrand: ["N/A","Bridgestone","Continental","Firestone","Goodyear","Michelin"],
-    doorcolor: ["N/A","Pantone 432 C","White"],
-    doortype: ["N/A","Swing","Roll"],
-    mudflaptype: ["N/A","Fast-Flap"],
-    panelbranding: ["N/A","Bowman","Prime","Tape on White","Smile on Blue 2016","Smile on Blue 2017","Smile on Blue 2018","Smile on White 2019","Unbranded","XTRA Lease"],
-    nosebranding: ["N/A","Captive Mean"],
-    skirtcolor: ["N/A","Ekostinger","Pantone 432 C","Transtex","White"],
-    conspicuitytape: ["N/A","Bottom Rear","Full Rear Perimeter"],
+    manufacturer: ["N/A", "Atro", "Cartwright", "DiMond", "Don-Bur", "Great Dane", "Hyundai", "Lufkin", "Manac", "Operbus", "Stoughton", "Strick", "Tiger", "TrailerMobile", "Unity", "Vanguard", "Wabash"],
+    length: isCanadaTrailers ? ["N/A", "28 ft", "53 ft"] : ["N/A", "28 ft", "48 ft", "53 ft"],
+    height: ["N/A", "13 ft 6 in"],
+    grossaxleweightrating: ["N/A", "20000 lbs", "34000 lbs"],
+    axletype: ["N/A", "Dual Axle", "Single Axle"],
+    braketype: ["N/A", "Disc", "Drum"],
+    suspensiontype: ["N/A", "Air", "Spring"],
+    tirebrand: ["N/A", "Bridgestone", "Continental", "Firestone", "Goodyear", "Michelin"],
+    doorcolor: ["N/A", "Pantone 432 C", "White"],
+    leftfrontouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    leftfrontinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    leftrearouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    leftrearinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    rightfrontouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    rightfrontinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    rightrearouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    rightrearinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    doortype: ["N/A", "Swing", "Roll"],
+    mudflaptype: ["N/A", "Fast-Flap"],
+    panelbranding: ["N/A", "Bowman", "Prime", "Tape on White", "Smile on Blue 2016", "Smile on Blue 2017", "Smile on Blue 2018", "Smile on White 2019", "Unbranded", "XTRA Lease"],
+    nosebranding: ["N/A", "Captive Mean"],
+    skirtcolor: ["N/A", "Ekostinger", "Pantone 432 C", "Transtex", "White"],
+    conspicuitytape: ["N/A", "Bottom Rear", "Full Rear Perimeter"],
   };
   return base[key] || [];
 };
@@ -116,16 +132,39 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.split(" ")[1];
     const user = await getUserFromToken(token);
     if (!user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
     }
 
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const vendorId = String(form.get("vendorId") || "");
     const departmentId = String(form.get("departmentId") || "");
-    if (!file) return NextResponse.json({ success: false, message: "file required" }, { status: 400 });
-    if (!vendorId) return NextResponse.json({ success: false, message: "vendorId required" }, { status: 400 });
-    if (!departmentId) return NextResponse.json({ success: false, message: "departmentId required" }, { status: 400 });
+    if (!file)
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "file is required",
+        data: null
+      }, { status: 400 });
+    if (!vendorId)
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "vendorId is required",
+        data: null
+      }, { status: 400 });
+    if (!departmentId)
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "departmentId is required",
+        data: null
+      }, { status: 400 });
 
     await connectDB();
 
@@ -148,12 +187,35 @@ export async function POST(req: NextRequest) {
     }
     rows = rows.filter(r => Array.isArray(r) && r.some(c => c !== null && c !== undefined && String(c).trim() !== ""));
     if (rows.length < 2) {
-      return NextResponse.json({ success: false, errors: [{ row: 0, field: "file", value: name, message: "File must contain headers and at least one data row." }] }, { status: 200 });
+      return NextResponse.json({
+        status: 200,
+        success: false,
+        message: "Validation errors in file",
+        data: {
+          errors: [
+            {
+              row: 0,
+              field: "file",
+              value: name,
+              message: "File must contain headers and at least one data row."
+            }
+          ]
+        }
+      }, { status: 200 });
     }
 
     const headers = (rows[0] as any[]).map(h => (h === null || h === undefined ? "" : String(h))).filter(h => h !== "");
     if (!headers.length) {
-      return NextResponse.json({ success: false, errors: [{ row: 0, field: "headers", value: "", message: "Invalid spreadsheet: No headers found." }] }, { status: 200 });
+      return NextResponse.json({
+        status: 200,
+        success: false,
+        message: "Invalid spreadsheet: No headers found",
+        data: {
+          errors: [
+            { row: 0, field: "headers", value: "", message: "No headers found" }
+          ]
+        }
+      }, { status: 200 });
     }
 
     const candidateAllowed = rows[1] as any[] | undefined;
@@ -214,6 +276,14 @@ export async function POST(req: NextRequest) {
         braketype: { type: "dropdown", key: "braketype" },
         suspensiontype: { type: "dropdown", key: "suspensiontype" },
         tirebrand: { type: "dropdown", key: "tirebrand" },
+        leftfrontouter: { type: "dropdown", key: "leftfrontouter" },
+        leftfrontinner: { type: "dropdown", key: "leftfrontinner" },
+        leftrearouter: { type: "dropdown", key: "leftrearouter" },
+        leftrearinner: { type: "dropdown", key: "leftrearinner" },
+        rightfrontouter: { type: "dropdown", key: "rightfrontouter" },
+        rightfrontinner: { type: "dropdown", key: "rightfrontinner" },
+        rightrearouter: { type: "dropdown", key: "rightrearouter" },
+        rightrearinner: { type: "dropdown", key: "rightrearinner" },
         doorcolor: { type: "dropdown", key: "doorcolor" },
         doortype: { type: "dropdown", key: "doortype" },
         mudflaptype: { type: "dropdown", key: "mudflaptype" },
@@ -287,7 +357,7 @@ export async function POST(req: NextRequest) {
           const ok = allowed.length ? allowed.some(a => a.toLowerCase() === v.toLowerCase()) : true;
           if (!ok) errors.push({ row: i + 1, field: header, value: v, message: `Value must be one of: ${allowed.join(", ")}` });
         } else if (kind.type === "radio") {
-          const ok = ["n/a","yes","no"].includes(v.toLowerCase());
+          const ok = ["n/a", "yes", "no"].includes(v.toLowerCase());
           if (!ok) errors.push({ row: i + 1, field: header, value: v, message: "Value must be one of: N/A, Yes, No" });
         } else if (kind.type === "year") {
           if (v.toLowerCase() !== "n/a") {
@@ -358,7 +428,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (parsedRows.length === 0) {
-      return NextResponse.json({ success: false, errors: [{ row: 0, field: "general", value: "", message: "Spreadsheet contains no valid data rows." }] }, { status: 200 });
+      return NextResponse.json({
+        status: 200,
+        success: false,
+        message: "Spreadsheet contains no valid data rows",
+        data: {
+          errors: [
+            { row: 0, field: "general", value: "", message: "No valid data rows" }
+          ]
+        }
+      }, { status: 200 });
     }
 
     const unitIdsToCheck = parsedRows.map(r => String(r["Unit ID"] || "").trim()).filter(Boolean);
@@ -403,22 +482,30 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
+      status: 200,
       success: errors.length === 0,
-      errors,
-      preview: {
-        headers: enhancedHeaders,
-        rows: rowsWithSrNo,
-        stats: {
-          inspections: rowsWithSrNo.length,
-          columns: dataHeaders.length,
-          ...categoryCounts,
-        },
-      },
+      message: errors.length
+        ? "Validation completed with errors"
+        : "File processed successfully",
+      data: {
+        errors,
+        preview: {
+          headers: enhancedHeaders,
+          rows: rowsWithSrNo,
+          stats: {
+            inspections: rowsWithSrNo.length,
+            columns: dataHeaders.length,
+            ...categoryCounts,
+          },
+        }
+      }
     }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error?.message || "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error?.message || "Internal Server Error",
+      data: null
+    }, { status: 500 });
   }
 }

@@ -5,63 +5,111 @@ import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function POST(req: NextRequest) {
   try {
+    // ===== AUTH =====
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
     const user = await getUserFromToken(token);
+
     if (!user) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
     }
 
     const body = await req.json();
+
+    // ===== VALIDATION =====
     if (!body?.unitId) {
-      return NextResponse.json({ success: false, message: "unitId is required" }, { status: 400 });
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "unitId is required",
+        data: null
+      }, { status: 400 });
     }
+
     if (!body?.departmentId) {
-      return NextResponse.json({ success: false, message: "departmentId is required" }, { status: 400 });
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "departmentId is required",
+        data: null
+      }, { status: 400 });
     }
+
     if (!body?.vendorId) {
-      return NextResponse.json({ success: false, message: "vendorId is required" }, { status: 400 });
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "vendorId is required",
+        data: null
+      }, { status: 400 });
     }
 
     await connectDB();
 
-
-    
-
+    // ===== CLEAN DATA =====
     const cleaned: any = { ...body };
+
     ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
       if (cleaned[key] === "" || cleaned[key] === undefined || cleaned[key] === null) {
         delete cleaned[key];
       }
     });
+
     ["equipmentNumber", "vin"].forEach((key) => {
       const v = cleaned[key];
-      if (v === "" || v === null || v === undefined || String(v).trim().toUpperCase() === "N/A") {
+      if (
+        v === "" ||
+        v === null ||
+        v === undefined ||
+        String(v).trim().toUpperCase() === "N/A"
+      ) {
         delete cleaned[key];
       }
     });
+
     if (cleaned["delivered_status"] && !cleaned["delivered"]) {
       cleaned["delivered"] = cleaned["delivered_status"];
       delete cleaned["delivered_status"];
     }
 
+    // ===== CREATE =====
     const inspection = await Inspection.create(cleaned);
-    return NextResponse.json({ success: true, inspection }, { status: 201 });
+
+    return NextResponse.json({
+      status: 201,
+      success: true,
+      message: "Inspection created successfully",
+      data: inspection
+    }, { status: 201 });
+
   } catch (error: any) {
+    // ===== DUPLICATE KEY =====
     if (error?.code === 11000) {
       const field =
         (error?.keyPattern && Object.keys(error.keyPattern)[0]) ||
         (error?.keyValue && Object.keys(error.keyValue)[0]) ||
-        (/dup key.*\{ (.+?):/.exec(String(error?.message || ''))?.[1]) ||
-        'unique field';
-      return NextResponse.json(
-        { success: false, message: `${field} already exists` },
-        { status: 409 }
-      );
+        (/dup key.*\{ (.+?):/.exec(String(error?.message || ""))?.[1]) ||
+        "unique field";
+
+      return NextResponse.json({
+        status: 409,
+        success: false,
+        message: `${field} already exists`,
+        data: null
+      }, { status: 409 });
     }
-    return NextResponse.json(
-      { success: false, message: error?.message || "Internal Server Error" },
-      { status: 500 }
-    );
+
+    // ===== GENERIC ERROR =====
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error?.message || "Internal Server Error",
+      data: null
+    }, { status: 500 });
   }
 }

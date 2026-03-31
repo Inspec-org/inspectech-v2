@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import User from "@/lib/models/User";
+import Vendor from "@/lib/models/Vendor";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db/db";
 import { getUserFromToken } from "@/lib/getUserFromToken";
@@ -31,11 +32,20 @@ export async function GET(req: Request) {
       }, { status: 401 });
     }
 
+    let vendorName = null;
+    if (user.vendorId) {
+      const vendor = await Vendor.findById(user.vendorId).select("name");
+      vendorName = vendor?.name || null;
+    }
+
     return NextResponse.json({
       status: 200,
       success: true,
       message: "User fetched successfully",
-      data: user
+      data: {
+        ...user,
+        vendorName
+      }
     }, { status: 200 });
 
   } catch (error) {

@@ -24,7 +24,6 @@ export default function AdminLayout({
       router.replace("/signin");
       return;
     }
-    console.log("admin role",user)
     if (user.role !== "admin") {
       router.replace(`/${user.role}/dashboard`);
     }

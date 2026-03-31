@@ -22,6 +22,7 @@ export async function PUT(req: NextRequest) {
 
     // Validate unitId vs equipmentNumber
     const { unitId, equipmentNumber } = body;
+    console.log(unitId, equipmentNumber)
 
     const isEmptyOrNA = (v: any) =>
       v === undefined || v === null || v === "" || v === "N/A";

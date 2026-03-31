@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
 import { getUserFromToken } from "@/lib/getUserFromToken";
+import { Types } from "mongoose";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,8 +19,8 @@ export async function POST(req: NextRequest) {
     const vendorId = body?.vendorId || undefined;
 
     const query: any = {};
-    if (department) query.departmentId = department;
-    if (vendorId) query.vendorId = vendorId;
+    if (department) query.departmentId = new Types.ObjectId(department);
+    if (vendorId) query.vendorId = new Types.ObjectId(vendorId);
 
     const [unitIds, statuses, types, inspectors, locations, delivered, durations, dates] = await Promise.all([
       Inspection.distinct('unitId', query),

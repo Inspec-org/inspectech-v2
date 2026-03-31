@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { email, name, role, vendorId, vendorAccess = [], departmentAccess = [] } = body;
-        console.log(body);
+
 
         const authHeader = req.headers.get("Authorization");
         const authToken = authHeader?.split(" ")[1];

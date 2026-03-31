@@ -58,6 +58,14 @@ export interface FormData {
   suspensionType: string;
   tireModel: string;
   tireBrand: string;
+  leftFrontOuter: string;
+  leftFrontInner: string;
+  leftRearOuter: string;
+  leftRearInner: string;
+  rightFrontOuter: string;
+  rightFrontInner: string;
+  rightRearOuter: string;
+  rightRearInner: string;
   aerokits: string;
   conspicuityTape: string;
   doorBranding: string;
@@ -147,6 +155,14 @@ export default function Edit({ type }: { type: string }) {
     suspensionType: '',
     tireModel: '',
     tireBrand: '',
+    leftFrontOuter: '',
+    leftFrontInner: '',
+    leftRearOuter: '',
+    leftRearInner: '',
+    rightFrontOuter: '',
+    rightFrontInner: '',
+    rightRearOuter: '',
+    rightRearInner: '',
     aerokits: '',
     conspicuityTape: '',
     doorBranding: '',

@@ -50,8 +50,6 @@ export async function POST(req: NextRequest) {
             firstName,
             lastName,
         };
-        console.log(payload);
-        console.log(invitation);
         if (invitation.role === "admin") {
             payload.vendorAccess = Array.isArray((invitation as any).vendorAccess) ? (invitation as any).vendorAccess : [];
             payload.departmentAccess = Array.isArray((invitation as any).departmentAccess) ? (invitation as any).departmentAccess : [];

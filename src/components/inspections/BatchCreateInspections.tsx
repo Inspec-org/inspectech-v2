@@ -52,7 +52,15 @@ const FIELD_CATEGORIES = {
         'brakeType',
         'suspensionType',
         'tireModel',
-        'tireBrand'
+        'tireBrand',
+        'leftFrontOuter',
+        'leftFrontInner',
+        'leftRearOuter',
+        'leftRearInner',
+        'rightFrontOuter',
+        'rightFrontInner',
+        'rightRearOuter',
+        'rightRearInner'
     ],
     feature: [
         'aerokits',

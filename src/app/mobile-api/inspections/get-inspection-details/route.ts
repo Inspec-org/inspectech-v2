@@ -30,14 +30,10 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
 
-    let id = unitId;
-    if (unitId.includes("%20")) {
-      id = unitId.replaceAll("%20", " ");
-    }
+    let id = unitId.includes("%20") ? unitId.replaceAll("%20", " ") : unitId;
 
-    const inspection = await Inspection.findOne({ unitId: id });
-
-    if (!inspection) {
+    const inspectionDoc = await Inspection.findOne({ unitId: id }).populate({ path: 'vendorId', select: 'name' }).lean();
+    if (!inspectionDoc) {
       return NextResponse.json({
         status: 404,
         success: false,
@@ -46,11 +42,20 @@ export async function GET(req: NextRequest) {
       }, { status: 404 });
     }
 
+    // cast to any so TS won’t complain
+    const inspection = inspectionDoc as any;
+
+    const result = {
+      ...inspection,
+      vendorId: inspection.vendorId._id, // just the ObjectId
+      vendor: inspection.vendorId?.name || null // keep vendor name
+    };
+
     return NextResponse.json({
       status: 200,
       success: true,
       message: "Inspection fetched successfully",
-      data: inspection
+      data: result
     }, { status: 200 });
 
   } catch (error: any) {

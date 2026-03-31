@@ -4,46 +4,39 @@ import Inspection from "@/lib/models/Inspections";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function POST(req: NextRequest) {
-  console.log("🚀 POST /api/inspection called");
 
   try {
     /* ================= AUTH ================= */
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split(" ")[1];
 
-    console.log("🔐 Auth Header:", authHeader);
-    console.log("🔑 Token:", token);
-
     const user = await getUserFromToken(token);
-    console.log("👤 User from token:", user?._id || user);
 
     if (!user) {
-      console.warn("⛔ Unauthorized request");
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
     }
 
     /* ================= BODY ================= */
     const body = await req.json();
-    console.log("📦 Raw body:", body);
 
     const payloads = Array.isArray(body?.payloads) ? body.payloads : [];
-    console.log("📦 Payload count:", payloads.length);
 
     if (!payloads.length) {
-      console.warn("⚠️ No payloads provided");
-      return NextResponse.json(
-        { success: false, message: "payloads required" },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "payloads required",
+        data: null
+      }, { status: 400 });
     }
 
     /* ================= DB ================= */
-    console.log("🔌 Connecting to DB...");
     await connectDB();
-    console.log("✅ DB connected");
 
     /* ================= CLEANING ================= */
     const cleanedDocs: any[] = [];
@@ -54,18 +47,12 @@ export async function POST(req: NextRequest) {
       v === "" || v === undefined || v === null;
 
     payloads.forEach((p: any, index: number) => {
-      console.log(`🧹 Processing payload [${index}]`, p);
 
       const unitId = String(p?.unitId || "").trim();
       const vendorId = p?.vendorId;
       const departmentId = p?.departmentId;
 
       if (!unitId || !vendorId || !departmentId) {
-        console.warn(`❌ Invalid payload [${index}]`, {
-          unitId,
-          vendorId,
-          departmentId,
-        });
         errors.push({
           index,
           unitId,
@@ -86,24 +73,19 @@ export async function POST(req: NextRequest) {
         doc["delivered"] = doc["delivered_status"];
         delete doc["delivered_status"];
       }
-
-      console.log(`✅ Cleaned doc [${index}]`, doc);
       cleanedDocs.push(doc);
-    });
-
-    console.log("🧼 Cleaned docs count:", cleanedDocs.length);
-    console.log("❌ Validation errors:", errors);
+    });;
 
     if (!cleanedDocs.length) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "No valid payloads",
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "No valid payloads",
+        data: {
           failed: errors.length,
-          errors,
-        },
-        { status: 400 }
-      );
+          errors
+        }
+      }, { status: 400 });
     }
 
     /* ================= DUPLICATE CHECK ================= */
@@ -128,26 +110,25 @@ export async function POST(req: NextRequest) {
         { unitId: { $in: unitIds } },
         ...(equipmentNumbers.length
           ? [
-              {
-                vendorId: { $in: vendorIds },
-                equipmentNumber: { $in: equipmentNumbers },
-              },
-            ]
+            {
+              vendorId: { $in: vendorIds },
+              equipmentNumber: { $in: equipmentNumbers },
+            },
+          ]
           : []),
         ...(vins.length
           ? [
-              {
-                vendorId: { $in: vendorIds },
-                vin: { $in: vins },
-              },
-            ]
+            {
+              vendorId: { $in: vendorIds },
+              vin: { $in: vins },
+            },
+          ]
           : []),
       ],
     })
       .select("unitId equipmentNumber vin vendorId")
       .lean();
 
-    console.log("📄 Existing docs found:", existingDocs.length);
 
     const existingUnitIds = new Set(
       existingDocs.map((d: any) => String(d.unitId))
@@ -186,15 +167,13 @@ export async function POST(req: NextRequest) {
       const vinKey = `${vendorKey}:${v}`;
 
       if (eq && eq.toLowerCase() !== "n/a" &&
-          (existingEquipNums.has(eqKey) || seenEquipNums.has(eqKey))) {
-        console.warn("🚫 Duplicate equipmentNumber:", eqKey);
+        (existingEquipNums.has(eqKey) || seenEquipNums.has(eqKey))) {
         duplicates.push({ unitId: uid, field: "equipmentNumber", value: eq });
         continue;
       }
 
       if (v && v.toLowerCase() !== "n/a" &&
-          (existingVins.has(vinKey) || seenVins.has(vinKey))) {
-        console.warn("🚫 Duplicate VIN:", vinKey);
+        (existingVins.has(vinKey) || seenVins.has(vinKey))) {
         duplicates.push({ unitId: uid, field: "vin", value: v });
         continue;
       }
@@ -205,51 +184,40 @@ export async function POST(req: NextRequest) {
 
       toInsert.push(doc);
     }
-
-    console.log("📥 Documents to insert:", toInsert.length);
-    console.log("⏭️ Duplicates skipped:", duplicates.length);
-
     /* ================= INSERT ================= */
     let insertedCount = 0;
 
     try {
-      console.log("🚀 Inserting documents...");
       const inserted = await Inspection.insertMany(toInsert, { ordered: false });
       insertedCount = Array.isArray(inserted) ? inserted.length : 0;
-      console.log("✅ Insert successful:", insertedCount);
     } catch (err: any) {
-      console.error("🔥 InsertMany error:", err);
       insertedCount =
         err?.result?.nInserted ??
         err?.result?.insertedCount ??
         err?.insertedDocs?.length ??
         0;
-      console.log("📊 Partial insert count:", insertedCount);
     }
 
     /* ================= RESPONSE ================= */
-    console.log("📊 Final result:", {
-      created: insertedCount,
-      skipped: duplicates.length,
-      failed: errors.length,
-    });
 
-    return NextResponse.json(
-      {
-        success: true,
+    return NextResponse.json({
+      status: 200,
+      success: true,
+      message: "Bulk insert completed",
+      data: {
         created: insertedCount,
         skipped: duplicates.length,
         failed: errors.length,
         errors,
-        duplicates,
-      },
-      { status: 200 }
-    );
+        duplicates
+      }
+    }, { status: 200 });
   } catch (error: any) {
-    console.error("💥 API Crash:", error);
-    return NextResponse.json(
-      { success: false, message: error?.message || "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error?.message || "Internal Server Error",
+      data: null
+    }, { status: 500 });
   }
 }
