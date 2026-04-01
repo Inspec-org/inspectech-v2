@@ -45,8 +45,15 @@ export async function GET(req: Request) {
     if (actor.role === "superadmin") {
       filter = role ? { role } : {};
 
-      if (role === "user" && vendorId) {
-        filter.vendorId = vendorId;
+      if (vendorId) {
+        if (isAdminQuery) {
+          filter.$or = [
+            { vendorId: vendorId },
+            { vendorAccess: vendorId },
+          ];
+        } else {
+          filter.vendorId = vendorId;
+        }
       }
 
       if (q) {
@@ -78,17 +85,21 @@ export async function GET(req: Request) {
           : []),
       ].filter(Boolean);
 
+      const targetVendorIds = (vendorId && accessibleVendorIds.includes(vendorId))
+        ? [vendorId]
+        : accessibleVendorIds;
+
       if (isAdminQuery) {
         filter = {
           role: "admin",
           $or: [
-            { vendorId: { $in: accessibleVendorIds } },
-            { vendorAccess: { $in: accessibleVendorIds } },
+            { vendorId: { $in: targetVendorIds } },
+            { vendorAccess: { $in: targetVendorIds } },
           ],
         };
       } else {
         filter = {
-          vendorId: { $in: accessibleVendorIds },
+          vendorId: { $in: targetVendorIds },
           ...(role ? { role } : {}),
         };
       }

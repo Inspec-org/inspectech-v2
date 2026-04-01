@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Check, LucideImage, ChevronUp, ChevronDown, Camera, CloudUpload, X, ZoomIn } from 'lucide-react';
 import type { FormData as InspectionFormData } from './Edit';
 import { toast } from 'react-toastify';
+import { apiRequest } from '@/utils/apiWrapper';
 interface UploadCardProps {
     title: string;
     description: string;
@@ -339,15 +340,6 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
         'Door Details Image': '/images/reference_images/door_details_silhouette.svg',
     };
 
-    const referenceMaskImages: Record<TabType, string> = {
-        'Front Left Side': '/images/reference_images/front_left_mask.png',
-        'Front Right Side': '/images/reference_images/front_right_mask.png',
-        'Rare Left Side': '/images/reference_images/rear_left_mask.png',
-        'Rare Right Side': '/images/reference_images/rear_right_maskf.png',
-        'Inside Trailer Image': '/images/reference_images/inside_trailer_mask.png',
-        'Door Details Image': '/images/reference_images/door_details_mask.png',
-    };
-
     const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
     const [overlayFile, setOverlayFile] = useState<File | null>(null);
     const [alignmentScore, setAlignmentScore] = useState<number | null>(null);
@@ -471,27 +463,6 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
         e.target.value = '';
     };
 
-    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new window.Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = src;
-    });
-
-    const drawContain = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, size: number) => {
-        const cw = size, ch = size;
-        ctx.clearRect(0, 0, cw, ch);
-        const ratio = Math.min(cw / img.width, ch / img.height);
-        const nw = img.width * ratio;
-        const nh = img.height * ratio;
-        const dx = (cw - nw) / 2;
-        const dy = (ch - nh) / 2;
-        ctx.drawImage(img, dx, dy, nw, nh);
-    };
-
-
-
     const computeAlignment = async () => {
         if (!overlayFile) return;
         setComputing(true);
@@ -504,89 +475,29 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
             segCtrlRef.current = ctrl;
             seq = segSeqRef.current + 1;
             segSeqRef.current = seq;
-            const endpoint = 'https://mlbench-inspectech-segmentation.hf.space/segment/mask';
+
             const fd = new FormData();
             fd.append('file', overlayFile, overlayFile.name);
-            fd.append('model', 'birefnet');
-            fd.append('threshold', '0.5');
-            const resp = await fetch(endpoint, { method: 'POST', body: fd, signal: ctrl.signal });
-            console.log(resp, resp.ok);
+            fd.append('activeTab', activeTab);
+
+            const resp = await apiRequest('/mobile-api/uploads/compute-alignment', {
+                method: 'POST',
+                body: fd,
+                signal: ctrl.signal
+            });
+
             if (!resp.ok) {
                 const errText = await resp.text().catch(() => '');
-                setComputing(false);
-                throw new Error(errText || 'segmentation_failed');
-            }
-            console.log("api done")
-            const blob = await resp.blob();
-            const maskUrl = URL.createObjectURL(blob);
-
-            // Load the mask from API
-            const maskImg = await loadImage(maskUrl);
-            URL.revokeObjectURL(maskUrl);
-
-            let refMaskImg: HTMLImageElement;
-            try {
-                console.log('using precomputed mask');
-                console.log(activeTab)
-                console.log(referenceMaskImages);
-                console.log(referenceMaskImages[activeTab]);
-
-                const preMaskUrl = referenceMaskImages[activeTab];
-                if (!preMaskUrl) throw new Error('no_precomputed_mask');
-                refMaskImg = await loadImage(preMaskUrl);
-            } catch {
-                const refImageResponse = await fetch(referenceImages[activeTab]);
-                const refImageBlob = await refImageResponse.blob();
-                const refFile = new File([refImageBlob], 'reference.jpg', { type: refImageBlob.type });
-
-                const fdRef = new FormData();
-                fdRef.append('file', refFile);
-                fdRef.append('model', 'birefnet');
-                fdRef.append('threshold', '0.5');
-
-                const respRef = await fetch(endpoint, { method: 'POST', body: fdRef, signal: ctrl.signal });
-                if (!respRef.ok) {
-                    throw new Error('Failed to get reference mask');
-                }
-
-                const refMaskBlob = await respRef.blob();
-                const refMaskUrl = URL.createObjectURL(refMaskBlob);
-                refMaskImg = await loadImage(refMaskUrl);
-                URL.revokeObjectURL(refMaskUrl);
+                throw new Error(errText || 'alignment_failed');
             }
 
-            // Now compare the two masks
-            const size = 256;
-
-            const cRef = document.createElement('canvas');
-            cRef.width = size;
-            cRef.height = size;
-            const ctxRef = cRef.getContext('2d')!;
-            drawContain(ctxRef, refMaskImg, size);
-            const refData = ctxRef.getImageData(0, 0, size, size).data;
-
-            const cMask = document.createElement('canvas');
-            cMask.width = size;
-            cMask.height = size;
-            const ctxMask = cMask.getContext('2d')!;
-            drawContain(ctxMask, maskImg, size);
-            const usrData = ctxMask.getImageData(0, 0, size, size).data;
-
-            let inter = 0, union = 0;
-            for (let y = 0; y < size; y++) {
-                for (let x = 0; x < size; x++) {
-                    const i = (y * size + x) * 4;
-                    const brRef = 0.299 * refData[i] + 0.587 * refData[i + 1] + 0.114 * refData[i + 2];
-                    const refMask = brRef > 128;
-                    const brUsr = 0.299 * usrData[i] + 0.587 * usrData[i + 1] + 0.114 * usrData[i + 2];
-                    const usrMask = brUsr > 128;
-
-                    if (refMask || usrMask) union++;
-                    if (refMask && usrMask) inter++;
-                }
+            const data = await resp.json();
+            if (seq === segSeqRef.current && data.success) {
+                setAlignmentScore(data.alignmentScore);
+            } else if (seq === segSeqRef.current && !data.success) {
+                setEvalError(data.message || 'Alignment scoring failed');
+                toast.error(data.message || 'Alignment scoring failed');
             }
-            const iou = union > 0 ? inter / union : 0;
-            if (seq === segSeqRef.current) setAlignmentScore(Math.round(iou * 100));
         } catch (e: any) {
             if (e?.name === 'AbortError') return;
             setAlignmentScore(null);
