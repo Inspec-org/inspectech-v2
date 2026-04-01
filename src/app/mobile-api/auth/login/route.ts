@@ -6,6 +6,7 @@ import Department from "@/lib/models/Departments";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { sendEmail } from "@/lib/sendEmail";
+import { getOtpEmailTemplate } from "@/lib/emailTemplates";
 
 
 export async function POST(req: NextRequest) {
@@ -62,14 +63,17 @@ export async function POST(req: NextRequest) {
             await user.save();
 
             // Send email
-            const emailHtml = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Two-Factor Authentication</h2>
-                    <p>Your OTP for login is: <strong style="font-size: 24px; color: #10b981;">${otp}</strong></p>
-                    <p>This OTP will expire in 10 minutes.</p>
-                </div>
-            `;
-            await sendEmail(user.email, "Your 2FA Login OTP", emailHtml);
+            await sendEmail(
+                user.email, 
+                "Your 2FA Login OTP", 
+                getOtpEmailTemplate(
+                    otp,
+                    "Two-Factor Authentication",
+                    "A request to sign in to your InspecTech account was made. Use the verification code below to complete your login:",
+                    user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : undefined,
+                    "10 minutes"
+                )
+            );
 
             return NextResponse.json({
                 status: 200,

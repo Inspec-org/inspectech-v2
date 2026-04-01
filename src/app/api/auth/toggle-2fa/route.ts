@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import User from "@/lib/models/User";
 import { sendEmail } from "@/lib/sendEmail";
+
 import { getOtpEmailTemplate } from "@/lib/emailTemplates";
 
 export async function POST(req: NextRequest) {
@@ -10,10 +11,8 @@ export async function POST(req: NextRequest) {
 
         if (!email || !password || typeof enable !== "boolean") {
             return NextResponse.json({
-                status: 400,
                 success: false,
                 message: "Email, password, and enable (boolean) are required",
-                data: null
             }, { status: 400 });
         }
 
@@ -22,20 +21,16 @@ export async function POST(req: NextRequest) {
         const user = await User.findOne({ email, isDeleted: false }).select("+password");
         if (!user) {
             return NextResponse.json({
-                status: 401,
                 success: false,
                 message: "User not found",
-                data: null
             }, { status: 401 });
         }
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             return NextResponse.json({
-                status: 401,
                 success: false,
                 message: "Invalid credentials",
-                data: null
             }, { status: 401 });
         }
 
@@ -62,7 +57,6 @@ export async function POST(req: NextRequest) {
         );
 
         return NextResponse.json({
-            status: 200,
             success: true,
             message: `OTP sent to your email to confirm 2FA ${enable ? "enable" : "disable"}`,
             data: {
@@ -73,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         return NextResponse.json(
-            { status: 500, success: false, message: error.message || "Server error", data: null },
+            { success: false, message: error.message || "Server error" },
             { status: 500 }
         );
     }

@@ -6,6 +6,7 @@ const PUBLIC_PATHS = new Set([
   "/forget-password",
   "/reset-password",
   "/accept-invitation",
+  "/two-factor-setup",
 ]);
 
 function getBaseUrl(origin: string): string {

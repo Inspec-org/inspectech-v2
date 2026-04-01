@@ -4,7 +4,7 @@ import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef } from "react";
 import { buildRequestBody } from "@/utils/apiWrapper";
 import { UserContext } from "@/context/authContext";
 import { useRouter } from "next/navigation";
@@ -14,12 +14,75 @@ import Image from "next/image";
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState(1); // 1: Login, 2: OTP
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { login } = useContext(UserContext);
   const router = useRouter();
   const [formdata, setFormdata] = useState({
     email: "",
     password: ""
   });
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1);
+    if (!/^\d?$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const otpString = otp.join("");
+      if (otpString.length < 6) {
+        throw new Error("Please enter a 6-digit OTP");
+      }
+
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formdata.email,
+          otp: otpString
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Invalid OTP");
+      }
+
+      const role = result.user.role;
+      login(result.token);
+      toast.success(result.message);
+
+      if (role === "superadmin") {
+        router.push(`/${role}`);
+      } else {
+        router.push(`/${role}/departments`);
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -50,6 +113,13 @@ export default function SignInForm() {
       if (!response.ok) {
         throw new Error(result?.message || result.error)
       }
+
+      if (result.twoFactorRequired) {
+        toast.info(result.message);
+        setStep(2);
+        return;
+      }
+
       const role=result.user.role
       login(result.token)
       
@@ -107,10 +177,11 @@ export default function SignInForm() {
           </h1>
         </div>
         <p className="text-sm text-gray-500 ">
-          Sign in to access your secure dashboard
-        </p>
-      </div>
-      <div>
+        {step === 1 ? "Sign in to access your secure dashboard" : "Enter the 6-digit code sent to your email"}
+      </p>
+    </div>
+    <div>
+      {step === 1 ? (
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -198,18 +269,26 @@ export default function SignInForm() {
                 Forgot password?
               </Link>
             </div>
-            <div className="flex items-center justify-start gap-2">
-              <div className="">
-                <input
-                  name="email"
-                  placeholder="info@gmail.com"
-                  type="checkbox"
-                  className="pl-10"
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-start gap-2">
+                <div className="">
+                  <input
+                    name="email"
+                    placeholder="info@gmail.com"
+                    type="checkbox"
+                    className="pl-10"
+                  />
+                </div>
+                <Label>
+                  Remember Me
+                </Label>
               </div>
-              <Label>
-                Remember Me
-              </Label>
+              <Link
+                href="/two-factor-setup"
+                className="text-sm font-medium text-text-blue hover:underline"
+              >
+                Setup 2FA
+              </Link>
             </div>
             <div>
               <Button
@@ -231,7 +310,42 @@ export default function SignInForm() {
             </div>
           </div>
         </form>
-      </div>
+      ) : (
+        <form onSubmit={handleVerifyOtp}>
+          <div className="space-y-6">
+            <div className="flex justify-between gap-2">
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => { otpRefs.current[index] = el; }}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                  className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+                  required
+                />
+              ))}
+            </div>
+
+            <Button type="submit" className="w-full" size="sm" disabled={isLoading}>
+              {isLoading ? "Verifying..." : "Verify OTP"}
+            </Button>
+
+            <div className="text-center py-2">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="text-sm text-gray-500 hover:text-text-blue hover:underline"
+              >
+                Back to Sign In
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+    </div>
     </div>
 
   );
