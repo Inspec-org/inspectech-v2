@@ -64,7 +64,7 @@ export const evaluateInspectionData = (formData: any): ProcessResult => {
     const require = (key: string) => { if (!get(formData, key)) { missing.push(label(key)); missingKeys.push(key); } };
 
     ['poNumber', 'equipmentNumber', 'vin', 'licensePlateId', 'licensePlateCountry', 'licensePlateExpiration', 'licensePlateState', 'possessionOrigin'].forEach(require);
-    ['manufacturer', 'modelYear', 'length', 'height', 'grossAxleWeightRating', 'axleType', 'brakeType', 'suspensionType', 'tireModel', 'tireBrand', 'leftFrontOuter', 'leftFrontInner', 'leftRearOuter', 'leftRearInner', 'rightFrontOuter', 'rightFrontInner', 'rightRearOuter', 'rightRearInner', 'aerokits', 'doorBranding', 'doorColor', 'doorSensor', 'doorType', 'lashSystem', 'mudFlapType', 'panelBranding', 'noseBranding', 'skirted', 'skirtColor', 'captiveBeam', 'cargoCameras', 'cartbars', 'tpms', 'trailerHeightDecal'].forEach(require);
+    ['manufacturer', 'modelYear', 'length', 'height', 'grossAxleWeightRating', 'axleType', 'brakeType', 'suspensionType', 'tireModel', 'tireBrand', 'leftFrontOuter', 'leftFrontInner', 'leftRearOuter', 'leftRearInner', 'rightFrontOuter', 'rightFrontInner', 'rightRearOuter', 'rightRearInner', 'aerokits', 'doorBranding', 'doorColor', 'doorSensor', 'doorType', 'lashSystem', 'mudFlapType', 'panelBranding', 'noseBranding', 'skirted', 'skirtColor', 'captiveBeam', 'cargoCameras', 'cartbars', 'tpms', 'trailerHeightDecal', 'absSensor', 'airTankMonitor', 'atisregulator', 'lightOutSensor', 'sensorError', 'ultrasonicCargoSensor'].forEach(require);
     if (isCanadaTrailers) ['owner', 'conspicuityTape'].forEach(require);
 
     const status: 'pass' | 'fail' = missing.length ? 'fail' : 'pass';
@@ -79,7 +79,8 @@ export const openDetailedResults = (formData: any): void => {
 
     const sections: Array<{ name: string; keys: string[] }> = [
         { name: 'Identification & Registration', keys: ['poNumber', 'equipmentNumber', 'vin', 'licensePlateId', 'licensePlateCountry', 'licensePlateExpiration', 'licensePlateState', 'possessionOrigin'].concat(isCanadaTrailers ? ['owner'] : []) },
-        { name: 'Physical Dimensions & Components', keys: ['length', 'height', 'grossAxleWeightRating', 'axleType', 'brakeType', 'suspensionType', 'tireModel', 'tireBrand', 'leftFrontOuter', 'leftFrontInner', 'leftRearOuter', 'leftRearInner', 'rightFrontOuter', 'rightFrontInner', 'rightRearOuter', 'rightRearInner'] },
+        { name: 'Physical Dimensions & Components', keys: ['length', 'height', 'grossAxleWeightRating', 'axleType', 'brakeType', 'suspensionType', 'tireModel', 'tireBrand'] },
+        { name: 'Tire Location', keys: ['leftFrontOuter', 'leftFrontInner', 'leftRearOuter', 'leftRearInner', 'rightFrontOuter', 'rightFrontInner', 'rightRearOuter', 'rightRearInner'] },
         { name: 'Features & Appearance', keys: ['aerokits', 'doorBranding', 'doorColor', 'doorSensor', 'doorType', 'lashSystem', 'mudFlapType', 'panelBranding', 'noseBranding', 'skirted', 'skirtColor', 'captiveBeam', 'cargoCameras', 'cartbars', 'tpms', 'trailerHeightDecal'].concat(isCanadaTrailers ? ['conspicuityTape'] : []) },
         { name: 'Sensors & Electrical', keys: ['absSensor', 'airTankMonitor', 'atisregulator', 'lightOutSensor', 'sensorError', 'ultrasonicCargoSensor'] },
     ];

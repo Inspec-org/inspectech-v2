@@ -26,26 +26,34 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
         document.querySelectorAll('.' + fieldCls).forEach(el => el.classList.remove(fieldCls));
         (missingKeys || []).forEach((key) => {
             const input = document.querySelector<HTMLInputElement>(`input[name="${key}"]`);
+            const labelElExplicit = document.querySelector<HTMLElement>(`label[data-name="${key}"]`);
+            if (labelElExplicit) labelElExplicit.classList.add(labelCls);
             if (input) {
                 let container: HTMLElement | null = input.closest('div.relative') as HTMLElement | null;
-                let labelEl: HTMLElement | null = null;
-                if (container && container.previousElementSibling && container.previousElementSibling.tagName.toLowerCase() === 'label') {
-                    labelEl = container.previousElementSibling as HTMLElement;
-                } else {
+                let groupLabel: HTMLElement | null = labelElExplicit;
+                if (!container && groupLabel) {
+                    container = groupLabel.nextElementSibling as HTMLElement | null;
+                }
+                if (!container) {
+                    container = input.closest('div.flex') as HTMLElement | null;
+                }
+                if (!groupLabel && container) {
+                    groupLabel = (container.parentElement?.querySelector('label') as HTMLElement | null) || (container.querySelector('label') as HTMLElement | null);
+                }
+                if (groupLabel) groupLabel.classList.add(labelCls);
+                if (!container) {
                     container = input.closest('div') as HTMLElement | null;
-                    while (container && !(container.previousElementSibling && container.previousElementSibling.tagName.toLowerCase() === 'label')) {
+                    while (container && !container.classList.contains('flex') && !(container.previousElementSibling && container.previousElementSibling.tagName.toLowerCase() === 'label')) {
                         container = container.parentElement as HTMLElement | null;
                     }
-                    labelEl = container?.previousElementSibling as HTMLElement | null;
                 }
-                if (labelEl) labelEl.classList.add(labelCls);
                 if (container) container.classList.add(fieldCls);
             }
-            const dd = document.querySelector(`[data-name="${key}"]`) as HTMLElement | null;
+            const dd = document.querySelector<HTMLElement>(`div.relative[data-name="${key}"]`);
             if (dd) {
+                dd.classList.add(fieldCls);
                 const labelEl = dd.parentElement?.querySelector('label') as HTMLElement | null;
                 if (labelEl) labelEl.classList.add(labelCls);
-                dd.classList.add(fieldCls);
             }
         });
     }, [missingKeys]);
@@ -82,11 +90,11 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
     return (
         <div className="">
-            <style jsx>{`
+            <style jsx global>{`
               .missing-field-label{color:#ef4444 !important;}
-              .missing-field-input.relative input{background-color:#fee2e2 !important;border-color:#ef4444 !important;}
-              .missing-field-input.flex{background-color:#fee2e2 !important;border:1px solid #ef4444 !important;border-radius:8px;}
-              .missing-field-input>button{background-color:#fee2e2 !important;border-color:#ef4444 !important;color:#b91c1c !important;}
+              .missing-field-input{background-color:#fee2e2 !important;border:1px solid #ef4444 !important;border-radius:8px;}
+              .missing-field-input :is(button,input,select,textarea){background-color:#fee2e2 !important;border-color:#ef4444 !important;color:#b91c1c !important;}
+              .missing-field-input input[type="radio"]{accent-color:#ef4444 !important;}
             `}</style>
             <div className="">
 
@@ -104,7 +112,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                         {expandedSections.identification && (
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">PO Number</label>
+                                    <label data-name="poNumber" className="block text-sm font-medium text-gray-700 mb-1">PO Number</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -128,7 +136,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
                                 {isCanadaTrailers && (
                                     <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
+                                        <label data-name="owner" className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
                                         <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                             <input
                                                 type="text"
@@ -151,7 +159,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <div className='flex-1'>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Equipment ID/Trailer Number</label>
+                                        <label data-name="equipmentNumber" className="block text-sm font-medium text-gray-700 mb-1">Equipment ID/Trailer Number</label>
                                     </div>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
@@ -176,7 +184,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">VIN</label>
+                                    <label data-name="vin" className="block text-sm font-medium text-gray-700 mb-1">VIN</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -199,7 +207,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">License Plate ID</label>
+                                    <label data-name="licensePlateId" className="block text-sm font-medium text-gray-700 mb-1">License Plate ID</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -220,7 +228,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">License Plate Country</label>
+                                    <label data-name="licensePlateCountry" className="block text-sm font-medium text-gray-700 mb-1">License Plate Country</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -241,7 +249,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">License Plate Expiration</label>
+                                    <label data-name="licensePlateExpiration" className="block text-sm font-medium text-gray-700 mb-1">License Plate Expiration</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -263,7 +271,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
                                     <div className="flex-1">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">License Plate State/Province</label>
+                                        <label data-name="licensePlateState" className="block text-sm font-medium text-gray-700 mb-1">License Plate State/Province</label>
                                     </div>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
@@ -285,7 +293,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Possession Origin <br /> Location/ Pickup Location</label>
+                                    <label data-name="possessionOrigin" className="block text-sm font-medium text-gray-700 mb-1">Possession Origin <br /> Location/ Pickup Location</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -306,7 +314,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
+                                    <label data-name="manufacturer" className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
                                     <CustomDropdown name="manufacturer"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -334,7 +342,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Model Year</label>
+                                    <label data-name="modelYear" className="block text-sm font-medium text-gray-700 mb-1">Model Year</label>
                                     <YearPicker name="modelYear"
                                         value={formData.modelYear}
                                         onChange={(year) => handleDropdownChange("modelYear", year)}
@@ -360,7 +368,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                         {expandedSections.sensors && (
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                                 <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">ABS Sensor</label>
+                                    <label data-name="absSensor" className="block text-sm font-medium text-gray-700 mb-2">ABS Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
                                             <input
@@ -399,7 +407,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Air Tank Monitor</label>
+                                    <label data-name="airTankMonitor" className="block text-sm font-medium text-gray-700 mb-2">Air Tank Monitor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
                                             <input
@@ -438,7 +446,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">ATIS Regulator</label>
+                                    <label data-name="atisregulator" className="block text-sm font-medium text-gray-700 mb-2">ATIS Regulator</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
                                             <input
@@ -477,7 +485,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Light Out Sensor</label>
+                                    <label data-name="lightOutSensor" className="block text-sm font-medium text-gray-700 mb-2">Light Out Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
                                             <input
@@ -516,7 +524,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Sensor Error</label>
+                                    <label data-name="sensorError" className="block text-sm font-medium text-gray-700 mb-2">Sensor Error</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
                                             <input
@@ -555,7 +563,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Ultrasonic Cargo Sensor</label>
+                                    <label data-name="ultrasonicCargoSensor" className="block text-sm font-medium text-gray-700 mb-2">Ultrasonic Cargo Sensor</label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center">
                                             <input
@@ -611,7 +619,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                         {expandedSections.dimensions && (
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Length</label>
+                                    <label data-name="length" className="block text-sm font-medium text-gray-700 mb-1">Length</label>
                                     <CustomDropdown name="length"
                                         options={isCanadaTrailers ? [
                                             { value: "N/A", label: "N/A" },
@@ -630,7 +638,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Height</label>
+                                    <label data-name="height" className="block text-sm font-medium text-gray-700 mb-1">Height</label>
                                     <CustomDropdown name="height"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -644,7 +652,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Gross Axle Weight Rating</label>
+                                    <label data-name="grossAxleWeightRating" className="block text-sm font-medium text-gray-700 mb-1">Gross Axle Weight Rating</label>
                                     <CustomDropdown name="grossAxleWeightRating"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -659,7 +667,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Axle Type</label>
+                                    <label data-name="axleType" className="block text-sm font-medium text-gray-700 mb-1">Axle Type</label>
                                     <CustomDropdown name="axleType"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -674,7 +682,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Brake Type</label>
+                                    <label data-name="brakeType" className="block text-sm font-medium text-gray-700 mb-1">Brake Type</label>
                                     <CustomDropdown name="brakeType"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -689,7 +697,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
+                                    <label data-name="suspensionType" className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
                                     <CustomDropdown name="suspensionType"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -704,7 +712,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tire Model</label>
+                                    <label data-name="tireModel" className="block text-sm font-medium text-gray-700 mb-1">Tire Model</label>
                                     <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                         <input
                                             type="text"
@@ -725,7 +733,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tire Brand</label>
+                                    <label data-name="tireBrand" className="block text-sm font-medium text-gray-700 mb-1">Tire Brand</label>
                                     <CustomDropdown name="tireBrand"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -757,7 +765,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                         {expandedSections.tireLocation && (
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Left Front Outer</label>
+                                    <label data-name="leftFrontOuter" className="block text-sm font-medium text-gray-700 mb-1">Left Front Outer</label>
                                     <CustomDropdown name="leftFrontOuter"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -775,7 +783,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Left Front Inner</label>
+                                    <label data-name="leftFrontInner" className="block text-sm font-medium text-gray-700 mb-1">Left Front Inner</label>
                                     <CustomDropdown name="leftFrontInner"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -793,7 +801,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Left Rear Outer</label>
+                                    <label data-name="leftRearOuter" className="block text-sm font-medium text-gray-700 mb-1">Left Rear Outer</label>
                                     <CustomDropdown name="leftRearOuter"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -811,7 +819,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Left Rear Inner</label>
+                                    <label data-name="leftRearInner" className="block text-sm font-medium text-gray-700 mb-1">Left Rear Inner</label>
                                     <CustomDropdown name="leftRearInner"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -829,7 +837,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Right Front Outer</label>
+                                    <label data-name="rightFrontOuter" className="block text-sm font-medium text-gray-700 mb-1">Right Front Outer</label>
                                     <CustomDropdown name="rightFrontOuter"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -847,7 +855,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Right Front Inner</label>
+                                    <label data-name="rightFrontInner" className="block text-sm font-medium text-gray-700 mb-1">Right Front Inner</label>
                                     <CustomDropdown name="rightFrontInner"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -865,7 +873,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Right Rear Outer</label>
+                                    <label data-name="rightRearOuter" className="block text-sm font-medium text-gray-700 mb-1">Right Rear Outer</label>
                                     <CustomDropdown name="rightRearOuter"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -883,7 +891,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 </div>
 
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Right Rear Inner</label>
+                                    <label data-name="rightRearInner" className="block text-sm font-medium text-gray-700 mb-1">Right Rear Inner</label>
                                     <CustomDropdown name="rightRearInner"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -918,7 +926,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                     {expandedSections.features && (
                         <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Aerokits</label>
+                                <label data-name="aerokits" className="block text-sm font-medium text-gray-700 mb-2">Aerokits</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -957,7 +965,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Door Branding</label>
+                                <label data-name="doorBranding" className="block text-sm font-medium text-gray-700 mb-1">Door Branding</label>
                                 <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
                                     <input
                                         type="text"
@@ -978,7 +986,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Door Color</label>
+                                <label data-name="doorColor" className="block text-sm font-medium text-gray-700 mb-1">Door Color</label>
                                 <CustomDropdown name="doorColor"
                                     options={[
                                         { value: "N/A", label: "N/A" },
@@ -993,7 +1001,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Door Sensor</label>
+                                <label data-name="doorSensor" className="block text-sm font-medium text-gray-700 mb-2">Door Sensor</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -1032,7 +1040,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Door Type</label>
+                                <label data-name="doorType" className="block text-sm font-medium text-gray-700 mb-1">Door Type</label>
                                 <CustomDropdown name="doorType"
                                     options={[
                                         { value: "N/A", label: "N/A" },
@@ -1047,7 +1055,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Lash System</label>
+                                <label data-name="lashSystem" className="block text-sm font-medium text-gray-700 mb-2">Lash System</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -1086,7 +1094,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Mud Flap Type</label>
+                                <label data-name="mudFlapType" className="block text-sm font-medium text-gray-700 mb-1">Mud Flap Type</label>
                                 <CustomDropdown name="mudFlapType"
                                     options={[
                                         { value: "N/A", label: "N/A" },
@@ -1100,7 +1108,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Panel Branding</label>
+                                <label data-name="panelBranding" className="block text-sm font-medium text-gray-700 mb-1">Panel Branding</label>
                                 <CustomDropdown name="panelBranding"
                                     options={[
                                         { value: "N/A", label: "N/A" },
@@ -1121,7 +1129,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nose Branding</label>
+                                <label data-name="noseBranding" className="block text-sm font-medium text-gray-700 mb-1">Nose Branding</label>
                                 <CustomDropdown name="noseBranding"
                                     options={[
                                         { value: "N/A", label: "N/A" },
@@ -1135,7 +1143,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Skirted</label>
+                                <label data-name="skirted" className="block text-sm font-medium text-gray-700 mb-2">Skirted</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -1174,7 +1182,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Skirt Color</label>
+                                <label data-name="skirtColor" className="block text-sm font-medium text-gray-700 mb-1">Skirt Color</label>
                                 <CustomDropdown name="skirtColor"
                                     options={[
                                         { value: "N/A", label: "N/A" },
@@ -1192,7 +1200,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
                             {isCanadaTrailers && (
                                 <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Conspicuity Tape</label>
+                                    <label data-name="conspicuityTape" className="block text-sm font-medium text-gray-700 mb-2">Conspicuity Tape</label>
                                     <CustomDropdown name="conspicuityTape"
                                         options={[
                                             { value: "N/A", label: "N/A" },
@@ -1207,7 +1215,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             )}
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Captive Beam</label>
+                                <label data-name="captiveBeam" className="block text-sm font-medium text-gray-700 mb-2">Captive Beam</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -1246,7 +1254,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Cargo Camera</label>
+                                <label data-name="cargoCameras" className="block text-sm font-medium text-gray-700 mb-2">Cargo Camera</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -1285,7 +1293,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Cartbars</label>
+                                <label data-name="cartbars" className="block text-sm font-medium text-gray-700 mb-2">Cartbars</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -1324,7 +1332,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">TPMS</label>
+                                <label data-name="tpms" className="block text-sm font-medium text-gray-700 mb-2">TPMS</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input
@@ -1363,7 +1371,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             </div>
 
                             <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Trailer Height Decal</label>
+                                <label data-name="trailerHeightDecal" className="block text-sm font-medium text-gray-700 mb-2">Trailer Height Decal</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center">
                                         <input

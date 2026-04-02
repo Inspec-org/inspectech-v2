@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const page = parseInt(body.page ?? 1, 10);
     const limit = parseInt(body.limit ?? 10, 10);
     const idsOnly: boolean = Boolean(body.idsOnly);
+    const all: boolean = Boolean(body.all);
     const department = body.department ?? undefined;
     const vendorId = body.vendorId ?? undefined;
 
@@ -171,11 +172,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, allUnitIds, total });
     }
 
-    const result = await Inspection.find(query)
+    let q = Inspection.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit)
-      .select('unitId inspectionStatus type inspector location delivered durationMin durationSec dateMonth dateDay dateYear vendorId createdAt')
+      .limit(limit);
+    if (!all) {
+      q = q.select('unitId inspectionStatus type inspector location delivered durationMin durationSec dateMonth dateDay dateYear vendorId createdAt');
+    }
+    const result = await q
       .populate({ path: 'vendorId', select: 'name' })
       .lean();
 

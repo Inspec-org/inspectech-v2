@@ -457,6 +457,15 @@ function Inspections() {
                 'suspensionType',
                 'tireModel',
                 'tireBrand',
+                // Tire Location
+                'leftFrontOuter',
+                'leftFrontInner',
+                'leftRearOuter',
+                'leftRearInner',
+                'rightFrontOuter',
+                'rightFrontInner',
+                'rightRearOuter',
+                'rightRearInner',
                 // Features & Appearance
                 'aerokits',
                 'doorBranding',

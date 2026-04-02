@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 import { Upload, ArrowLeft, FolderPlus, AlertCircle, X, Download, FileUp } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Modal } from '../ui/modal';
 import { useModal } from '@/hooks/useModal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -89,6 +89,7 @@ export default function BatchCreateInspections() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const router = useRouter();
+    const pathname = usePathname();
     const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
     const [previewData, setPreviewData] = useState<{
         headers: string[];
@@ -306,7 +307,7 @@ export default function BatchCreateInspections() {
             // Field mapping with synonyms and variations
             const fieldMap: Record<string, string[]> = {
                 poNumber: ['po', 'ponumber', 'purchaseorder', 'purchaseordernumber'],
-                equipmentNumber: ['equipment', 'equipmentid', 'equipmentidtrailernumber', 'trailer', 'trailernumber', 'trailerno', 'unit'],
+                equipmentNumber: ['equipmentnumber', 'equipment', 'equipmentid', 'equipmentidtrailernumber', 'trailer', 'trailernumber', 'trailerno', 'unit'],
                 vin: ['vin', 'vehicleidentificationnumber'],
                 licensePlateId: ['licenseplate', 'licenseplateid', 'licenseno', 'platenumber', 'plate'],
                 licensePlateCountry: ['licenseplatecountry', 'platecountry', 'country'],
@@ -329,6 +330,14 @@ export default function BatchCreateInspections() {
                 suspensionType: ['suspensiontype', 'suspension'],
                 tireModel: ['tiremodel', 'tire'],
                 tireBrand: ['tirebrand', 'tiremake'],
+                leftFrontOuter: ['leftfrontouter', 'lfouter'],
+                leftFrontInner: ['leftfrontinner', 'lfinner'],
+                leftRearOuter: ['leftrearouter', 'lrouter'],
+                leftRearInner: ['leftrearinner', 'lrinner'],
+                rightFrontOuter: ['rightfrontouter', 'rfouter'],
+                rightFrontInner: ['rightfrontinner', 'rfinner'],
+                rightRearOuter: ['rightrearouter', 'rrouter'],
+                rightRearInner: ['rightrearinner', 'rrinner'],
                 aerokits: ['aerokits', 'aerokits', 'aerokit'],
                 doorBranding: ['doorbranding', 'branding'],
                 doorColor: ['doorcolor', 'color'],
@@ -401,7 +410,17 @@ export default function BatchCreateInspections() {
 
             const payloads: any[] = [];
             for (const row of previewData.rows) {
-                const payload: any = { unitId: String(row['Unit ID'] || '').trim(), departmentId: department, vendorId };
+                const equipmentValue = previewData.headers.reduce((acc, h) => {
+                    const key = findBestMatch(h);
+                    if (key === 'equipmentNumber') {
+                        const v = row[h];
+                        const s = String(v ?? '').trim();
+                        return acc || s;
+                    }
+                    return acc;
+                }, '');
+                const unitIdValue = String(row['Unit ID'] || '').trim();
+                const payload: any = { unitId: unitIdValue || equipmentValue, departmentId: department, vendorId };
                 previewData.headers
                     .filter(h => !['Sr No', 'Unit ID'].includes(h))
                     .forEach(h => {
@@ -431,7 +450,10 @@ export default function BatchCreateInspections() {
             const failed = Number(data?.failed || 0);
             const skipped = Number(data?.skipped || 0);
             toast.success(`Created ${created} inspections${skipped ? `, ${skipped} duplicates skipped` : ''}${failed ? `, ${failed} failed` : ''}`);
-            // router.back();
+            const segs = (pathname || '').split('/').filter(Boolean);
+            const role = segs[0] || '';
+            const target = role ? `/${role}/inspections` : '/inspections';
+            router.push(target);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Unknown error';
             toast.error(`Failed to create inspections: ${errorMessage}`);

@@ -176,10 +176,17 @@ export async function POST(req: NextRequest) {
     const isAllowedValuesCell = (s: string) => {
       const t = String(s || "").trim();
       if (!t) return false;
+      const compact = t.replace(/\s+/g, "").toLowerCase();
+      if (compact === "n/a") return false;
       const hasSep = t.includes(",") || t.includes("/") || t.includes("|");
       if (!hasSep) return false;
-      const parts = t.split(t.includes(",") ? "," : t.includes("/") ? "/" : "|").map(x => x.trim());
-      return parts.length >= 2 && parts.every(p => p.length > 0);
+      const sep = t.includes(",") ? "," : t.includes("/") ? "/" : "|";
+      const parts = t.split(sep).map(x => String(x || "").trim());
+      if (parts.length < 2) return false;
+      // Avoid false positives like "N/A" -> ["N", "A"]
+      const allSingleChars = parts.every(p => p.length === 1);
+      if (allSingleChars) return false;
+      return parts.every(p => p.length > 0);
     };
     let dataStartIndex = 1;
     const allowedByHeader: Record<string, string[]> = {};
