@@ -195,8 +195,8 @@ export async function POST(req: NextRequest) {
 
     const inspections = result.map(item => ({
       ...item,
-      vendorId: item.vendorId,      // just the ObjectId
-      vendor: item.vendor || null   // keep vendor name as-is
+      vendorId: item.vendorId._id, // just the ObjectId
+      vendor: item.vendorId?.name || null // keep vendor name
     }));
     const totalPages = Math.ceil(total / limit);
     return NextResponse.json({
