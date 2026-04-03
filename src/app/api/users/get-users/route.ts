@@ -147,14 +147,21 @@ export async function GET(req: Request) {
     const users = records.map((u: any) => {
       const obj = u.toObject();
 
-      const vendorNames = Array.from(
-        new Set([
-          obj.vendorId?.name,
-          ...(Array.isArray(obj.vendorAccess)
-            ? obj.vendorAccess.map((v: any) => v?.name)
-            : []),
-        ].filter(Boolean))
-      );
+      let vendorNames: string[] = [];
+      if (obj.role === "admin") {
+        vendorNames = Array.isArray(obj.vendorAccess)
+          ? obj.vendorAccess.map((v: any) => v?.name).filter(Boolean)
+          : [];
+      } else {
+        vendorNames = Array.from(
+          new Set([
+            obj.vendorId?.name,
+            ...(Array.isArray(obj.vendorAccess)
+              ? obj.vendorAccess.map((v: any) => v?.name)
+              : []),
+          ].filter(Boolean))
+        );
+      }
 
       const deptNames = Array.isArray(obj.departmentAccess)
         ? obj.departmentAccess.map((d: any) => d?.name).filter(Boolean)

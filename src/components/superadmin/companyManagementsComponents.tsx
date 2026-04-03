@@ -317,6 +317,37 @@ export const AdminUserManagementSection: React.FC<{
         });
     };
 
+    useEffect(() => {
+        const handler = async () => {
+            try {
+                const res = await apiRequest(`/api/users/get-users?role=admin&page=${extPage}&limit=${extSize}&q=${encodeURIComponent(searchQueryLocal)}`);
+                const json = await res.json().catch(() => ({}));
+                if (res.ok && json.success) {
+                    const mapped = (json.users || []).map((u: any, idx: number) => {
+                        const vendorNames = Array.isArray(u.vendorNames) ? u.vendorNames : [];
+                        return {
+                            id: (extPage - 1) * extSize + idx + 1,
+                            name: `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() || (u.name || ''),
+                            email: u.email || '',
+                            secondaryEmail: u.email || '',
+                            vendor: vendorNames.length ? vendorNames.join(', ') : '—',
+                            vendorNames,
+                            departments: Array.isArray(u.departmentNames) ? u.departmentNames : [],
+                            department: vendorNames.length ? vendorNames[0] : '—',
+                        } as AdminUser;
+                    });
+                    setItems(mapped);
+                    setTotalCount(Number(json.total || json.totalCount || mapped.length));
+                }
+            } catch {
+            }
+        };
+        window.addEventListener('adminAccessUpdated', handler as EventListener);
+        return () => {
+            window.removeEventListener('adminAccessUpdated', handler as EventListener);
+        };
+    }, [extPage, extSize, searchQueryLocal]);
+
     return (
         <div className="">
             <div className="py-4">
