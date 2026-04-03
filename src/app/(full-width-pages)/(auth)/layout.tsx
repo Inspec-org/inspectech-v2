@@ -50,8 +50,8 @@ export default function AuthLayout({
     }
   }, [user, loading, router]);
 
-  if (loading) return null;
-  if (user) return null;
+  if (loading) return <div className="flex items-center justify-center min-h-[100dvh]"><div className="text-gray-600">Loading...</div></div>;
+  if (user) return <div className="flex items-center justify-center min-h-[100dvh]"><div className="text-gray-600">Redirecting...</div></div>;
 
   return (
     <div className="relative z-1 sm:p-0">

@@ -3,23 +3,57 @@ import { sendEmail } from "@/lib/sendEmail";
 import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
 import Review from "@/lib/models/Reviews";
+import Department from "@/lib/models/Departments";
 
 export async function POST(req: NextRequest) {
   try {
-    const { recipients, unitIds, vendorName, vendorId, departmentId, detailsCsv } = await req.json();
+    const { recipients, unitIds, vendorName, vendorId, departmentId } = await req.json();
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
-      return NextResponse.json({ success: false, message: "recipients must be a non-empty array" }, { status: 400 });
+      return NextResponse.json(
+        {
+          status: 400,
+          success: false,
+          message: "recipients must be a non-empty array",
+          data: null,
+        },
+        { status: 400 }
+      );
     }
+
     if (!Array.isArray(unitIds) || unitIds.length === 0) {
-      return NextResponse.json({ success: false, message: "unitIds must be a non-empty array" }, { status: 400 });
+      return NextResponse.json(
+        {
+          status: 400,
+          success: false,
+          message: "unitIds must be a non-empty array",
+          data: null,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!vendorId || !departmentId) {
+      return NextResponse.json(
+        {
+          status: 400,
+          success: false,
+          message: "vendorId and departmentId required",
+          data: null,
+        },
+        { status: 400 }
+      );
     }
 
     const safeVendor = vendorName || "N/A";
     const count = unitIds.length;
-    const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" });
+    const dateStr = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
 
-    const emailHtml = `
+     const emailHtml = `
       <!DOCTYPE html><html><head><meta charSet="utf-8" />
       <style>
         body { font-family: Arial, sans-serif; background:#f6f7fb; margin:0; padding:0; color:#1f2937; }
@@ -56,15 +90,99 @@ export async function POST(req: NextRequest) {
       </div></body></html>
     `;
 
-    const csv = detailsCsv ? detailsCsv : "unitId\n" + unitIds.join("\n");
-    const attachments = [{ filename: detailsCsv ? "inspection_details.csv" : "unit_ids.csv", content: csv, contentType: "text/csv" }];
-
-    if (!vendorId || !departmentId) {
-      return NextResponse.json({ success: false, message: "vendorId and departmentId required" }, { status: 400 });
-    }
     await connectDB();
+
+    const dept: any = await Department.findById(departmentId).select("name").lean();
+    const isCanadaTrailers = String(((dept as any)?.name) || "").toLowerCase() === "canada trailers";
+
+    const requiredA = [
+      "poNumber",
+      "equipmentNumber",
+      "vin",
+      "licensePlateId",
+      "licensePlateCountry",
+      "licensePlateExpiration",
+      "licensePlateState",
+      "possessionOrigin",
+    ];
+    const requiredB = [
+      "manufacturer",
+      "modelYear",
+      "length",
+      "height",
+      "grossAxleWeightRating",
+      "axleType",
+      "brakeType",
+      "suspensionType",
+      "tireModel",
+      "tireBrand",
+      "leftFrontOuter",
+      "leftFrontInner",
+      "leftRearOuter",
+      "leftRearInner",
+      "rightFrontOuter",
+      "rightFrontInner",
+      "rightRearOuter",
+      "rightRearInner",
+      "aerokits",
+      "doorBranding",
+      "doorColor",
+      "doorSensor",
+      "doorType",
+      "lashSystem",
+      "mudFlapType",
+      "panelBranding",
+      "noseBranding",
+      "skirted",
+      "skirtColor",
+      "captiveBeam",
+      "cargoCameras",
+      "cartbars",
+      "tpms",
+      "trailerHeightDecal",
+      "absSensor",
+      "airTankMonitor",
+      "atisregulator",
+      "lightOutSensor",
+      "sensorError",
+      "ultrasonicCargoSensor",
+    ];
+
+    const getVal = (obj: any, key: string) => String(obj?.[key] || "").trim();
+
+    const rows: string[] = [];
     for (const unitId of unitIds) {
-      const insp = await Inspection.findOne({ unitId, vendorId, departmentId }).select('_id').lean() as { _id: any } | null;
+      const doc: any = await Inspection.findOne({ unitId, vendorId, departmentId }).lean();
+      if (doc) {
+        const need = [...requiredA, ...requiredB].concat(isCanadaTrailers ? ["owner", "conspicuityTape"] : []);
+        const missing = need.filter((k) => !getVal(doc, k));
+        const checklistStatus = (missing.length ? "FAIL" : "PASS");
+        const imgs = [
+          (doc as any).frontLeftSideUrl,
+          (doc as any).frontRightSideUrl,
+          (doc as any).rearLeftSideUrl,
+          (doc as any).rearRightSideUrl,
+          (doc as any).insideTrailerImageUrl,
+          (doc as any).doorDetailsImageUrl,
+        ].map((v: any) => String(v || "").trim());
+        const imageStatus = "";
+        rows.push(`${unitId},${checklistStatus},${imageStatus}`);
+      } else {
+        rows.push(`${unitId},N/A,N/A`);
+      }
+    }
+
+    const csv = `Unit ID,Inspection Checklist,Inspection Media Central\n${rows.join("\n")}`;
+    const attachments = [{ filename: "inspection_details.csv", content: csv, contentType: "text/csv" }];
+
+    for (const unitId of unitIds) {
+      const insp = (await Inspection.findOne({
+        unitId,
+        vendorId,
+        departmentId,
+      })
+        .select("_id")
+        .lean()) as { _id: any } | null;
 
       await Review.findOneAndUpdate(
         { unitId, vendorId, departmentId },
@@ -84,9 +202,27 @@ export async function POST(req: NextRequest) {
     }
 
     await sendEmail(recipients, "Admin Review Request", emailHtml, attachments);
-    return NextResponse.json({ success: true, message: "Email sent" });
+
+    return NextResponse.json(
+      {
+        status: 200,
+        success: true,
+        message: "Email sent successfully",
+        data: null,
+      },
+      { status: 200 }
+    );
   } catch (error: any) {
-    console.log(error)
-    return NextResponse.json({ success: false, message: error?.message || "Internal Server Error" }, { status: 500 });
+    console.log(error);
+
+    return NextResponse.json(
+      {
+        status: 500,
+        success: false,
+        message: error?.message || "Internal Server Error",
+        data: null,
+      },
+      { status: 500 }
+    );
   }
 }

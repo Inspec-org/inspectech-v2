@@ -16,6 +16,8 @@ function getBaseUrl(origin: string): string {
 export async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
   const baseUrl = getBaseUrl(origin);
+  const sessionId = req.cookies.get("session_id")?.value;
+  const hasRefresh = !!req.cookies.get("refreshToken")?.value;
 
   if (
     pathname.startsWith("/api") ||
@@ -27,12 +29,59 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (PUBLIC_PATHS.has(pathname)) {
+  if (pathname === "/signin") {
+    if (sessionId) {
+      try {
+        const userRes = await fetch(new URL("/api/auth/fetch_user", baseUrl), {
+          headers: {
+            Authorization: "Bearer " + sessionId,
+            cookie: req.headers.get("cookie") || "",
+          },
+        });
+        if (userRes.ok) {
+          const { user } = await userRes.json();
+          const role = user?.role || "user";
+          const url = req.nextUrl.clone();
+          url.pathname = role === "superadmin" ? "/superadmin" : `/${role}/departments`;
+          return NextResponse.redirect(url);
+        }
+      } catch {}
+    }
+    if (hasRefresh) {
+      try {
+        const refreshRes = await fetch(new URL("/api/auth/refresh", baseUrl), {
+          headers: { cookie: req.headers.get("cookie") || "" },
+        });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          if (data?.success && data?.accessToken) {
+            try {
+              const roleRes = await fetch(new URL("/api/auth/fetch_user", baseUrl), {
+                headers: { Authorization: "Bearer " + data.accessToken },
+              });
+              if (roleRes.ok) {
+                const { user } = await roleRes.json();
+                const role = user?.role || "user";
+                const res = NextResponse.redirect(
+                  role === "superadmin" ? new URL("/superadmin", baseUrl) : new URL(`/${role}/departments`, baseUrl)
+                );
+                res.cookies.set("session_id", data.accessToken, {
+                  path: "/",
+                  sameSite: "lax",
+                });
+                return res;
+              }
+            } catch {}
+          }
+        }
+      } catch {}
+    }
     return NextResponse.next();
   }
 
-  const sessionId = req.cookies.get("session_id")?.value;
-  const hasRefresh = !!req.cookies.get("refreshToken")?.value;
+  if (PUBLIC_PATHS.has(pathname)) {
+    return NextResponse.next();
+  }
 
   if (pathname === "/") {
     // Try session_id first

@@ -51,13 +51,26 @@ const AdminManageAccessModal: React.FC<Props> = ({
                         const firstRes = await apiRequest(`/api/vendors/get-vendors?page=1&limit=${limit}`);
                         if (firstRes.ok) {
                             const firstJson = await firstRes.json().catch(() => ({}));
-                            out.push(...(Array.isArray(firstJson.vendors) ? firstJson.vendors : []));
-                            const totalPages = firstJson.totalPages || 1;
-                            for (let p = 2; p <= totalPages; p++) {
+                            const firstList = Array.isArray(firstJson.vendors)
+                                ? firstJson.vendors
+                                : Array.isArray(firstJson.data)
+                                    ? firstJson.data
+                                    : [];
+                            out.push(...firstList);
+                            const totalPages =
+                                (firstJson.pagination && Number(firstJson.pagination.totalPages)) ||
+                                Number(firstJson.totalPages) ||
+                                (Number.isFinite(firstJson.total) ? Math.ceil(Number(firstJson.total) / limit) : 1);
+                            for (let p = 2; p <= (totalPages || 1); p++) {
                                 const r = await apiRequest(`/api/vendors/get-vendors?page=${p}&limit=${limit}`);
                                 if (r.ok) {
                                     const j = await r.json().catch(() => ({}));
-                                    out.push(...(Array.isArray(j.vendors) ? j.vendors : []));
+                                    const list = Array.isArray(j.vendors)
+                                        ? j.vendors
+                                        : Array.isArray(j.data)
+                                            ? j.data
+                                            : [];
+                                    out.push(...list);
                                 }
                             }
                         }
@@ -132,9 +145,23 @@ const AdminManageAccessModal: React.FC<Props> = ({
             });
             const json = await res.json().catch(() => ({}));
             if (res.ok && json.success) {
-                const selectedVendorNames = vendors
+                let selectedVendorNames = vendors
                     .filter((v: any) => selectedVendors.includes(String(v._id || v.id || v.value || '')))
                     .map((v: any) => v.name || v.label || '');
+                if (selectedVendorNames.length < selectedVendors.length) {
+                    const missingIds = selectedVendors.filter((id) => !vendors.some((v: any) => String(v._id || v.id || v.value || '') === String(id)));
+                    const fetched = await Promise.all(missingIds.map(async (id) => {
+                        try {
+                            const r = await apiRequest(`/api/vendors/details?vendorId=${id}`);
+                            const j = await r.json().catch(() => ({}));
+                            const v = j.vendor || j.data;
+                            return v?.name || '';
+                        } catch {
+                            return '';
+                        }
+                    }));
+                    selectedVendorNames = [...selectedVendorNames, ...fetched.filter(Boolean)];
+                }
                 const selectedDepartmentNames = departments
                     .filter((d) => selectedDepartments.includes(String(d._id)))
                     .map((d) => d.name);

@@ -361,8 +361,8 @@ export const AdminUserManagementSection: React.FC<{
                         <tbody>
                             {displayed.map((user, idx) => {
                                 const isExpanded = expandedRows.has(user.id.toString());
-                                const hasExtraVendors = Array.isArray(user.vendorNames) && user.vendorNames.length > 1;
-                                const hasExtraDepts = Array.isArray(user.departments) && user.departments.length > 1;
+                                const hasExtraVendors = Array.isArray(user.vendorNames) && user.vendorNames.length > 0;
+                                const hasExtraDepts = Array.isArray(user.departments) && user.departments.length > 0;
                                 const hasExpandableContent = hasExtraVendors || hasExtraDepts;
 
                                 return (

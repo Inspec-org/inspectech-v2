@@ -104,18 +104,19 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    Cookies.remove("session_id");
-    localStorage.clear();
-    sessionStorage.clear();
-    setSession_id("");
-    setUser(null);
-    const response = fetch("/api/auth/logout", {
+    fetch("/api/auth/logout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-    })
-    router.push("/signin");
+    }).finally(() => {
+      Cookies.remove("session_id");
+      localStorage.clear();
+      sessionStorage.clear();
+      setSession_id("");
+      setUser(null);
+      router.replace("/signin");
+    });
   };
 
   return (

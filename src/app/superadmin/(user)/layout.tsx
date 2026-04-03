@@ -29,7 +29,9 @@ export default function AdminLayout({
     }
   }, [user, loading, router]);
 
-  if (loading || !user || user.role !== "superadmin") return null;
+  if (loading || !user || user.role !== "superadmin") {
+    return <div className="flex items-center justify-center min-h-screen"><div className="text-gray-600">Redirecting...</div></div>;
+  }
 
   const isDepartmentsPage = (pathname === "/admin/departments" || pathname === "/user/departments" || pathname === "/superadmin/departments");
 
