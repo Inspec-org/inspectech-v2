@@ -9,6 +9,7 @@ const PUBLIC_PATHS = new Set([
   "/two-factor-setup",
 ]);
 
+
 function getBaseUrl(origin: string): string {
   return process.env.APP_URL || origin;
 }
