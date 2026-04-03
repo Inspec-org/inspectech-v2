@@ -34,6 +34,7 @@ const CompanyManagementPage: React.FC = () => {
     const [adminSearch, setAdminSearch] = useState('');
     const [admins, setAdmins] = useState<AdminUser[]>([]);
     const [adminsTotal, setAdminsTotal] = useState(0);
+    const [adminReloadFlag, setAdminReloadFlag] = useState(0);
     // get departments api
     useEffect(() => {
         (async () => {
@@ -93,6 +94,15 @@ const CompanyManagementPage: React.FC = () => {
             window.removeEventListener('selectedVendorChanged', handleVendorChange as EventListener);
         };
     }, []);
+    useEffect(() => {
+        const handler = () => {
+            setAdminReloadFlag((prev) => prev + 1);
+        };
+        window.addEventListener('adminAccessUpdated', handler as EventListener);
+        return () => {
+            window.removeEventListener('adminAccessUpdated', handler as EventListener);
+        };
+    }, []);
 
     useEffect(() => {
         setAdminsLoading(true);
@@ -144,7 +154,7 @@ const CompanyManagementPage: React.FC = () => {
         return () => {
             clearTimeout(timer); // 🚫 cancel previous call
         };
-    }, [adminPage, adminSearch, vendorId]);
+    }, [adminPage, adminSearch, vendorId, adminReloadFlag]);
 
     const tabs = [
         { id: 'admin-departments', label: 'Admin Departments', icon: <Building2 className="text-gray-400" size={18} /> },

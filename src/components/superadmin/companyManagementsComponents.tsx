@@ -522,6 +522,9 @@ export const AdminUserManagementSection: React.FC<{
                                 ? { ...u, vendorNames: vnames, vendor: vnames.length ? vnames.join(', ') : '—', departments: dnames }
                                 : u
                         ));
+                        if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('adminAccessUpdated'));
+                        }
                     }
                 }}
             />
