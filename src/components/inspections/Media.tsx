@@ -52,8 +52,8 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, description, currentUrl,
                 setUploadProgress(100);
                 toast.success("Image Uploaded Successfully")
             }
-            catch (e) {
-                toast.error("Image Upload Failed")
+            catch (e: any) {
+                toast.error(e?.message || "Image Upload Failed")
             }
             finally {
                 setIsUploading(false);
@@ -522,8 +522,8 @@ const ImageAlignmentGuide: React.FC<{ onUploadToCloudinary: (field: string, file
         try {
             await onUploadToCloudinary(tabFieldMap[activeTab], overlayFile);
             toast.success('Sent to upload area');
-        } catch {
-            toast.error('Failed to send to upload area');
+        } catch (e: any) {
+            toast.error(e?.message || 'Failed to send to upload area');
         }
     };
 

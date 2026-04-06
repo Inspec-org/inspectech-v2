@@ -56,10 +56,37 @@ export async function PUT(req: NextRequest) {
       delete cleaned["delivered_status"];
     }
 
-    const existing = await Inspection.findOne({ unitId: cleaned.unitId }).select("inspectionStatus");
+    const existing = await Inspection.findOne({ unitId: cleaned.unitId }).select("inspectionStatus notes");
 
-    const updateOps: any = { $set: cleaned };
-    if (Object.keys(unsetDoc).length) updateOps.$unset = unsetDoc;
+    const protectedStatuses = new Set([
+      "pass",
+      "out of cycle (delivered)",
+      "no inspection (delivered)",
+    ]);
+    const targetStatus = String(
+      (typeof cleaned.inspectionStatus === "string" ? cleaned.inspectionStatus : existing?.inspectionStatus) || ""
+    ).trim().toLowerCase();
+    
+    let updateOps: any;
+    if (protectedStatuses.has(targetStatus) && user.role !== "superadmin") {
+      const allowedKeys = new Set(["unitId", "notes"]);
+      const filtered: any = {};
+      for (const k of Object.keys(cleaned)) {
+        if (allowedKeys.has(k)) filtered[k] = cleaned[k];
+      }
+      const incomingNotes = filtered.notes;
+      const existingNotes = existing?.notes;
+      if (typeof incomingNotes === "undefined" || String(incomingNotes) === String(existingNotes)) {
+        return NextResponse.json(
+          { success: false, message: "Only 'notes' can be updated; no changes applied" },
+          { status: 200 }
+        );
+      }
+      updateOps = { $set: filtered };
+    } else {
+      updateOps = { $set: cleaned };
+      if (Object.keys(unsetDoc).length) updateOps.$unset = unsetDoc;
+    }
 
     const updated = await Inspection.findOneAndUpdate(
       { unitId: cleaned.unitId },

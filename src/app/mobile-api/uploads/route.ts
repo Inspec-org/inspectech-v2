@@ -39,6 +39,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    await connectDB();
+    if (unitId && field) {
+      const doc = await Inspection.findOne({ unitId }).select("inspectionStatus");
+      const status = String(doc?.inspectionStatus || "").trim().toLowerCase();
+      const protectedStatuses = new Set([
+        "pass",
+        "out of cycle (delivered)",
+        "no inspection (delivered)",
+      ]);
+      if (protectedStatuses.has(status) && user.role !== "superadmin") {
+        return NextResponse.json(
+          { message: "Uploads are not allowed for this inspection status; only 'notes' can be updated" },
+          { status: 403 }
+        );
+      }
+    }
+
     const cryptToken = crypto.randomUUID();
     const filename = `${folder}/${unitId ? `${unitId}/` : ""}${field ? `${field}-` : ""}${Date.now()}-${originalFileName}`;
 
@@ -54,7 +71,7 @@ export async function POST(req: NextRequest) {
     });
     const secure_url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filename)}?alt=media&token=${token}`;
 
-    await connectDB();
+    
 
     if (!unitId || !field) {
       return NextResponse.json({

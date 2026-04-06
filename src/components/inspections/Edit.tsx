@@ -367,14 +367,10 @@ export default function Edit({ type }: { type: string }) {
       const res = await apiRequest('/api/uploads', { method: 'POST', body });
       const json = await res.json();
 
-      ;
-
       if (!res.ok || !json.secure_url) {
         throw new Error(json.message || 'Upload failed');
       }
       const url: string = json.secure_url;
-
-      ;
 
       setFormData(prev => {
         const updates: any = { [field]: url };
@@ -385,9 +381,7 @@ export default function Edit({ type }: { type: string }) {
         return { ...prev, ...updates };
       });
     } catch (e: any) {
-      ;
-      toast.error(e.message || 'Upload failed');
-      throw e; // Re-throw to handle in PDFUpload component
+      throw e;
     }
   };
 
