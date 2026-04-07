@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     else if (user.role === "vendor" || user.role === "user") {
       vendors = await Vendor.find({ _id: user.vendorId, status: 'active' }).select("_id name");
     }
-    else if (user.role === "superadmin") {
+    else if (user.role === "superadmin" || user.role === "owner") {
       total = await Vendor.countDocuments();
       vendors = await Vendor.find()
         .sort({ createdAt: -1 })
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     }
 
     const payload: any = { status: "success", vendors };
-    if (user.role === "superadmin" || user.role === "admin") {
+    if (user.role === "superadmin" || user.role === "owner" || user.role === "admin") {
       payload.total = total;
       payload.page = page;
       payload.limit = limit;

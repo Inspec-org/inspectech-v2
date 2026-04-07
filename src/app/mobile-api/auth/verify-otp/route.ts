@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         }
 
         // OTP is valid, perform role/vendor checks before finalizing login
-        if (user.role !== 'superadmin') {
+        if (user.role !== 'superadmin' && user.role !== 'owner') {
             if (user.role === 'user') {
                 const vendorId = user.vendorId;
                 if (!vendorId) {

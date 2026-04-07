@@ -23,12 +23,12 @@ export default function AdminLayout({
             router.replace("/signin");
             return;
         }
-        if (user.role !== "superadmin") {
+        if (user.role !== "superadmin" && user.role !== "owner") {
             router.replace(`/${user.role}/dashboard`);
         }
     }, [user, loading, router]);
 
-    if (loading || !user || user.role !== "superadmin") {
+    if (loading || !user || (user.role !== "superadmin" && user.role !== "owner")) {
         return <div className="flex items-center justify-center min-h-screen"><div className="text-gray-600">Redirecting...</div></div>;
     }
 

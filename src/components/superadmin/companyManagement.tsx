@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { apiRequest } from '@/utils/apiWrapper';
 import Cookies from 'js-cookie';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
-import { AdminDepartmentsSection, AdminUserManagementSection, PageHeader, VendorsSection, VendorUserManagementSection } from './companyManagementsComponents';
+import { AdminDepartmentsSection, AdminUserManagementSection, PageHeader, VendorsSection, VendorUserManagementSection, SuperAdminManagementSection } from './companyManagementsComponents';
 
 // Main Company Management Page Component
 const CompanyManagementPage: React.FC = () => {
@@ -15,6 +15,7 @@ const CompanyManagementPage: React.FC = () => {
     const [deptLoading, setDeptLoading] = useState(false);
     const [vendorsLoading, setVendorsLoading] = useState(false);
     const [adminsLoading, setAdminsLoading] = useState(false);
+    const [sAdminsLoading, setSAdminsLoading] = useState(false);
 
     // Admin Departments pagination
     const [deptPage, setDeptPage] = useState(1);
@@ -33,8 +34,15 @@ const CompanyManagementPage: React.FC = () => {
     const adminPageSize = 5;
     const [adminSearch, setAdminSearch] = useState('');
     const [admins, setAdmins] = useState<AdminUser[]>([]);
+    type SuperAdminItem = { id: number; name: string; email: string; status: 'Active' | 'Inactive' };
+    const [superAdmins, setSuperAdmins] = useState<SuperAdminItem[]>([]);
     const [adminsTotal, setAdminsTotal] = useState(0);
+    const [superAdminsTotal, setSuperAdminsTotal] = useState(0);
     const [adminReloadFlag, setAdminReloadFlag] = useState(0);
+    const [sAdminReloadFlag, setSAdminReloadFlag] = useState(0);
+    const [superAdminPage, setSuperAdminPage] = useState(1);
+    const superAdminPageSize = 5;
+    const [superAdminSearch, setSuperAdminSearch] = useState('');
     // get departments api
     useEffect(() => {
         (async () => {
@@ -156,9 +164,42 @@ const CompanyManagementPage: React.FC = () => {
         };
     }, [adminPage, adminSearch, vendorId, adminReloadFlag]);
 
+    // Fetch SuperAdmins
+    useEffect(() => {
+        setSAdminsLoading(true);
+        const timer = setTimeout(async () => {
+            try {
+                const res = await apiRequest(
+                    `/api/users/get-users?role=superadmin&page=${superAdminPage}&limit=${superAdminPageSize}&q=${encodeURIComponent(superAdminSearch)}`
+                );
+                const json = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    const mapped = (json.users || []).map((u: any, idx: number) => ({
+                        id: (superAdminPage - 1) * superAdminPageSize + idx + 1,
+                        name: `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() || (u.name || ''),
+                        email: u.email || '',
+                        status: (u.status || 'active').toString().toLowerCase() === 'inactive' ? 'Inactive' : 'Active',
+                    }));
+                    setSuperAdmins(mapped);
+                    setSuperAdminsTotal(Number(json.total || json.totalCount || mapped.length));
+                } else {
+                    setSuperAdmins([]);
+                    setSuperAdminsTotal(0);
+                }
+            } catch {
+                setSuperAdmins([]);
+                setSuperAdminsTotal(0);
+            } finally {
+                setSAdminsLoading(false);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [superAdminPage, superAdminSearch, sAdminReloadFlag]);
+
     const tabs = [
         { id: 'admin-departments', label: 'Admin Departments', icon: <Building2 className="text-gray-400" size={18} /> },
         { id: 'admin-users', label: 'Admin Users', icon: <Users className="text-gray-400" size={18} /> },
+        { id: 'superadmins', label: 'SuperAdmins', icon: <Shield className="text-gray-400" size={18} /> },
         { id: 'vendors', label: 'Vendors & Companies', icon: <Store className="text-gray-400" size={18} /> },
         { id: 'vendor-users', label: 'Vendor Users', icon: <UserCog2 className="text-gray-400" size={18} /> },
     ];
@@ -205,6 +246,19 @@ const CompanyManagementPage: React.FC = () => {
                                 searchQuery={adminSearch}
                                 onSearchChange={(q) => { setAdminSearch(q); setAdminPage(1); }}
                                 loading={adminsLoading}
+                            />
+                        )}
+                        {activeTab === 'superadmins' && (
+                            <SuperAdminManagementSection
+                                superAdmins={superAdmins}
+                                totalCount={superAdminsTotal}
+                                currentPage={superAdminPage}
+                                pageSize={superAdminPageSize}
+                                onPageChange={setSuperAdminPage}
+                                searchQuery={superAdminSearch}
+                                onSearchChange={(q: string) => { setSuperAdminSearch(q); setSuperAdminPage(1); }}
+                                loading={sAdminsLoading}
+                                onReload={() => setSAdminReloadFlag((p) => p + 1)}
                             />
                         )}
                         {activeTab === 'vendors' && (

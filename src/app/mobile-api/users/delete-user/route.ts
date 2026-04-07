@@ -17,7 +17,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    if (actor.role !== "superadmin") {
+    if (actor.role !== "superadmin" && actor.role !== "owner") {
       return NextResponse.json(
         { status: 403, success: false, message: "Forbidden", data: null },
         { status: 403 }
@@ -27,6 +27,7 @@ export async function DELETE(req: NextRequest) {
     const body = await req.json();
     const targetEmail: string = String(body?.targetEmail || "").trim();
     const targetUserId: string = String(body?.targetUserId || body?.targetId || "").trim();
+    const otp: string = String(body?.otp || "").trim();
 
     if (!targetEmail && !targetUserId) {
       return NextResponse.json(
@@ -45,6 +46,33 @@ export async function DELETE(req: NextRequest) {
         { status: 404, success: false, message: "User not found", data: null },
         { status: 404 }
       );
+    }
+    if (user.role === "owner") {
+      return NextResponse.json(
+        { status: 403, success: false, message: "Owner account cannot be deleted", data: null },
+        { status: 403 }
+      );
+    }
+    if (user.role === "superadmin") {
+      if (!otp || otp.length !== 6) {
+        return NextResponse.json(
+          { status: 400, success: false, message: "OTP is required to delete a SuperAdmin", data: null },
+          { status: 400 }
+        );
+      }
+      const owner = await User.findOne({
+        role: "owner",
+        managementOTP: otp,
+        managementOTPExpires: { $gt: new Date() },
+        isDeleted: false
+      }).select("_id");
+      if (!owner) {
+        return NextResponse.json(
+          { status: 401, success: false, message: "Invalid or expired OTP", data: null },
+          { status: 401 }
+        );
+      }
+      await User.updateMany({ role: "owner", managementOTP: otp }, { $unset: { managementOTP: "", managementOTPExpires: "" } });
     }
 
     await User.deleteOne({ _id: user._id });

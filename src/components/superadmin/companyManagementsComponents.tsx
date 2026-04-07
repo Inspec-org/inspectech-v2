@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import InvitationModal from "../Modals/invitationModal";
 import { ClipLoader } from "react-spinners";
+import SuperAdminInviteModal from "../Modals/SuperAdminInviteModal";
 
 export const TablePagination: React.FC<TablePaginationProps> = ({
     currentPage,
@@ -728,6 +729,228 @@ export const VendorsSection: React.FC<{ vendors?: Vendor[]; totalCount?: number;
                     onUpdated={() => { setAccessModalOpen(false); }}
                 />
             )}
+        </div>
+    );
+};
+
+// SuperAdmin Management Section
+export const SuperAdminManagementSection: React.FC<{
+    superAdmins?: { id: number; name: string; email: string; status: 'Active' | 'Inactive' }[];
+    totalCount?: number;
+    currentPage?: number;
+    pageSize?: number;
+    onPageChange?: (page: number) => void;
+    searchQuery?: string;
+    onSearchChange?: (q: string) => void;
+    loading?: boolean;
+    onReload?: () => void;
+}> = ({ superAdmins = [], totalCount: extTotal, currentPage: extPage = 1, pageSize: extSize = 5, onPageChange, searchQuery, onSearchChange, loading, onReload }) => {
+    const [items, setItems] = useState(superAdmins);
+    const [totalCount, setTotalCount] = useState<number>(extTotal ?? superAdmins.length);
+    const [searchQueryLocal, setSearchQueryLocal] = useState(searchQuery ?? '');
+    const [inviteOpen, setInviteOpen] = useState(false);
+
+    useEffect(() => { setItems(superAdmins); }, [superAdmins]);
+    useEffect(() => { setTotalCount(extTotal ?? superAdmins.length); }, [extTotal, superAdmins]);
+    useEffect(() => { setSearchQueryLocal(searchQuery ?? ''); }, [searchQuery]);
+
+    const pageSize = extSize;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const safePage = Math.min(extPage, totalPages);
+    const startIndex = (safePage - 1) * pageSize;
+
+    const maskEmail = (email: string) => {
+        const [user, domain] = email.split("@");
+        if (!domain) return email.replace(/./g, "*");
+        const maskedUser = user.length <= 2 ? user[0] + "*".repeat(Math.max(user.length - 1, 0)) : user[0] + "*".repeat(user.length - 2) + user[user.length - 1];
+        const [dom, tld] = domain.split(".");
+        const maskedDomain = dom[0] + "*".repeat(Math.max(dom.length - 2, 1)) + dom[dom.length - 1] + "." + tld;
+        return `${maskedUser}@${maskedDomain}`;
+    };
+
+    const handleDelete = async (email: string) => {
+        try {
+            Swal.fire({
+                title: 'Requesting OTP...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    // @ts-ignore
+                    Swal.showLoading();
+                }
+            });
+            const resReq = await apiRequest('/api/superadmins/request-otp', { method: 'POST' });
+            if (!resReq.ok) {
+                Swal.close();
+                const j = await resReq.json().catch(() => ({}));
+                toast.error(j.message || 'Failed to send OTP to owner email');
+                return;
+            }
+            Swal.close();
+            const result = await Swal.fire({
+                title: 'Enter OTP',
+                html: `
+                  <div id="otp-wrapper" style="display:flex;justify-content:center;gap:10px;margin-top:12px;">
+                    ${Array.from({ length: 6 })
+                      .map(
+                        (_, i) =>
+                          `<input id="swal-otp-${i}" class="swal-otp-input" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" style="width:48px;height:48px;text-align:center;font-size:20px;border:1px solid black;border-radius:8px;outline:none; background: #FAF7FF" />`
+                      )
+                      .join('')}
+                  </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Verify & Delete',
+                preConfirm: () => {
+                    const inputs = Array.from(document.querySelectorAll('.swal-otp-input')) as HTMLInputElement[];
+                    const code = inputs.map(i => i.value).join('');
+                    if (!/^\d{6}$/.test(code)) {
+                        // @ts-ignore
+                        Swal.showValidationMessage('Enter a valid 6-digit OTP');
+                        return false as any;
+                    }
+                    return code;
+                },
+                didOpen: () => {
+                    const htmlContainer = (Swal as any).getHtmlContainer?.() as HTMLElement | null;
+                    if (htmlContainer) {
+                        htmlContainer.style.overflow = 'hidden';
+                    }
+                    const inputs = Array.from(document.querySelectorAll('.swal-otp-input')) as HTMLInputElement[];
+                    inputs.forEach((input, idx) => {
+                        input.addEventListener('input', (e: Event) => {
+                            const target = e.target as HTMLInputElement;
+                            let v = target.value.replace(/\D/g, '');
+                            if (v.length > 1) v = v.slice(-1);
+                            target.value = v;
+                            if (v && idx < inputs.length - 1) {
+                                inputs[idx + 1].focus();
+                            }
+                        });
+                        input.addEventListener('keydown', (e: KeyboardEvent) => {
+                            const target = e.target as HTMLInputElement;
+                            if (e.key === 'Backspace' && !target.value && idx > 0) {
+                                inputs[idx - 1].focus();
+                            }
+                        });
+                        input.addEventListener('paste', (e: ClipboardEvent) => {
+                            e.preventDefault();
+                            const data = e.clipboardData?.getData('text') || '';
+                            const digits = data.replace(/\D/g, '').slice(0, 6).split('');
+                            if (!digits.length) return;
+                            inputs.forEach((inp, i) => {
+                                inp.value = digits[i] || '';
+                            });
+                            const last = Math.min(5, digits.length - 1);
+                            inputs[last]?.focus();
+                        });
+                    });
+                    inputs[0]?.focus();
+                }
+            });
+            const otp = result.isConfirmed ? (result.value as string) : null;
+            if (!otp) return;
+            const res = await apiRequest('/api/users/delete-user', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetEmail: email, otp })
+            });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok && (json.success || json.status === 200)) {
+                setItems(prev => prev.filter(u => u.email !== email));
+                setTotalCount(prev => Math.max(0, prev - 1));
+                onReload && onReload();
+                toast.success('SuperAdmin deleted');
+            } else {
+                toast.error(json.message || 'Failed to delete SuperAdmin');
+            }
+        } catch (e: any) {
+            Swal.close();
+            toast.error(e?.message || 'Unexpected error');
+        }
+    };
+
+    return (
+        <div className="">
+            <div className="py-4">
+                <div className="flex items-start justify-between gap-3 mb-6">
+                    <div>
+                        <h2 className="text-sm text-gray-900">SuperAdmin Management</h2>
+                        <p className="text-xs text-[#6A7282] mt-1">Manage superadmin accounts</p>
+                    </div>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                        onClick={() => setInviteOpen(true)}
+                    >
+                        <UserPlus size={18} />
+                        Add SuperAdmin
+                    </button>
+                </div>
+                <div className="mb-6">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Search by name or email ..."
+                            value={searchQuery ?? searchQueryLocal}
+                            onChange={(e) => { setSearchQueryLocal(e.target.value); onSearchChange && onSearchChange(e.target.value); }}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent outline-none bg-gray-50"
+                        />
+                    </div>
+                </div>
+            </div>
+            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <ClipLoader color="#7C3AED" size={28} />
+                    </div>
+                ) : (
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b bg-gray-50">
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="text-left py-3 px-4 pl-8 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items.map((user, idx) => (
+                                <tr key={user.email} className="border-b hover:bg-gray-50">
+                                    <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
+                                    <td className="py-4 px-4">
+                                        <div className="text-sm font-medium text-gray-900">{user.name || '—'}</div>
+                                    </td>
+                                    <td className="py-4 px-4 text-sm text-gray-900">{maskEmail(user.email)}</td>
+                                    <td className="py-4 px-4">
+                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${user.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'}`}>
+                                            {user.status}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                        <button
+                                            className="text-red-500 hover:text-red-700 transition-colors"
+                                            onClick={() => handleDelete(user.email)}
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+            <TablePagination currentPage={extPage} totalCount={totalCount} pageSize={extSize} onPageChange={onPageChange || (() => { })} />
+            <SuperAdminInviteModal
+                isOpen={inviteOpen}
+                onClose={() => setInviteOpen(false)}
+                onUpdated={() => {
+                    setInviteOpen(false);
+                    onReload && onReload();
+                }}
+            />
         </div>
     );
 };

@@ -42,7 +42,7 @@ export async function GET(req: Request) {
     /* =========================
        SUPERADMIN
     ========================= */
-    if (actor.role === "superadmin") {
+    if (actor.role === "superadmin" || actor.role === "owner") {
       filter = role ? { role } : {};
 
       if (vendorId) {

@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
         }
 
         // If 2FA is false, perform original functionality (role/vendor checks)
-        if (user.role !== 'superadmin') {
+        if (user.role !== 'superadmin' && user.role !== 'owner') {
             if (user.role === 'user') {
                 const vendorId = user.vendorId;
                 if (!vendorId) {
@@ -219,4 +219,3 @@ export async function POST(req: NextRequest) {
         );
     }
 }
-

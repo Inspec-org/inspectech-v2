@@ -72,8 +72,16 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin', 'superadmin'],
+    enum: ['user', 'admin', 'superadmin', 'owner'],
     default: 'user',
+  },
+  managementOTP: {
+    type: String,
+    select: false
+  },
+  managementOTPExpires: {
+    type: Date,
+    select: false
   },
   status: {
     type: String,

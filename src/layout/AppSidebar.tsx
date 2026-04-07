@@ -69,10 +69,11 @@ const AppSidebar: React.FC = () => {
       path: currentRole ? `/${currentRole}/users` : undefined,
     },
 
-    // Request Admin Review → vendor, user, superadmin
+    // Request Admin Review → vendor, user, superadmin, owner
     ...(currentRole === "vendor" ||
       currentRole === "user" ||
-      currentRole === "superadmin"
+      currentRole === "superadmin" ||
+      currentRole === "owner"
       ? [
         {
           icon: <Mail />,
@@ -82,8 +83,8 @@ const AppSidebar: React.FC = () => {
       ]
       : []),
 
-    // Inspection Vendor Tracker → admin + superadmin
-    ...(currentRole === "admin" || currentRole === "superadmin"
+    // Inspection Vendor Tracker → admin + superadmin + owner
+    ...(currentRole === "admin" || currentRole === "superadmin" || currentRole === "owner"
       ? [
         {
           icon: <CircleQuestionMark />,
@@ -520,7 +521,7 @@ const AppSidebar: React.FC = () => {
 
           {/* Logout Button */}
           <div className="mt-auto pt-4">
-            {currentRole === "superadmin" && (
+            {(currentRole === "superadmin" || currentRole === "owner") && (
               <button
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#92400e] hover:bg-[#b45309] text-white transition-colors mb-4 ${!isExpanded && !isHovered && !isMobileOpen
                   ? "justify-center"

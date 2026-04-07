@@ -72,8 +72,8 @@ export default function SignInForm() {
       login(result.token);
       toast.success(result.message);
 
-      if (role === "superadmin") {
-        router.push(`/${role}`);
+      if (role === "superadmin" || role === "owner") {
+        router.push(`/superadmin`);
       } else {
         router.push(`/${role}/departments`);
       }
@@ -123,7 +123,7 @@ export default function SignInForm() {
       const role=result.user.role
       login(result.token)
       
-      if(role==="superadmin")
+      if(role==="superadmin" || role==="owner")
       {
         router.push(`/${role}`);
       }

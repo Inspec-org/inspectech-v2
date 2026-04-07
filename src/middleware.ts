@@ -41,7 +41,7 @@ export async function middleware(req: NextRequest) {
           const { user } = await userRes.json();
           const role = user?.role || "user";
           const url = req.nextUrl.clone();
-          url.pathname = role === "superadmin" ? "/superadmin" : `/${role}/departments`;
+          url.pathname = (role === "superadmin" || role === "owner") ? "/superadmin" : `/${role}/departments`;
           return NextResponse.redirect(url);
         }
       } catch {}
@@ -61,9 +61,7 @@ export async function middleware(req: NextRequest) {
               if (roleRes.ok) {
                 const { user } = await roleRes.json();
                 const role = user?.role || "user";
-                const res = NextResponse.redirect(
-                  role === "superadmin" ? new URL("/superadmin", baseUrl) : new URL(`/${role}/departments`, baseUrl)
-                );
+                const res = NextResponse.redirect((role === "superadmin" || role === "owner") ? new URL("/superadmin", baseUrl) : new URL(`/${role}/departments`, baseUrl));
                 res.cookies.set("session_id", data.accessToken, {
                   path: "/",
                   sameSite: "lax",

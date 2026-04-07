@@ -11,7 +11,7 @@ import { getUserFromToken } from "@/lib/getUserFromToken";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { email, name, role, vendorId, vendorAccess = [], departmentAccess = [] } = body;
+        const { email, name, role, vendorId, vendorAccess = [], departmentAccess = [], otp } = body;
 
 
         const authHeader = req.headers.get("Authorization");
@@ -23,8 +23,16 @@ export async function POST(req: NextRequest) {
         if (!actor) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
-        if (role === "admin" && actor.role !== "superadmin") {
+        if (role === "admin" && actor.role !== "superadmin" && actor.role !== "owner") {
             return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+        }
+        if (role === "superadmin") {
+            if (actor.role !== "superadmin" && actor.role !== "owner") {
+                return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+            }
+            if (!otp || String(otp).trim().length !== 6) {
+                return NextResponse.json({ success: false, message: "OTP is required to invite a SuperAdmin" }, { status: 400 });
+            }
         }
         // if (role === "vendor" && !(actor.role === "admin" || actor.role === "superadmin")) {
         //     console.log(actor.role);
@@ -83,6 +91,23 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: false, message: "One or more departments not found" }, { status: 404 });
             }
             vendorName = vendors.map(v => v.name).join(", ");
+        } else if (role === "superadmin") {
+            // no vendor fields
+            // Verify OTP with an owner account
+            const owner = await User.findOne({
+                role: "owner",
+                managementOTP: String(otp),
+                managementOTPExpires: { $gt: new Date() },
+                isDeleted: false
+            }).select("_id email");
+            if (!owner) {
+                return NextResponse.json({ success: false, message: "Invalid or expired OTP" }, { status: 401 });
+            }
+            // Invalidate used OTP
+            await User.updateMany(
+                { role: "owner", managementOTP: String(otp) },
+                { $unset: { managementOTP: "", managementOTPExpires: "" } }
+            );
         }
 
         // Check if invitation already exists

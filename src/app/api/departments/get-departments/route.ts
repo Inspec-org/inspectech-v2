@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     let departments = [];
     let total = 0;
 
-    if (user.role === "superadmin") {
+    if (user.role === "superadmin" || user.role === "owner") {
       const vendorId = url.searchParams.get("vendorId");
       if (vendorId) {
         const vendor = await Vendor.findById(vendorId).select("departmentAccess").lean();
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
       (dept && typeof (dept as any).toObject === 'function') ? (dept as any).toObject() : dept
     ));
     const payload: any = { message: "success", departments: plainDepartments };
-    if (user.role === "superadmin") {
+    if (user.role === "superadmin" || user.role === "owner") {
       payload.pagination = { page, limit, total, totalPages: Math.ceil(total / limit) };
     }
     return NextResponse.json(payload);

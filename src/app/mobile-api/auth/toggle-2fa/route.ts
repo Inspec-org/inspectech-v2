@@ -29,6 +29,15 @@ export async function POST(req: NextRequest) {
             }, { status: 401 });
         }
 
+        if (user.role === "superadmin" && enable === false) {
+            return NextResponse.json({
+                status: 403,
+                success: false,
+                message: "Two-factor authentication cannot be disabled for SuperAdmin accounts",
+                data: null
+            }, { status: 403 });
+        }
+
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             return NextResponse.json({
