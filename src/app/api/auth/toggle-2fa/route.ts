@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
             }, { status: 401 });
         }
 
-        if (user.role === "superadmin" && enable === false) {
+        if ((user.role === "superadmin" || user.role === "owner") && enable === false) {
             return NextResponse.json({
                 success: false,
-                message: "Two-factor authentication cannot be disabled for SuperAdmin accounts",
+                message: "Two-factor authentication cannot be disabled for SuperAdmin or Owner accounts",
             }, { status: 403 });
         }
 

@@ -84,14 +84,14 @@ const getDropdownAllowed = (key?: string, isCanadaTrailers?: boolean): string[] 
     suspensiontype: ["N/A", "Air", "Spring"],
     tirebrand: ["N/A", "Bridgestone", "Continental", "Firestone", "Goodyear", "Michelin"],
     doorcolor: ["N/A", "Pantone 432 C", "White"],
-    leftfrontouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    leftfrontinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    leftrearouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    leftrearinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    rightfrontouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    rightfrontinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    rightrearouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    rightrearinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
+    leftfrontouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    leftfrontinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    leftrearouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    leftrearinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    rightfrontouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    rightfrontinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    rightrearouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    rightrearinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
     doortype: ["N/A", "Swing", "Roll"],
     mudflaptype: ["N/A", "Fast-Flap"],
     panelbranding: ["N/A", "Bowman", "Prime", "Tape on White", "Smile on Blue 2016", "Smile on Blue 2017", "Smile on Blue 2018", "Smile on White 2019", "Unbranded", "XTRA Lease"],
@@ -372,13 +372,36 @@ export async function POST(req: NextRequest) {
 
       const unitVal = unitIdIndex >= 0 ? norm(String(currentRow[unitIdIndex] ?? "")) : "";
       const equipVal = equipIdIndex >= 0 ? norm(String(currentRow[equipIdIndex] ?? "")) : "";
-      if (unitVal && equipVal) {
-        if (normId(unitVal) !== normId(equipVal)) {
-          errors.push({ row: i + 1, field: "Unit ID / Equipment ID", value: `${unitVal} / ${equipVal}`, message: "Both identifiers must match" });
-        }
+
+      // ✅ Case 1: Both present → MUST match
+      if (unitVal && equipVal && normId(unitVal) !== normId(equipVal)) {
+        errors.push({
+          row: i + 1,
+          field: "Unit ID",
+          value: `${unitVal} / ${equipVal}`,
+          message: "Unit ID and Equipment Number must match",
+        });
       }
-      if (!unitVal && equipVal && unitIdIndex >= 0) rowData[headers[unitIdIndex]] = equipVal;
-      if (unitVal && !equipVal && equipIdIndex >= 0) rowData[headers[equipIdIndex]] = unitVal;
+
+      // ✅ Case 2: One missing → throw error (strict mode)
+      if ((unitVal && !equipVal) || (!unitVal && equipVal)) {
+        errors.push({
+          row: i + 1,
+          field: "Unit ID / Equipment Number",
+          value: `${unitVal || "-"} / ${equipVal || "-"}`,
+          message: "Both Unit ID and Equipment Number are required",
+        });
+      }
+
+      // ✅ Case 3: Both missing
+      if (!unitVal && !equipVal) {
+        errors.push({
+          row: i + 1,
+          field: "Unit ID",
+          value: "",
+          message: "Unit ID and Equipment Number are required",
+        });
+      }
 
       const effectiveId = unitVal || equipVal;
       if (effectiveId) {

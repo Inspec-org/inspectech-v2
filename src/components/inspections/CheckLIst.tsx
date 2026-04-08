@@ -914,7 +914,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                 </div>
 
                 {/* Features & Appearance */}
-                <div className={`bg-white rounded-lg mt-4 ${prop === "single" ? "md:w-1/2 w-full" : "w-full px-4"}`}>
+                <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full px-4"}`}>
                     <button
                         onClick={() => toggleSection('features')}
                         className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"

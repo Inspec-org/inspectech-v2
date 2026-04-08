@@ -75,7 +75,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       // Clear invalid session
       setUser(null);
       Cookies.remove("session_id");
-      localStorage.removeItem("session_id");
       setSession_id("");
     } finally {
       setLoading(false);
@@ -83,7 +82,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    const savedSession = localStorage.getItem("session_id") || Cookies.get("session_id");
+    const savedSession = Cookies.get("session_id");
     
     if (savedSession?.trim()) {
       setSession_id(savedSession);
@@ -98,7 +97,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const login = (sessionId: string) => {
     setLoading(true);
     Cookies.set("session_id", sessionId); 
-    localStorage.setItem("session_id", sessionId);
     setSession_id(sessionId);
     fetchUser(sessionId);
   };

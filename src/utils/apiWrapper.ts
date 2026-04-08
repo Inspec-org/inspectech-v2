@@ -10,7 +10,7 @@ export function buildRequestBody(data: object) {
 
 // utils/apiRequest.ts
 export async function apiRequest(url: string, options: RequestInit = {}) {
-  const stored = localStorage.getItem("session_id") || Cookies.get("session_id");
+  const stored = Cookies.get("session_id");
 
   const res = await fetch(url, {
     ...options,
@@ -26,7 +26,6 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
   const refreshData = await refreshRes.json();
 
   if (refreshRes.ok && refreshData.success && refreshData.accessToken) {
-    localStorage.setItem("session_id", refreshData.accessToken);
     Cookies.set("session_id", refreshData.accessToken);
 
     return fetch(url, {
@@ -39,7 +38,6 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
   }
 
   Cookies.remove("session_id");
-  localStorage.removeItem("session_id");
   if (typeof window !== "undefined") window.location.href = "/signin";
   return res;
 }

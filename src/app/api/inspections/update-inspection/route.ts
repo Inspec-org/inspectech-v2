@@ -78,7 +78,7 @@ export async function PUT(req: NextRequest) {
       const existingNotes = existing?.notes;
       if (typeof incomingNotes === "undefined" || String(incomingNotes) === String(existingNotes)) {
         return NextResponse.json(
-          { success: false, message: "Only 'notes' can be updated; no changes applied" },
+          { success: false, message: "Inspection marked as PASS / DELIVERED. Only notes can be edited." },
           { status: 200 }
         );
       }

@@ -47,26 +47,33 @@ const AppSidebar: React.FC = () => {
   const [hoverSuspended, setHoverSuspended] = useState(false);
   const menuItemRefs = useRef<Record<string, HTMLElement | null>>({});
 
+  const basePath = React.useMemo(() => {
+    if (currentRole === "owner" || currentRole === "superadmin") {
+      return "/superadmin";
+    }
+    return currentRole ? `/${currentRole}` : "";
+  }, [currentRole]);
+
   const navItems: NavItem[] = [
     {
       icon: <Home />,
       name: "Dashboard",
-      path: currentRole ? `/${currentRole}/dashboard` : undefined,
+      path: `${basePath}/dashboard`,
     },
     {
       icon: <ClipboardCheck />,
       name: "Inspections",
-      path: currentRole ? `/${currentRole}/inspections` : undefined,
+      path: `${basePath}/inspections`,
     },
     {
       icon: <BarChart4 />,
       name: "Reports",
-      path: currentRole ? `/${currentRole}/reports` : undefined,
+      path: `${basePath}/reports`,
     },
     {
       icon: <Users />,
       name: "Users",
-      path: currentRole ? `/${currentRole}/users` : undefined,
+      path: `${basePath}/users`,
     },
 
     // Request Admin Review → vendor, user, superadmin, owner
@@ -240,8 +247,18 @@ const AppSidebar: React.FC = () => {
 
   const isActive = useCallback(
     (path: string) => {
+      if (!pathname) return false;
 
-      return pathname === path || pathname.startsWith(`${path}/`);
+      // normalize owner → superadmin
+      const normalizedPathname =
+        pathname.startsWith("/owner")
+          ? pathname.replace("/owner", "/superadmin")
+          : pathname;
+
+      return (
+        normalizedPathname === path ||
+        normalizedPathname.startsWith(`${path}/`)
+      );
     },
     [pathname]
   );

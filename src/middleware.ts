@@ -95,7 +95,7 @@ export async function middleware(req: NextRequest) {
           const { user } = await userRes.json();
           const role = user?.role || "vendor";
           const url = req.nextUrl.clone();
-          url.pathname = `/${role}/dashboard`;
+          url.pathname = (role === "superadmin" || role === "owner") ? "/superadmin" : `/${role}/departments`;
           return NextResponse.redirect(url);
         }
       } catch {

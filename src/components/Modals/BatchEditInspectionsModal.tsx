@@ -25,6 +25,16 @@ type Props = {
 const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData, setFormData, onChange, onDropdownChange, selectedUnitIds, onUpdated }) => {
   const { user } = useContext(UserContext)
   const handleUpdate = async () => {
+    const protectedStatuses = new Set([
+      'pass',
+      'out of cycle (delivered)',
+      'no inspection (delivered)',
+    ]);
+    const selectedStatus = String(formData.status || '').trim().toLowerCase();
+    if (selectedStatus && selectedStatus !== 'leave unchanged' && protectedStatuses.has(selectedStatus) && user?.role !== 'superadmin') {
+      toast.error('Inspection marked as PASS / DELIVERED. Only notes can be edited.');
+      return;
+    }
     const updates: any = {};
 
     if (formData.status && formData.status !== 'Leave unchanged') updates.inspectionStatus = formData.status;
@@ -72,7 +82,14 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
         toast.success(`Updated ${successes.length} inspections`);
         if (onUpdated) onUpdated();
       }
-      if (failures.length) toast.error(`Failed ${failures.length} updates`);
+      if (failures.length) {
+        const unique = Array.from(new Set(failures.filter(Boolean)));
+        if (unique.length === 1) {
+          toast.error(unique[0]);
+        } else {
+          toast.error(`Failed ${failures.length} updates. ${unique[0] || ''}`);
+        }
+      }
       onClose();
     } catch (e: any) {
       toast.error(e.message || 'Server error');

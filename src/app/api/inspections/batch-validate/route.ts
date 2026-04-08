@@ -75,29 +75,29 @@ const FIELD_CATEGORIES = {
 const getDropdownAllowed = (key?: string, isCanadaTrailers?: boolean): string[] => {
   if (!key) return [];
   const base: Record<string, string[]> = {
-    manufacturer: ["N/A","Atro","Cartwright","DiMond","Don-Bur","Great Dane","Hyundai","Lufkin","Manac","Operbus","Stoughton","Strick","Tiger","TrailerMobile","Unity","Vanguard","Wabash"],
-    length: isCanadaTrailers ? ["N/A","28 ft","53 ft"] : ["N/A","28 ft","48 ft","53 ft"],
-    height: ["N/A","13 ft 6 in"],
-    grossaxleweightrating: ["N/A","20000 lbs","34000 lbs"],
-    axletype: ["N/A","Dual Axle","Single Axle"],
-    braketype: ["N/A","Disc","Drum"],
-    suspensiontype: ["N/A","Air","Spring"],
-    tirebrand: ["N/A","Bridgestone","Continental","Firestone","Goodyear","Michelin"],
-    leftfrontouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    leftfrontinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    leftrearouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    leftrearinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    rightfrontouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    rightfrontinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    rightrearouter: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    rightrearinner: ["N/A","15/32","14/32","13/32","12/32","11/32","10/32"],
-    doorcolor: ["N/A","Pantone 432 C","White"],
-    doortype: ["N/A","Swing","Roll"],
-    mudflaptype: ["N/A","Fast-Flap"],
-    panelbranding: ["N/A","Bowman","Prime","Tape on White","Smile on Blue 2016","Smile on Blue 2017","Smile on Blue 2018","Smile on White 2019","Unbranded","XTRA Lease"],
-    nosebranding: ["N/A","Captive Mean"],
-    skirtcolor: ["N/A","Ekostinger","Pantone 432 C","Transtex","White"],
-    conspicuitytape: ["N/A","Bottom Rear","Full Rear Perimeter"],
+    manufacturer: ["N/A", "Atro", "Cartwright", "DiMond", "Don-Bur", "Great Dane", "Hyundai", "Lufkin", "Manac", "Operbus", "Stoughton", "Strick", "Tiger", "TrailerMobile", "Unity", "Vanguard", "Wabash"],
+    length: isCanadaTrailers ? ["N/A", "28 ft", "53 ft"] : ["N/A", "28 ft", "48 ft", "53 ft"],
+    height: ["N/A", "13 ft 6 in"],
+    grossaxleweightrating: ["N/A", "20000 lbs", "34000 lbs"],
+    axletype: ["N/A", "Dual Axle", "Single Axle"],
+    braketype: ["N/A", "Disc", "Drum"],
+    suspensiontype: ["N/A", "Air", "Spring"],
+    tirebrand: ["N/A", "Bridgestone", "Continental", "Firestone", "Goodyear", "Michelin"],
+    leftfrontouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    leftfrontinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    leftrearouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    leftrearinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    rightfrontouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    rightfrontinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    rightrearouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    rightrearinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    doorcolor: ["N/A", "Pantone 432 C", "White"],
+    doortype: ["N/A", "Swing", "Roll"],
+    mudflaptype: ["N/A", "Fast-Flap"],
+    panelbranding: ["N/A", "Bowman", "Prime", "Tape on White", "Smile on Blue 2016", "Smile on Blue 2017", "Smile on Blue 2018", "Smile on White 2019", "Unbranded", "XTRA Lease"],
+    nosebranding: ["N/A", "Captive Mean"],
+    skirtcolor: ["N/A", "Ekostinger", "Pantone 432 C", "Transtex", "White"],
+    conspicuitytape: ["N/A", "Bottom Rear", "Full Rear Perimeter"],
   };
   return base[key] || [];
 };
@@ -318,7 +318,7 @@ export async function POST(req: NextRequest) {
           const ok = allowed.length ? allowed.some(a => a.toLowerCase() === v.toLowerCase()) : true;
           if (!ok) errors.push({ row: i + 1, field: header, value: v, message: `Value must be one of: ${allowed.join(", ")}` });
         } else if (kind.type === "radio") {
-          const ok = ["n/a","yes","no"].includes(v.toLowerCase());
+          const ok = ["n/a", "yes", "no"].includes(v.toLowerCase());
           if (!ok) errors.push({ row: i + 1, field: header, value: v, message: "Value must be one of: N/A, Yes, No" });
         } else if (kind.type === "year") {
           if (v.toLowerCase() !== "n/a") {
@@ -333,13 +333,37 @@ export async function POST(req: NextRequest) {
 
       const unitVal = unitIdIndex >= 0 ? norm(String(currentRow[unitIdIndex] ?? "")) : "";
       const equipVal = equipIdIndex >= 0 ? norm(String(currentRow[equipIdIndex] ?? "")) : "";
-      if (unitVal && equipVal) {
-        if (normId(unitVal) !== normId(equipVal)) {
-          errors.push({ row: i + 1, field: "Unit ID / Equipment ID", value: `${unitVal} / ${equipVal}`, message: "Both identifiers must match" });
-        }
+
+      // ✅ Case 1: Both present → MUST match
+      if (unitVal && equipVal && normId(unitVal) !== normId(equipVal)) {
+        errors.push({
+          row: i + 1,
+          field: "Unit ID",
+          value: `${unitVal} / ${equipVal}`,
+          message: "Unit ID and Equipment Number must match",
+        });
       }
-      if (!unitVal && equipVal && unitIdIndex >= 0) rowData[headers[unitIdIndex]] = equipVal;
-      if (unitVal && !equipVal && equipIdIndex >= 0) rowData[headers[equipIdIndex]] = unitVal;
+
+      // ✅ Case 2: One missing → throw error (strict mode)
+      if ((unitVal && !equipVal) || (!unitVal && equipVal)) {
+        errors.push({
+          row: i + 1,
+          field: "Unit ID / Equipment Number",
+          value: `${unitVal || "-"} / ${equipVal || "-"}`,
+          message: "Both Unit ID and Equipment Number are required",
+        });
+      }
+
+      // ✅ Case 3: Both missing
+      if (!unitVal && !equipVal) {
+        errors.push({
+          row: i + 1,
+          field: "Unit ID",
+          value: "",
+          message: "Unit ID and Equipment Number are required",
+        });
+      }
+
 
       const effectiveId = unitVal || equipVal;
       if (effectiveId) {
@@ -392,7 +416,7 @@ export async function POST(req: NextRequest) {
               d = isNaN(nd.getTime()) ? null : nd;
             }
           }
-          
+
           const display = (() => {
             const asNum = Number(t);
             if (!isNaN(asNum) && isFinite(asNum)) {

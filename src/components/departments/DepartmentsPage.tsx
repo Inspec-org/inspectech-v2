@@ -55,7 +55,7 @@ export default function DepartmentsPage() {
 
   const handleDepartmentSelect = (department: Department) => {
     const role = String(user?.role || 'superadmin');
-    const target = `/${role}/dashboard`;
+    const target = (role === "superadmin" || role === "owner") ? "/superadmin/dashboard" : `/${role}/dashboard`;
     Cookies.set('selectedDepartment', department.name || '');
     Cookies.set('selectedDepartmentId', department._id || '');
     window.dispatchEvent(new CustomEvent("selectedDepartmentChanged", { detail: department.name }));
