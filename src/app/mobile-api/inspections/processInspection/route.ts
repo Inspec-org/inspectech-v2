@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
+import Department from "@/lib/models/Departments";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
 const isEmpty = (v: any) => {
@@ -41,9 +42,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    let departmentName = "";
+    try {
+      if (inspection.departmentId) {
+        const dept: any = await Department.findById(inspection.departmentId).lean();
+        departmentName = String(dept?.name || "");
+      }
+    } catch {}
+    const isCanadaTrailers = departmentName.trim().toLowerCase() === "canada trailers";
+
     const identificationKeys = [
       "poNumber",
-      "owner",
       "equipmentNumber",
       "vin",
       "licensePlateId",
@@ -52,6 +61,7 @@ export async function GET(req: NextRequest) {
       "licensePlateState",
       "possessionOrigin",
     ];
+    if (isCanadaTrailers) identificationKeys.push("owner");
 
     const physicalDimensionKeys = [
       "manufacturer",
@@ -94,8 +104,8 @@ export async function GET(req: NextRequest) {
       "cartbars",
       "tpms",
       "trailerHeightDecal",
-      "conspicuityTape",
     ];
+    if (isCanadaTrailers) featuresKeys.push("conspicuityTape");
 
     const sensorsKeys = [
       "absSensor",
