@@ -247,21 +247,43 @@ export async function POST(req: NextRequest) {
 
     const errors: ValidationError[] = [];
     const parsedRows: Record<string, string>[] = [];
+
+    // ✅ FIX: Use normalizeHeader for all candidate matching so camelCase,
+    // snake_case, spaced variants all match correctly (e.g. "equipmentNumber" === "equipment number")
     const unitIdHeaderCandidates = ["unit id", "unitid", "unitid#", "unit"];
-    const equipIdHeaderCandidates = ["equipment id/trailer number", "equipment id", "trailer number", "equipment id #", "equipment", "equipment number"];
-    const unitIdIndex = headers.findIndex(h => unitIdHeaderCandidates.includes(h.trim().toLowerCase()));
-    const equipIdIndex = headers.findIndex(h => equipIdHeaderCandidates.includes(h.trim().toLowerCase()));
+    const equipIdHeaderCandidates = [
+      "equipment id/trailer number",
+      "equipment id",
+      "trailer number",
+      "equipment id #",
+      "equipment",
+      "equipment number",
+      "equipmentnumber",
+      "equipmentid",
+      "equipmentidtrailernumber",
+    ];
+
+    const unitIdIndex = headers.findIndex(h =>
+      unitIdHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
+    );
+    const equipIdIndex = headers.findIndex(h =>
+      equipIdHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
+    );
+
     const seenUnitIds = new Map<string, number>();
+
+    // ✅ FIX: Use normalizeHeader for VIN header matching
     const vinHeaderCandidates = ["vin", "vehicle identification number"];
-    const vinIndex = headers.findIndex(h => normalizeHeader(h) === normalizeHeader("vin"));
+    const vinIndex = headers.findIndex(h =>
+      vinHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
+    );
+
+    // ✅ FIX: Use normalizeHeader for date header matching
     const dateHeaderCandidates = ["date", "inspection date", "inspectiondate"];
-    const dateIndex = headers.findIndex(h => {
-      const n = normalizeHeader(h);
-      return dateHeaderCandidates.some(c => {
-        const cNorm = normalizeHeader(c);
-        return n === cNorm || n.includes(cNorm) || cNorm.includes(n);
-      });
-    });
+    const dateIndex = headers.findIndex(h =>
+      dateHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
+    );
+
     const seenVINs = new Map<string, number>();
 
     const headerKinds = headers.map(h => {
@@ -373,7 +395,7 @@ export async function POST(req: NextRequest) {
       const unitVal = unitIdIndex >= 0 ? norm(String(currentRow[unitIdIndex] ?? "")) : "";
       const equipVal = equipIdIndex >= 0 ? norm(String(currentRow[equipIdIndex] ?? "")) : "";
 
-      // ✅ Case 1: Both present → MUST match
+      // Case 1: Both present → MUST match
       if (unitVal && equipVal && normId(unitVal) !== normId(equipVal)) {
         errors.push({
           row: i + 1,
@@ -383,7 +405,7 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // ✅ Case 2: One missing → throw error (strict mode)
+      // Case 2: One missing → throw error (strict mode)
       if ((unitVal && !equipVal) || (!unitVal && equipVal)) {
         errors.push({
           row: i + 1,
@@ -393,7 +415,7 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // ✅ Case 3: Both missing
+      // Case 3: Both missing
       if (!unitVal && !equipVal) {
         errors.push({
           row: i + 1,
@@ -493,7 +515,7 @@ export async function POST(req: NextRequest) {
 
     const enhancedHeaders = ["Sr No", "Unit ID", ...headers.filter(h =>
       !["Sr No", "Unit ID"].includes(h) &&
-      !unitIdHeaderCandidates.includes(h.trim().toLowerCase())
+      !unitIdHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
     )];
     const dataHeaders = enhancedHeaders.filter(h => !["Sr No", "Unit ID"].includes(h));
     const categoryCounts = countFieldCategories(dataHeaders, isCanadaTrailers);
