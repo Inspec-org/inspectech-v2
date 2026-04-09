@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
         const referenceMaskMap: Record<string, string> = {
             'Front Left Side': 'front_left_mask.png',
             'Front Right Side': 'front_right_mask.png',
-            'Rare Left Side': 'rear_left_mask.png',
-            'Rare Right Side': 'rear_right_mask.png',
+            'Rear Left Side': 'rear_left_mask.png',
+            'Rear Right Side': 'rear_right_mask.png',
             'Inside Trailer Image': 'inside_trailer_mask.png',
             'Door Details Image': 'door_details_mask.png',
         };

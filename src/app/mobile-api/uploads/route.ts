@@ -83,9 +83,15 @@ export async function POST(req: NextRequest) {
 
     // Store both URL and filename if it's a PDF
     const updateFields: any = { [field]: secure_url };
+    // console.log("before",updateFields)
     if (field === 'dotFormPdfUrl' && originalFileName) {
+      // console.log('dotFormPdfUrlName', originalFileName)
       updateFields['dotFormPdfFileName'] = originalFileName;
     }
+    // console.log("after",updateFields)
+
+    const inspection=await Inspection.findOne({ unitId:unitId });
+    console.log(unitId,inspection)
 
     const updated = await (Inspection as any).findOneAndUpdate(
       { unitId },
@@ -95,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     if (!updated) {
       return NextResponse.json({
-        message: "Inspection not found",
+        message: "Inspection not Updated",
         secure_url,
         public_id: filename,
         originalFileName
