@@ -18,3 +18,4 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 EXPOSE 3000
 CMD ["sh","-c","node node_modules/next/dist/bin/next start -p ${PORT}"]
+
