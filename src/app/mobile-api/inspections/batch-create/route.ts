@@ -35,6 +35,18 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
+    const topVendorId = body?.vendorId;
+    const topDepartmentId = body?.departmentId;
+
+    if (!topVendorId || !topDepartmentId) {
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "vendorId and departmentId required",
+        data: null
+      }, { status: 400 });
+    }
+
     /* ================= DB ================= */
     await connectDB();
 
@@ -49,19 +61,17 @@ export async function POST(req: NextRequest) {
     payloads.forEach((p: any, index: number) => {
 
       const unitId = String(p?.unitId || "").trim();
-      const vendorId = p?.vendorId;
-      const departmentId = p?.departmentId;
 
-      if (!unitId || !vendorId || !departmentId) {
+      if (!unitId) {
         errors.push({
           index,
           unitId,
-          message: "unitId, vendorId, departmentId required",
+          message: "unitId required",
         });
         return;
       }
 
-      const doc: any = { ...p, unitId, vendorId, departmentId };
+      const doc: any = { ...p, unitId, vendorId: topVendorId, departmentId: topDepartmentId };
 
       ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
         if (normalizeEmpty(doc[key])) {
