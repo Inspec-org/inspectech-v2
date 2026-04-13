@@ -14,12 +14,10 @@ export async function POST(req: NextRequest) {
         const user = await getUserFromToken(token);
 
         if (!user) {
-            return NextResponse.json({
-                status: 401,
-                success: false,
-                message: "Unauthorized",
-                data: null
-            }, { status: 401 });
+            return NextResponse.json(
+                { success: false, message: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
         /* -------------------- BODY -------------------- */
@@ -44,16 +42,11 @@ export async function POST(req: NextRequest) {
 
         if (vendorIds.length === 0 && !(user.role === 'superadmin' && Array.isArray(unitIds) && unitIds.length > 0)) {
             return NextResponse.json({
-                status: 200,
                 success: true,
-                message: "No vendor access found for user",
-                data: {
-                    vendorInspectionCounts: [],
-                    vendorReviewIssueAnalytics: [],
-                    vendorInspectionStatusCounts: [],
-                    totalVendors: 0
-                }
-            }, { status: 200 });
+                vendorInspectionCounts: [],
+                vendorReviewIssueAnalytics: [],
+                message: "No vendor access found for user"
+            });
         }
 
         /* -------------------- BASE QUERY -------------------- */
@@ -64,12 +57,10 @@ export async function POST(req: NextRequest) {
 
         if (departmentId) {
             if (!Types.ObjectId.isValid(departmentId)) {
-                return NextResponse.json({
-                    status: 400,
-                    success: false,
-                    message: "Invalid departmentId",
-                    data: null
-                }, { status: 400 });
+                return NextResponse.json(
+                    { success: false, message: "Invalid departmentId" },
+                    { status: 400 }
+                );
             }
             query.departmentId = new Types.ObjectId(departmentId);
         }
@@ -358,22 +349,17 @@ export async function POST(req: NextRequest) {
 
         /* -------------------- RESPONSE -------------------- */
         return NextResponse.json({
-            status: 200,
             success: true,
-            message: "Report generated successfully",
-            data: {
-                vendorInspectionCounts,
-                vendorReviewIssueAnalytics,
-                vendorInspectionStatusCounts,
-                totalVendors: vendorIds.length
-            }
-        }, { status: 200 });
+            vendorInspectionCounts,
+            vendorReviewIssueAnalytics,
+            vendorInspectionStatusCounts,
+            totalVendors: vendorIds.length
+        });
     } catch (error: any) {
-        return NextResponse.json({
-            status: 500,
-            success: false,
-            message: error?.message || "Internal Server Error",
-            data: null
-        }, { status: 500 });
+        ;
+        return NextResponse.json(
+            { success: false, message: error?.message || "Internal Server Error" },
+            { status: 500 }
+        );
     }
 }
