@@ -29,6 +29,8 @@ export async function PATCH(req: NextRequest) {
       reviewCompletedAt
     } = body;
 
+    console.log(body);
+
     if (!unitId || !vendorId || !departmentId) {
       return NextResponse.json(
         { success: false, message: "unitId, vendorId, departmentId required" },

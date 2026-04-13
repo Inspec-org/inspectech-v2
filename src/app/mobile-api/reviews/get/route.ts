@@ -5,329 +5,346 @@ import Vendor from "@/lib/models/Vendor";
 import Department from "@/lib/models/Departments";
 import "@/lib/models/Inspections";
 import { getUserFromToken } from "@/lib/getUserFromToken";
+import mongoose from "mongoose";
+
+const normalize = (arr: string[] = []) =>
+    arr.map(v => String(v).toLowerCase());
+
+const buildDateRange = (dates: string[]) => {
+    if (!dates?.length) return null;
+
+    if (dates.length >= 2) {
+        const start = new Date(dates[0]);
+        const end = new Date(dates[1]);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+
+        return { $gte: start, $lte: end };
+    }
+
+    return {
+        $or: dates.map(d => {
+            const start = new Date(d);
+            const end = new Date(d);
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
+
+            return { $gte: start, $lte: end };
+        })
+    };
+};
 
 export async function POST(req: NextRequest) {
     try {
-        const authHeader = req.headers.get("Authorization");
-        const token = authHeader?.split(" ")[1];
+        // ================= AUTH =================
+        const token = req.headers.get("Authorization")?.split(" ")[1];
         const user = await getUserFromToken(token);
+
         if (!user) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            );
+            return NextResponse.json({
+                status: 401,
+                success: false,
+                message: "Unauthorized",
+                data: null
+            }, { status: 401 });
         }
 
         await connectDB();
 
         const body = await req.json();
-        const page = parseInt(body.page ?? 1, 10);
-        const limit = parseInt(body.limit ?? 10, 10);
-        const department = body.department ?? undefined;
-        const vendorId = body.vendorId ?? undefined;
-        const filters = body.filters ?? {};
-        const optionsOnly = Boolean(body.optionsOnly);
+
+        const {
+            page = 1,
+            limit = 10,
+            department,
+            vendorId,
+            filters = {},
+            optionsOnly = false,
+            fetchAllIds = false
+        } = body;
+
+
+
         const query: any = {};
 
-        // --------------------------------------------------
-        // BASE FILTERS
-        // --------------------------------------------------
-        if (department) query.departmentId = department;
-        if (vendorId) query.vendorId = vendorId;
-
-        if (optionsOnly) {
-            const base = { ...query };
-
-            const unitIds = await Review.distinct("unitId", base);
-            const missingDataRaw = await Review.distinct("missingData", base);
-            const emailRaw = await Review.distinct("emailNotification", base);
-
-            const reqDocs = await Review.find(base).select("reviewRequestedAt").lean();
-            const compDocs = await Review.find(base).select("reviewCompletedAt").lean();
-            const reviewRequested = Array.from(new Set(reqDocs.filter(d => d.reviewRequestedAt).map(d => new Date(d.reviewRequestedAt as any).toISOString().slice(0, 10))));
-            const reviewCompleted = Array.from(new Set(compDocs.filter(d => d.reviewCompletedAt).map(d => new Date(d.reviewCompletedAt as any).toISOString().slice(0, 10))));
-
-            const { default: Inspection } = await import("@/lib/models/Inspections");
-            const insps = await Inspection.find(base)
-                .select("inspectionStatus dateDay dateMonth dateYear")
-                .lean();
-            const inspectionStatus = Array.from(new Set(
-                insps.map((i: any) => String(i.inspectionStatus || "")).filter(Boolean)
-            ));
-            const dateCreated = Array.from(new Set(
-                insps.map((i: any) => {
-                    if (!i.dateYear || !i.dateMonth || !i.dateDay) return null;
-                    const y = String(i.dateYear);
-                    const m = String(i.dateMonth).padStart(2, "0");
-                    const d = String(i.dateDay).padStart(2, "0");
-                    return `${y}-${m}-${d}`;
-                }).filter(Boolean)
-            ));
-
-            const toLabel = (s: string) => (s === "none" ? "None" : s === "incomplete image file" ? "Incomplete Image File" : s === "incomplete checklist" ? "Incomplete Checklist" : s === "incomplete dot form" ? "Incomplete DOT Form" : s);
-
-            const options = {
-                unitId: unitIds.map((v: any) => String(v)),
-                inspectionStatus,
-                vendor: [],
-                department: [],
-                dateCreated,
-                reviewRequested,
-                missingData: missingDataRaw.filter(Boolean).map((v: any) => toLabel(String(v))),
-                reviewCompleted,
-                emailNotification: emailRaw.filter(Boolean).map((v: any) => (String(v) === "yes" ? "Yes" : String(v) === "no" ? "No" : String(v) === "manually sent" ? "Manually Sent" : String(v)))
-            };
-
-            return NextResponse.json({ success: true, options });
+        // ================= BASE FILTERS =================
+        if (department) {
+            query.departmentId = new mongoose.Types.ObjectId(department);
         }
 
-        // --------------------------------------------------
-        // UNIT ID (Review)
-        // --------------------------------------------------
-        if (filters.unitId?.length > 0) {
+        if (vendorId) {
+            query.vendorId = new mongoose.Types.ObjectId(vendorId);
+        }
+
+        // ================= APPLY ALL FILTERS FIRST =================
+
+        if (filters.unitId?.length) {
             query.unitId = { $in: filters.unitId };
         }
 
-        // --------------------------------------------------
-        // VENDOR FILTER (BY NAME → ID)
-        // --------------------------------------------------
-        // if (filters.vendor?.length > 0) {
-
-        //     const vendorDocs = await Vendor.find({
-        //         name: { $in: filters.vendor }
-        //     }).select("_id").lean();
-
-        //     query.vendorId = { $in: vendorDocs.map(v => v._id) };
-        // }
-
-        // --------------------------------------------------
-        // DEPARTMENT FILTER (BY NAME → ID)
-        // --------------------------------------------------
-        if (filters.department?.length > 0) {
-
+        if (filters.department?.length) {
             const deptDocs = await Department.find({
                 name: { $in: filters.department }
-            }).select("_id").lean();
+            }).select("_id");
 
-            query.departmentId = { $in: deptDocs.map(d => d._id) };
-        }
-
-        // --------------------------------------------------
-        // MISSING DATA (Review)
-        // --------------------------------------------------
-        if (filters.missingData?.length > 0) {
-            query.missingData = {
-                $in: filters.missingData.map((v: string) => v.toLowerCase())
+            query.departmentId = {
+                $in: deptDocs.map(d => new mongoose.Types.ObjectId(d._id))
             };
         }
 
-        // --------------------------------------------------
-        // EMAIL NOTIFICATION (Review)
-        // --------------------------------------------------
-        if (filters.email_notifcation?.length > 0) {
-            query.emailNotification = {
-                $in: filters.email_notifcation.map((v: string) => v.toLowerCase())
-            };
+        if (filters.missingData?.length) {
+            query.missingData = { $in: normalize(filters.missingData) };
         }
 
-        // --------------------------------------------------
-        // INSPECTION-LEVEL FILTERS
-        // --------------------------------------------------
-        const inspectionMatch: any = {};
-
-        // STATUS
-        if (filters.inspectionStatus?.length > 0) {
-            inspectionMatch.inspectionStatus = {
-                $in: filters.inspectionStatus.map((s: string) => s.toLowerCase())
-            };
+        if (filters.email_notification?.length) {
+            query.emailNotification = { $in: normalize(filters.email_notification) };
         }
 
-        // DATE CREATED
-        if (filters.dateCreated?.length > 0) {
-            if (filters.dateCreated.length >= 2) {
-                const [startStr, endStr] = filters.dateCreated;
-                const start = new Date(startStr);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(endStr);
-                end.setHours(23, 59, 59, 999);
-                const dateExpr: any = {
-                    $dateFromParts: {
-                        year: { $toInt: "$dateYear" },
-                        month: { $toInt: "$dateMonth" },
-                        day: { $toInt: "$dateDay" }
-                    }
-                };
-                inspectionMatch.$expr = { $and: [ { $gte: [dateExpr, start] }, { $lte: [dateExpr, end] } ] };
-            } else {
-                const dates = filters.dateCreated.map((d: string) => new Date(d));
-                inspectionMatch.$or = dates.map((dt: Date) => {
-                    const day = dt.getUTCDate();
-                    const month = dt.getUTCMonth() + 1;
-                    const year = dt.getUTCFullYear();
-                    const dayMatch = day < 10 ? { $in: [day, `0${day}`] } : day;
-                    const monthMatch = month < 10 ? { $in: [month, `0${month}`] } : month;
-                    return { dateDay: dayMatch, dateMonth: monthMatch, dateYear: year };
-                });
-            }
+        if (filters.reviewRequested?.length) {
+            query.reviewRequestedAt = buildDateRange(filters.reviewRequested);
         }
 
+        if (filters.reviewCompleted?.length) {
+            query.reviewCompletedAt = buildDateRange(filters.reviewCompleted);
+        }
+        if (fetchAllIds) {
+            const allReviews = await Review.find(query)
+                .select("unitId vendorId departmentId")
+                .lean();
+            return NextResponse.json({
+                status: 200,
+                success: true,
+                message: "",
+                data: {
+                    total: allReviews.length,
+                    allReviews: allReviews.map(r => ({
+                        id: r.unitId,
+                        vendorId: String(r.vendorId),
+                        departmentId: String(r.departmentId)
+                    }))
+                }
+            });
+        }
+        // ================= INSPECTION FILTER =================
+        let inspectionIds: any[] = [];
 
-
-        // --------------------------------------------------
-        // FETCH INSPECTIONS IF NEEDED
-        // --------------------------------------------------
-        if (Object.keys(inspectionMatch).length > 0) {
-
+        if (filters.inspectionStatus?.length || filters.dateCreated?.length) {
             const { default: Inspection } = await import("@/lib/models/Inspections");
+
+            const inspectionMatch: any = {};
+
+            if (filters.inspectionStatus?.length) {
+                inspectionMatch.inspectionStatus = {
+                    $in: normalize(filters.inspectionStatus)
+                };
+            }
+
+            if (filters.dateCreated?.length) {
+                const [start, end] = filters.dateCreated;
+
+                if (end) {
+                    inspectionMatch.$expr = {
+                        $and: [
+                            {
+                                $gte: [
+                                    {
+                                        $dateFromParts: {
+                                            year: { $toInt: "$dateYear" },
+                                            month: { $toInt: "$dateMonth" },
+                                            day: { $toInt: "$dateDay" }
+                                        }
+                                    },
+                                    new Date(start)
+                                ]
+                            },
+                            {
+                                $lte: [
+                                    {
+                                        $dateFromParts: {
+                                            year: { $toInt: "$dateYear" },
+                                            month: { $toInt: "$dateMonth" },
+                                            day: { $toInt: "$dateDay" }
+                                        }
+                                    },
+                                    new Date(end)
+                                ]
+                            }
+                        ]
+                    };
+                }
+            }
 
             const inspections = await Inspection.find(inspectionMatch)
                 .select("_id")
                 .lean();
 
-            const inspectionIds = inspections.map(i => i._id);
+            inspectionIds = inspections.map(i => i._id);
 
-            if (inspectionIds.length === 0) {
+            if (!inspectionIds.length && !optionsOnly) {
                 return NextResponse.json({
+                    status: 200,
                     success: true,
-                    reviews: [],
-                    total: 0,
-                    page,
-                    limit
-                });
+                    message: "No reviews found",
+                    data: {
+                        reviews: [],
+                        total: 0,
+                        page,
+                        limit
+                    }
+                }, { status: 200 });
             }
 
             query.inspectionId = { $in: inspectionIds };
         }
 
-        // --------------------------------------------------
-        // REVIEW REQUESTED DATE (Review)
-        // --------------------------------------------------
-        if (filters.reviewRequested?.length > 0) {
-            if (filters.reviewRequested.length >= 2) {
-                const [startStr, endStr] = filters.reviewRequested;
-                const start = new Date(startStr);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(endStr);
-                end.setHours(23, 59, 59, 999);
-                if (query.$or) {
-                    const prevOr = query.$or;
-                    delete query.$or;
-                    query.$and = [{ $or: prevOr }, { reviewRequestedAt: { $gte: start, $lte: end } }];
-                } else if (query.$and) {
-                    query.$and.push({ reviewRequestedAt: { $gte: start, $lte: end } });
-                } else {
-                    query.reviewRequestedAt = { $gte: start, $lte: end };
-                }
-            } else {
-                const orConds = filters.reviewRequested.map((d: string) => {
-                    const start = new Date(d);
-                    start.setHours(0, 0, 0, 0);
-                    const end = new Date(d);
-                    end.setHours(23, 59, 59, 999);
-                    return { reviewRequestedAt: { $gte: start, $lte: end } };
-                });
-                if (query.$and) {
-                    query.$and.push({ $or: orConds });
-                } else if (query.$or) {
-                    const prevOr = query.$or;
-                    delete query.$or;
-                    query.$and = [{ $or: prevOr }, { $or: orConds }];
-                } else {
-                    query.$or = orConds;
-                }
-            }
+        // ================= OPTIONS ONLY =================
+        if (optionsOnly) {
+            const { default: Inspection } = await import("@/lib/models/Inspections");
+
+            const inspectionIds = await Review.distinct("inspectionId", query);
+
+            const inspectionMatch = inspectionIds.length
+                ? { _id: { $in: inspectionIds } }
+                : { _id: null };
+
+            const [reviewData, inspectionData] = await Promise.all([
+                Review.aggregate([
+                    { $match: query },
+                    {
+                        $group: {
+                            _id: null,
+                            unitId: { $addToSet: "$unitId" },
+                            missingData: { $addToSet: "$missingData" },
+                            emailNotification: { $addToSet: "$emailNotification" },
+                            reviewRequested: { $addToSet: "$reviewRequestedAt" },
+                            reviewCompleted: { $addToSet: "$reviewCompletedAt" }
+                        }
+                    }
+                ]),
+                Inspection.aggregate([
+                    { $match: inspectionMatch },
+                    {
+                        $group: {
+                            _id: null,
+                            inspectionStatus: { $addToSet: "$inspectionStatus" },
+                            dateCreated: {
+                                $addToSet: {
+                                    $cond: [
+                                        {
+                                            $and: [
+                                                { $gt: [{ $toInt: "$dateYear" }, 2000] },
+                                                { $lte: [{ $toInt: "$dateMonth" }, 12] },
+                                                { $lte: [{ $toInt: "$dateDay" }, 31] }
+                                            ]
+                                        },
+                                        {
+                                            $dateToString: {
+                                                format: "%Y-%m-%d",
+                                                date: {
+                                                    $dateFromParts: {
+                                                        year: { $toInt: "$dateYear" },
+                                                        month: { $toInt: "$dateMonth" },
+                                                        day: { $toInt: "$dateDay" }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        null
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ])
+            ]);
+
+            const options = {
+                unitId: reviewData?.[0]?.unitId || [],
+                missingData: reviewData?.[0]?.missingData || [],
+                emailNotification: reviewData?.[0]?.emailNotification || [],
+                reviewRequested: (reviewData?.[0]?.reviewRequested || [])
+                    .filter(Boolean)
+                    .map((d: any) => new Date(d).toISOString().slice(0, 10)),
+                reviewCompleted: (reviewData?.[0]?.reviewCompleted || [])
+                    .filter(Boolean)
+                    .map((d: any) => new Date(d).toISOString().slice(0, 10)),
+                inspectionStatus: inspectionData?.[0]?.inspectionStatus || [],
+                dateCreated: (inspectionData?.[0]?.dateCreated || []).filter(Boolean)
+            };
+
+            return NextResponse.json({
+                status: 200,
+                success: true,
+                message: "Options fetched successfully",
+                data: options
+            }, { status: 200 });
         }
 
+        // ================= MAIN QUERY =================
+        const [total, reviewsRaw] = await Promise.all([
+            Review.countDocuments(query),
+            Review.find(query)
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .populate("inspectionId", "inspectionStatus dateDay dateMonth dateYear")
+                .lean()
+        ]);
 
-        // --------------------------------------------------
-        // REVIEW COMPLETED DATE (Review)
-        // --------------------------------------------------
-        if (filters.reviewCompleted?.length > 0) {
-            if (filters.reviewCompleted.length >= 2) {
-                const [startStr, endStr] = filters.reviewCompleted;
-                const start = new Date(startStr);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(endStr);
-                end.setHours(23, 59, 59, 999);
-                if (query.$or) {
-                    const prevOr = query.$or;
-                    delete query.$or;
-                    query.$and = [{ $or: prevOr }, { reviewCompletedAt: { $gte: start, $lte: end } }];
-                } else if (query.$and) {
-                    query.$and.push({ reviewCompletedAt: { $gte: start, $lte: end } });
-                } else {
-                    query.reviewCompletedAt = { $gte: start, $lte: end };
+        if (!reviewsRaw.length) {
+            return NextResponse.json({
+                status: 200,
+                success: true,
+                message: "No reviews found",
+                data: {
+                    reviews: [],
+                    total,
+                    page,
+                    limit
                 }
-            } else {
-                const orConds = filters.reviewCompleted.map((d: string) => {
-                    const start = new Date(d);
-                    start.setHours(0, 0, 0, 0);
-                    const end = new Date(d);
-                    end.setHours(23, 59, 59, 999);
-                    return { reviewCompletedAt: { $gte: start, $lte: end } };
-                });
-                if (query.$and) {
-                    query.$and.push({ $or: orConds });
-                } else if (query.$or) {
-                    const prevOr = query.$or;
-                    delete query.$or;
-                    query.$and = [{ $or: prevOr }, { $or: orConds }];
-                } else {
-                    query.$or = orConds;
-                }
-            }
+            }, { status: 200 });
         }
 
-        // --------------------------------------------------
-        // QUERY REVIEWS
-        // --------------------------------------------------
-        const total = await Review.countDocuments(query);
-        ;
+        // ================= MAP NAMES =================
+        const vendorIds = [...new Set(reviewsRaw.map(r => String(r.vendorId)))];
+        const deptIds = [...new Set(reviewsRaw.map(r => String(r.departmentId)))];
 
-        const result = await Review.find(query)
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .populate("inspectionId", "inspectionStatus dateDay dateMonth dateYear")
-            .lean();
+        const [vendors, depts] = await Promise.all([
+            Vendor.find({ _id: { $in: vendorIds } }).select("name").lean(),
+            Department.find({ _id: { $in: deptIds } }).select("name").lean()
+        ]);
 
-        // --------------------------------------------------
-        // MAP VENDOR / DEPARTMENT NAMES
-        // --------------------------------------------------
-        const vendorIds = [...new Set(result.map(r => String(r.vendorId)))];
-        const deptIds = [...new Set(result.map(r => String(r.departmentId)))];
+        const vendorMap = Object.fromEntries(
+            vendors.map(v => [String(v._id), v.name])
+        );
+        const deptMap = Object.fromEntries(
+            depts.map(d => [String(d._id), d.name])
+        );
 
-
-
-        const vendors = await Vendor.find({ _id: { $in: vendorIds } })
-            .select("name")
-            .lean();
-
-        const depts = await Department.find({ _id: { $in: deptIds } })
-            .select("name")
-            .lean();
-
-        const vendorMap = Object.fromEntries(vendors.map(v => [String(v._id), v.name]));
-        const deptMap = Object.fromEntries(depts.map(d => [String(d._id), d.name]));
-
-        const reviews = result.map(r => ({
+        const reviews = reviewsRaw.map(r => ({
             ...r,
             vendorName: vendorMap[String(r.vendorId)] || "",
             departmentName: deptMap[String(r.departmentId)] || ""
         }));
 
         return NextResponse.json({
+            status: 200,
             success: true,
-            reviews,
-            total,
-            page,
-            limit
-        });
+            message: "Reviews fetched successfully",
+            data: {
+                reviews,
+                total,
+                page,
+                limit
+            }
+        }, { status: 200 });
+
     } catch (error: any) {
-        ;
-        return NextResponse.json(
-            { success: false, message: error?.message || "Internal Server Error" },
-            { status: 500 }
-        );
+        return NextResponse.json({
+            status: 500,
+            success: false,
+            message: error?.message || "Internal Server Error",
+            data: null
+        }, { status: 500 });
     }
 }

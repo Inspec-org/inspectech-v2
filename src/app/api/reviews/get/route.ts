@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
         const vendorId = body.vendorId ?? undefined;
         const filters = body.filters ?? {};
         const optionsOnly = Boolean(body.optionsOnly);
+        const fetchAllIds = Boolean(body.fetchAllIds);
         const query: any = {};
 
         // --------------------------------------------------
@@ -282,7 +283,22 @@ export async function POST(req: NextRequest) {
         // QUERY REVIEWS
         // --------------------------------------------------
         const total = await Review.countDocuments(query);
-        ;
+
+        if (fetchAllIds) {
+            const allReviews = await Review.find(query)
+                .select("unitId vendorId departmentId")
+                .lean();
+            return NextResponse.json({
+                success: true,
+                total,
+                allReviews: allReviews.map(r => ({
+                    id: r.unitId,
+                    vendorId: String(r.vendorId),
+                    departmentId: String(r.departmentId)
+                }))
+            });
+        }
+        
 
         const result = await Review.find(query)
             .sort({ createdAt: -1 })

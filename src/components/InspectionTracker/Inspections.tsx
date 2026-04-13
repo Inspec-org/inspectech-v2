@@ -37,7 +37,9 @@ function TrackingInspections() {
     const [openGeneratedReport, setOpenGeneratedReport] = useState(false);
     const [selectedCount, setSelectedCount] = useState(0);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
+    const [selectedFullData, setSelectedFullData] = useState<any[]>([]);
     const [selectAll, setSelectAll] = useState(false);
+    const [isAllAcrossPagesSelected, setIsAllAcrossPagesSelected] = useState(false);
     const [loading, setLoading] = useState(true)
     const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
     useEffect(() => { setSelectedCount(selectedRows.length); }, [selectedRows]);
@@ -62,6 +64,9 @@ function TrackingInspections() {
     const [editingValues, setEditingValues] = useState<any>(null);
     const [inspectionData, setInspectionData] = useState<any[]>([]);
     const [filtersReady, setFiltersReady] = useState(false);
+    const [vendorId, setVendorId] = useState<string>('');
+    const [departmentId, setDepartmentId] = useState<string>('');
+    const lastFetchKeyRef = React.useRef<string | null>(null);
     const { isOpen: isEditModalOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
     const [formData, setFormData] = useState<{
         reviewCompletedAt?: string;
@@ -83,9 +88,24 @@ function TrackingInspections() {
     const toLabel = (s: string) => (s === 'none' ? 'None' : s === 'incomplete image file' ? 'Incomplete Image File' : s === 'incomplete checklist' ? 'Incomplete Checklist' : s === 'incomplete dot form' ? 'Incomplete DOT Form' : s);
     const toEmailLabel = (s: string) => (s === 'yes' ? 'Yes' : s === 'no' ? 'No' : s === 'manually sent' ? 'Manually Sent' : s);
     const fromLabel = (s: string) => (s || '').toLowerCase();
-    const getReviews = React.useCallback(async () => {
-        const vendorId = Cookies.get('selectedVendorId') || '';
-        const departmentId = Cookies.get('selectedDepartmentId') || '';
+    const getReviews = React.useCallback(async (force = false) => {
+        if (!vendorId || !departmentId) {
+            setReports([]);
+            setTotalCount(0);
+            setInspectionData([]);
+            return;
+        }
+
+        const key = JSON.stringify({
+            vendorId,
+            departmentId,
+            page: currentPage,
+            limit: pageSize,
+            filters: selectedFilters,
+        });
+
+        if (!force && lastFetchKeyRef.current === key) return;
+        lastFetchKeyRef.current = key;
 
         try {
             setLoading(true);
@@ -159,9 +179,9 @@ function TrackingInspections() {
         } finally {
             setLoading(false);
         }
-    }, [selectedFilters, currentPage, pageSize]);
+    }, [selectedFilters, currentPage, pageSize, vendorId, departmentId]);
 
-    // fetch vendor & department lists for inline editing
+    // fetch vendor & department lists for inline editing and initial vendor/department
     useEffect(() => {
         (async () => {
             try {
@@ -175,42 +195,49 @@ function TrackingInspections() {
                     const jd = await dRes.json();
                     setDepartments(jd.departments || []);
                 }
-                const vendorId = Cookies.get('selectedVendorId') || '';
-                const departmentId = Cookies.get('selectedDepartmentId') || '';
-                const oRes = await apiRequest('/api/reviews/get', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ page: 1, limit: 1, vendorId, department: departmentId, optionsOnly: true })
-                });
-                if (oRes.ok) {
-                    const jo = await oRes.json();
-                    setFullOptions(jo.options || {});
+                const initialVendorId = Cookies.get('selectedVendorId') || '';
+                const initialDepartmentId = Cookies.get('selectedDepartmentId') || '';
+                setVendorId(initialVendorId);
+                setDepartmentId(initialDepartmentId);
+                if (initialVendorId && initialDepartmentId) {
+                    const oRes = await apiRequest('/api/reviews/get', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: 1, limit: 1, vendorId: initialVendorId, department: initialDepartmentId, optionsOnly: true })
+                    });
+                    if (oRes.ok) {
+                        const jo = await oRes.json();
+                        setFullOptions(jo.options || {});
+                    }
                 }
             } catch (e) {
                 // ignore
             }
         })();
     }, []);
+
     useEffect(() => {
         if (!filtersReady) return;
+        if (!vendorId || !departmentId) return;
         getReviews();
 
-    }, [selectedFilters, filtersReady, currentPage, pageSize]);
+    }, [selectedFilters, filtersReady, currentPage, pageSize, vendorId, departmentId, getReviews]);
 
     useEffect(() => {
         const onDept = () => {
             const params = new URLSearchParams(searchParams);
             params.set('tracking_page', '1');
             window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-            getReviews();
+            const depId = Cookies.get('selectedDepartmentId') || '';
+            setDepartmentId(depId);
             (async () => {
                 try {
-                    const vendorId = Cookies.get('selectedVendorId') || '';
-                    const departmentId = Cookies.get('selectedDepartmentId') || '';
+                    const vId = Cookies.get('selectedVendorId') || '';
+                    if (!vId || !depId) return;
                     const oRes = await apiRequest('/api/reviews/get', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ page: 1, limit: 1, vendorId, department: departmentId, optionsOnly: true })
+                        body: JSON.stringify({ page: 1, limit: 1, vendorId: vId, department: depId, optionsOnly: true })
                     });
                     if (oRes.ok) {
                         const jo = await oRes.json();
@@ -223,15 +250,16 @@ function TrackingInspections() {
             const params = new URLSearchParams(searchParams);
             params.set('tracking_page', '1');
             window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-            getReviews();
+            const vId = Cookies.get('selectedVendorId') || '';
+            setVendorId(vId);
             (async () => {
                 try {
-                    const vendorId = Cookies.get('selectedVendorId') || '';
-                    const departmentId = Cookies.get('selectedDepartmentId') || '';
+                    const depId = Cookies.get('selectedDepartmentId') || '';
+                    if (!vId || !depId) return;
                     const oRes = await apiRequest('/api/reviews/get', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ page: 1, limit: 1, vendorId, department: departmentId, optionsOnly: true })
+                        body: JSON.stringify({ page: 1, limit: 1, vendorId: vId, department: depId, optionsOnly: true })
                     });
                     if (oRes.ok) {
                         const jo = await oRes.json();
@@ -447,25 +475,74 @@ function TrackingInspections() {
     };
     const handleClearSelection = () => {
         setSelectedRows([]);
+        setSelectedFullData([]);
         setSelectedCount(0);
+        setIsAllAcrossPagesSelected(false);
+        setSelectAll(false);
     };
 
-    const handleSelectAll = () => {
+    const handleSelectAll = async () => {
         if (selectAll) {
             setSelectedRows([]);
-        } else {
-            setSelectedRows(reports.map((row) => row.id));
+            setSelectedFullData([]);
+            setIsAllAcrossPagesSelected(false);
+            setSelectAll(false);
+            return;
         }
-        setSelectAll(!selectAll);
+
+        try {
+            const vId = vendorId || Cookies.get('selectedVendorId') || '';
+            const dId = departmentId || Cookies.get('selectedDepartmentId') || '';
+
+            if (!vId || !dId) {
+                toast.error('Please select vendor and department first');
+                return;
+            }
+
+            const res = await apiRequest('/api/reviews/get', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fetchAllIds: true,
+                    department: dId,
+                    vendorId: vId,
+                    filters: selectedFilters,
+                }),
+            });
+
+            const json = await res.json();
+            if (res.ok && json.success) {
+                const allData = json.allReviews || [];
+                setSelectedRows(allData.map((r: any) => r.id));
+                setSelectedFullData(allData);
+                setIsAllAcrossPagesSelected(true);
+                setSelectAll(true);
+            } else {
+                toast.error(json.message || 'Failed to select all');
+            }
+        } catch (e: any) {
+            toast.error(e.message || 'Server error');
+        }
     };
 
     const handleSelectRow = (id: string) => {
         if (selectedRows.includes(id)) {
             setSelectedRows(selectedRows.filter((rowId) => rowId !== id));
+            setSelectedFullData(selectedFullData.filter((r) => r.id !== id));
+            setIsAllAcrossPagesSelected(false);
         } else {
+            const row = reports.find(r => r.id === id);
             setSelectedRows([...selectedRows, id]);
+            if (row) {
+                setSelectedFullData([...selectedFullData, {
+                    id: row.id,
+                    vendorId: row.vendorId,
+                    departmentId: row.departmentId
+                }]);
+            }
         }
     };
+
 
     const handleApplyFilters = (filters: { [key: string]: string[] }) => {
         const params = new URLSearchParams(searchParams);
@@ -494,8 +571,10 @@ function TrackingInspections() {
 
     const handleRefreshAfterUpdate = () => {
         setSelectedRows([]);
+        setSelectedFullData([]);
         setSelectAll(false);
-        getReviews();
+        setIsAllAcrossPagesSelected(false);
+        getReviews(true);
     };
 
     const columns: Column<ReportData>[] = [
@@ -817,6 +896,7 @@ function TrackingInspections() {
                 />,
         },
     ];
+    
     const filterCount = Object.values(selectedFilters).reduce((acc, arr) => acc + arr.length, 0);
     return (
         <Suspense fallback={<div>Loading...</div>}>
@@ -930,7 +1010,7 @@ function TrackingInspections() {
                 isOpen={isNotificationModalOpen}
                 onClose={() => setIsNotificationModalOpen(false)}
                 selectedUnitIds={selectedRows}
-                allInspections={reports}
+                allInspections={selectedFullData}
                 onUpdated={handleRefreshAfterUpdate}
             />
             <FilterTrackingModal
@@ -951,7 +1031,7 @@ function TrackingInspections() {
                 onChange={handleChange}
                 onDropdownChange={handleDropdownChange}
                 selectedUnitIds={selectedRows}
-                selectedUnitsData={reports.filter(r => selectedRows.includes(r.id))} // Pass full data
+                selectedUnitsData={selectedFullData} // Pass full data
                 onUpdated={handleRefreshAfterUpdate}
             />
 

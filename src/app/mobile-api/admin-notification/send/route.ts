@@ -3,25 +3,73 @@ import { sendEmail } from "@/lib/sendEmail";
 import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
 import Review from "@/lib/models/Reviews";
+import { getUserFromToken } from "@/lib/getUserFromToken";
 
 export async function POST(req: NextRequest) {
   try {
-    const { recipients, unitIds, vendorName, vendorId, departmentId } = await req.json();
+    // ================= AUTH =================
+    const token = req.headers.get("Authorization")?.split(" ")[1];
+    const user = await getUserFromToken(token);
 
+    if (!user) {
+      return NextResponse.json({
+        status: 401,
+        success: false,
+        message: "Unauthorized",
+        data: null
+      }, { status: 401 });
+    }
+
+    const body = await req.json();
+
+    const {
+      recipients,
+      unitIds,
+      vendorName,
+      vendorId,
+      departmentId
+    } = body;
+
+    // ================= VALIDATION =================
     if (!Array.isArray(recipients) || recipients.length === 0) {
-      return NextResponse.json({ success: false, message: "recipients must be a non-empty array" }, { status: 400 });
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "recipients must be a non-empty array",
+        data: null
+      }, { status: 400 });
     }
+
     if (!Array.isArray(unitIds) || unitIds.length === 0) {
-      return NextResponse.json({ success: false, message: "unitIds must be a non-empty array" }, { status: 400 });
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "unitIds must be a non-empty array",
+        data: null
+      }, { status: 400 });
     }
+
     if (!vendorId || !departmentId) {
-      return NextResponse.json({ success: false, message: "vendorId and departmentId required" }, { status: 400 });
+      return NextResponse.json({
+        status: 400,
+        success: false,
+        message: "vendorId and departmentId required",
+        data: null
+      }, { status: 400 });
     }
+
+    await connectDB();
 
     const safeVendor = vendorName || "N/A";
     const count = unitIds.length;
-    const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" });
 
+    const dateStr = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+
+    // ================= EMAIL HTML =================
     const emailHtml = `
       <!DOCTYPE html><html><head><meta charSet="utf-8" />
       <style>
@@ -59,25 +107,70 @@ export async function POST(req: NextRequest) {
       </div></body></html>
     `;
 
+    // ================= CSV =================
     const csv = "unitId\n" + unitIds.join("\n");
-    const attachments = [{ filename: "unit_ids.csv", content: csv, contentType: "text/csv" }];
+    const attachments = [
+      {
+        filename: "unit_ids.csv",
+        content: csv,
+        contentType: "text/csv"
+      }
+    ];
 
-    await connectDB();
+    // ================= BULK UPDATE REVIEWS =================
+    const reviewUpdateResult = await Review.updateMany(
+      {
+        unitId: { $in: unitIds },
+        vendorId,
+        departmentId
+      },
+      {
+        $set: { emailNotification: "manually sent" }
+      }
+    );
 
-    for (const unitId of unitIds) {
-      const insp = await Inspection.findOne({ unitId, vendorId, departmentId }).select('_id').lean();
-      await Review.findOneAndUpdate(
-        { unitId, vendorId, departmentId },
-        {
-          $set: { emailNotification: 'manually sent' }
-        },
-        { upsert: true }
-      );
-    }
+    // ================= BULK UPDATE INSPECTIONS =================
+    const inspectionUpdateResult = await Inspection.updateMany(
+      {
+        unitId: { $in: unitIds },
+        vendorId,
+        departmentId
+      },
+      {
+        $set: { emailNotification: "manually sent" }
+      }
+    );
 
+    // ================= SEND EMAIL =================
     await sendEmail(recipients, "Admin Notification", emailHtml, attachments);
-    return NextResponse.json({ success: true, message: "Email sent" });
+
+    // ================= RESPONSE =================
+    return NextResponse.json({
+      status: 200,
+      success: true,
+      message: "Email sent successfully",
+      data: {
+        sentTo: recipients,
+        unitCount: unitIds.length,
+        vendorId,
+        departmentId,
+        reviewUpdated: {
+          matched: reviewUpdateResult.matchedCount,
+          modified: reviewUpdateResult.modifiedCount
+        },
+        inspectionUpdated: {
+          matched: inspectionUpdateResult.matchedCount,
+          modified: inspectionUpdateResult.modifiedCount
+        }
+      }
+    }, { status: 200 });
+
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({
+      status: 500,
+      success: false,
+      message: error?.message || "Internal Server Error",
+      data: null
+    }, { status: 500 });
   }
 }
