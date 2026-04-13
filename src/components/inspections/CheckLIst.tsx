@@ -2,12 +2,10 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { FormData } from './Edit';
-import DatePicker from "react-datepicker";
 import YearPicker from '../ui/YearPicker';
 import Cookies from 'js-cookie';
 
 export default function CheckList({ prop, formData, setFormData, missingKeys }: { prop: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; missingKeys?: string[] }) {
-
 
     const [expandedSections, setExpandedSections] = useState({
         identification: true,
@@ -60,1358 +58,545 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleDropdownChange = (name: string, value: string) => {
-
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
+
     const toggleSection = (section: keyof typeof expandedSections) => {
-        setExpandedSections(prev => ({
-            ...prev,
-            [section]: !prev[section]
-        }));
+        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
     const handleSetNA = (field: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: "N/A"
-        }));
+        setFormData(prev => ({ ...prev, [field]: "N/A" }));
     };
 
+    // ─── Layout helpers ──────────────────────────────────────────────────────────
+
+    const w = prop === "single" ? "xl:w-[230px] w-full" : "w-full";
+    const colRow = `flex flex-col justify-between gap-4 ${prop === "single" ? "xl:flex-row xl:items-center" : ""}`;
+    const flexRow = `flex flex-row justify-between gap-4 ${prop === "single" ? "xl:flex-row xl:items-center" : ""}`;
+
+    // ─── Reusable field components ───────────────────────────────────────────────
+
+    /** Plain text input with an N/A shortcut button */
+    const TextFieldWithNA = ({ name, label, value, disabled }: { name: string; label: React.ReactNode; value: string; disabled?: boolean; }) => (
+        <div className={colRow}>
+            <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <div className={`relative ${w}`}>
+                <input
+                    type="text"
+                    name={name}
+                    value={value}
+                    onChange={handleChange}
+                    placeholder="Enter value or click N/A"
+                    className="w-full px-3 py-2 pr-14 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none disabled:opacity-50"
+                    disabled={disabled}
+                />
+                <button
+                    type="button"
+                    onClick={() => handleSetNA(name)}
+                    disabled={disabled}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50"
+                >
+                    N/A
+                </button>
+            </div>
+        </div>
+    );
+
+    /** Date input with an N/A shortcut button */
+    const DateField = ({ name, label, value }: { name: string; label: string; value: string }) => (
+        <div className={colRow}>
+            <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">
+                {label}
+            </label>
+            <div className={`relative ${w}`}>
+                <input
+                    type="date"
+                    name={name}
+                    value={value || ''}           // ensure controlled empty string, never undefined
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none cursor-pointer"
+                    onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}  // programmatically open picker on click
+                />
+            </div>
+        </div>
+    );
+
+    /** Three-way radio: N/A | Yes | No */
+    const RadioField = ({ name, label, value }: { name: string; label: string; value: string; }) => (
+        <div className={flexRow}>
+            <label data-name={name} className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+            <div className="flex gap-4">
+                {['N/A', 'Yes', 'No'].map(opt => (
+                    <label key={opt} className="flex items-center">
+                        <input
+                            type="radio"
+                            name={name}
+                            value={opt}
+                            checked={value === opt}
+                            onChange={handleChange}
+                            className="mr-2"
+                        />
+                        {opt}
+                    </label>
+                ))}
+            </div>
+        </div>
+    );
+
+    /** CustomDropdown wrapped in consistent label + layout */
+    const DropdownField = ({ name, label, value, options }: { name: string; label: string; value: string; options: { value: string; label: string }[]; }) => (
+        <div className={colRow}>
+            <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <CustomDropdown
+                name={name}
+                options={options}
+                width={w}
+                value={value}
+                onChange={(val) => handleDropdownChange(name, val)}
+            />
+        </div>
+    );
+
+    // ─── Static option sets ──────────────────────────────────────────────────────
+
+    const tireDepthOptions = [
+        { value: "N/A", label: "N/A" },
+        { value: "15/32", label: "15/32" },
+        { value: "14/32", label: "14/32" },
+        { value: "13/32", label: "13/32" },
+        { value: "12/32", label: "12/32" },
+        { value: "11/32", label: "11/32" },
+        { value: "10/32", label: "10/32" },
+    ];
+
+    const tireLocationFields: { key: keyof FormData; label: string }[] = [
+        { key: 'leftFrontOuter', label: 'Left Front Outer' },
+        { key: 'leftFrontInner', label: 'Left Front Inner' },
+        { key: 'leftRearOuter', label: 'Left Rear Outer' },
+        { key: 'leftRearInner', label: 'Left Rear Inner' },
+        { key: 'rightFrontOuter', label: 'Right Front Outer' },
+        { key: 'rightFrontInner', label: 'Right Front Inner' },
+        { key: 'rightRearOuter', label: 'Right Rear Outer' },
+        { key: 'rightRearInner', label: 'Right Rear Inner' },
+    ];
+
+    // ─── Render ──────────────────────────────────────────────────────────────────
 
     return (
         <div className="">
             <style jsx global>{`
-              .missing-field-label{color:#ef4444 !important;}
-              .missing-field-input{background-color:#fee2e2 !important;border:1px solid #ef4444 !important;border-radius:8px;}
-              .missing-field-input :is(button,input,select,textarea){background-color:#fee2e2 !important;border-color:#ef4444 !important;color:#b91c1c !important;}
-              .missing-field-input input[type="radio"]{accent-color:#ef4444 !important;}
+              .missing-field-label { color: #ef4444 !important; }
+              .missing-field-input { background-color: #fee2e2 !important; border: 1px solid #ef4444 !important; border-radius: 8px; }
+              .missing-field-input :is(button, input, select, textarea) { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
+              .missing-field-input input[type="radio"] { accent-color: #ef4444 !important; }
             `}</style>
+
             <div className="">
 
-                <div className={`flex  ${prop === "single" ? `md:flex-row flex-col ${expandedSections.identification || expandedSections.sensors ? "mb-5" : ""}` : "flex-col px-4"} justify-between items-start gap-2 `}>
+                {/* ── Row 1 : Identification & Registration  |  Sensors & Electrical ── */}
+                <div className={`flex ${prop === "single" ? `md:flex-row flex-col ${expandedSections.identification || expandedSections.sensors ? "mb-5" : ""}` : "flex-col px-4"} justify-between items-start gap-2`}>
+
                     {/* Identification & Registration */}
                     <div className={`rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full"}`}>
-                        <button
-                            onClick={() => toggleSection('identification')}
-                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
-                        >
-                            <h2 className={`text-sm  font-semibold text-gray-900`}>Identification & Registration</h2>
+                        <button onClick={() => toggleSection('identification')} className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4">
+                            <h2 className="text-sm font-semibold text-gray-900">Identification & Registration</h2>
                             <span className="text-gray-400">{expandedSections.identification ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
                         </button>
 
                         {expandedSections.identification && (
-                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="poNumber" className="block text-sm font-medium text-gray-700 mb-1">PO Number</label>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="poNumber"
-                                            value={formData.poNumber}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none"
-                                        />
+                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("poNumber")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
+                                <TextFieldWithNA name="poNumber" label="PO Number" value={formData.poNumber} />
+                                <TextFieldWithNA name="owner" label="Owner" value={formData.owner} />
+                                <TextFieldWithNA name="equipmentNumber" label="Equipment ID / Trailer Number" value={formData.equipmentNumber} disabled={prop === "batch"} />
+                                <TextFieldWithNA name="vin" label="VIN" value={formData.vin} disabled={prop === "batch"} />
+                                <TextFieldWithNA name="licensePlateId" label="License Plate ID" value={formData.licensePlateId} />
+                                <TextFieldWithNA name="licensePlateCountry" label="License Plate Country" value={formData.licensePlateCountry} />
+                                <TextFieldWithNA name="licensePlateExpiration" label="License Plate Expiration" value={formData.licensePlateExpiration} />
+                                <TextFieldWithNA name="licensePlateState" label="License Plate State / Province" value={formData.licensePlateState} />
+                                <TextFieldWithNA name="possessionOrigin" label={<>Possession Origin Location /<br/>Pickup Location</>} value={formData.possessionOrigin} />
+                                <DateField name="possessionStart" label="Possession Start" value={formData.possessionStart} />
+                                <DateField name="possessionEnd" label="Possession End" value={formData.possessionEnd} />
 
-                                </div>
+                                <DropdownField
+                                    name="manufacturer" label="Manufacturer" value={formData.manufacturer}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Atro", label: "Atro" },
+                                        { value: "Cartwright", label: "Cartwright" },
+                                        { value: "DiMond", label: "DiMond" },
+                                        { value: "Don-Bur", label: "Don-Bur" },
+                                        { value: "Great Dane", label: "Great Dane" },
+                                        { value: "Hyundai", label: "Hyundai" },
+                                        { value: "Lufkin", label: "Lufkin" },
+                                        { value: "Manac", label: "Manac" },
+                                        { value: "Operbus", label: "Operbus" },
+                                        { value: "Stoughton", label: "Stoughton" },
+                                        { value: "Strick", label: "Strick" },
+                                        { value: "Tiger", label: "Tiger" },
+                                        { value: "TrailerMobile", label: "TrailerMobile" },
+                                        { value: "Unity", label: "Unity" },
+                                        { value: "Vanguard", label: "Vanguard" },
+                                        { value: "Wabash", label: "Wabash" },
+                                    ]}
+                                />
 
-                                {isCanadaTrailers && (
-                                    <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                        <label data-name="owner" className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
-                                        <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                            <input
-                                                type="text"
-                                                name="owner"
-                                                value={formData.owner}
-                                                onChange={handleChange}
-                                                placeholder="Enter value or click N/A"
-                                                className="w-full px-3 py-2 pr-14 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => handleSetNA("owner")}
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                            >
-                                                N/A
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <div className='flex-1'>
-                                        <label data-name="equipmentNumber" className="block text-sm font-medium text-gray-700 mb-1">Equipment ID/Trailer Number</label>
-                                    </div>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="equipmentNumber"
-                                            value={formData.equipmentNumber}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm disabled:opacity-50"
-                                            disabled={prop === "batch"}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("equipmentNumber")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50"
-                                            disabled={prop === "batch"}
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
-
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="vin" className="block text-sm font-medium text-gray-700 mb-1">VIN</label>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="vin"
-                                            value={formData.vin}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm disabled:opacity-50"
-                                            disabled={prop === "batch"}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("vin")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50"
-                                            disabled={prop === "batch"}
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="licensePlateId" className="block text-sm font-medium text-gray-700 mb-1">License Plate ID</label>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="licensePlateId"
-                                            value={formData.licensePlateId}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("licensePlateId")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="licensePlateCountry" className="block text-sm font-medium text-gray-700 mb-1">License Plate Country</label>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="licensePlateCountry"
-                                            value={formData.licensePlateCountry}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("licensePlateCountry")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="licensePlateExpiration" className="block text-sm font-medium text-gray-700 mb-1">License Plate Expiration</label>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="licensePlateExpiration"
-                                            value={formData.licensePlateExpiration}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("licensePlateExpiration")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <div className="flex-1">
-                                        <label data-name="licensePlateState" className="block text-sm font-medium text-gray-700 mb-1">License Plate State/Province</label>
-                                    </div>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="licensePlateState"
-                                            value={formData.licensePlateState}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("licensePlateState")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="possessionOrigin" className="block text-sm font-medium text-gray-700 mb-1">Possession Origin <br /> Location/ Pickup Location</label>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="possessionOrigin"
-                                            value={formData.possessionOrigin}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("possessionOrigin")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="manufacturer" className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
-                                    <CustomDropdown name="manufacturer"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "Atro", label: "Atro" },
-                                            { value: "Cartwright", label: "Cartwright" },
-                                            { value: "DiMond", label: "DiMond" },
-                                            { value: "Don-Bur", label: "Don-Bur" },
-                                            { value: "Great Dane", label: "Great Dane" },
-                                            { value: "Hyundai", label: "Hyundai" },
-                                            { value: "Lufkin", label: "Lufkin" },
-                                            { value: "Manac", label: "Manac" },
-                                            { value: "Operbus", label: "Operbus" },
-                                            { value: "Stoughton", label: "Stoughton" },
-                                            { value: "Strick", label: "Strick" },
-                                            { value: "Tiger", label: "Tiger" },
-                                            { value: "TrailerMobile", label: "TrailerMobile" },
-                                            { value: "Unity", label: "Unity" },
-                                            { value: "Vanguard", label: "Vanguard" },
-                                            { value: "Wabash", label: "Wabash" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.manufacturer}
-                                        onChange={(val) => handleDropdownChange("manufacturer", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
+                                {/* Model Year uses a specialised YearPicker component */}
+                                <div className={colRow}>
                                     <label data-name="modelYear" className="block text-sm font-medium text-gray-700 mb-1">Model Year</label>
-                                    <YearPicker name="modelYear"
+                                    <YearPicker
+                                        name="modelYear"
                                         value={formData.modelYear}
                                         onChange={(year) => handleDropdownChange("modelYear", year)}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
+                                        width={w}
                                         minYear={1980}
                                         maxYear={new Date().getFullYear() + 1}
                                     />
                                 </div>
+
+                                <TextFieldWithNA name="manufacturerAssetId" label="Manufacturer Asset ID" value={formData.manufacturerAssetId} />
+                                <TextFieldWithNA name="assetTagId" label="Asset Tag ID" value={formData.assetTagId} />
+                                <TextFieldWithNA name="operator" label="Operator" value={formData.operator} />
+
+                                <DropdownField
+                                    name="program" label="Program" value={formData.program}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "ATS", label: "ATS" },
+                                        { value: "UTP", label: "UTP" },
+                                    ]}
+                                />
+
+                                <TextFieldWithNA name="invoiceNumber" label="Invoice Number" value={formData.invoiceNumber} />
+                                <TextFieldWithNA name="warrantyBatchId" label="Warranty Batch ID" value={formData.warrantyBatchId} />
+                                <TextFieldWithNA name="healthScore" label="Health Score" value={formData.healthScore} />
+
+                                <DropdownField
+                                    name="lifecycleState" label="Lifecycle State" value={formData.lifecycleState}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Active", label: "Active" },
+                                        { value: "End of Life", label: "End of Life" },
+                                        { value: "Ordered", label: "Ordered" },
+                                        { value: "Unavailable", label: "Unavailable" },
+                                    ]}
+                                />
+
+                                <DropdownField
+                                    name="lifecycleStateReason" label="Lifecycle State Reason" value={formData.lifecycleStateReason}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Injection - Out of State Movement", label: "Injection - Out of State Movement" },
+                                        { value: "Accident", label: "Accident" },
+                                        { value: "Campaign", label: "Campaign" },
+                                        { value: "Damaged-Moderate", label: "Damaged-Moderate" },
+                                        { value: "Damaged-Severe", label: "Damaged-Severe" },
+                                        { value: "Expired Inspection", label: "Expired Inspection" },
+                                        { value: "GPS Malfunctioning", label: "GPS Malfunctioning" },
+                                        { value: "Healthy", label: "Healthy" },
+                                        { value: "Impounded/Tow", label: "Impounded/Tow" },
+                                        { value: "LP investigation", label: "LP investigation" },
+                                        { value: "Legal Hold - Do Not Repair", label: "Legal Hold - Do Not Repair" },
+                                        { value: "License or Permit Issue", label: "License or Permit Issue" },
+                                        { value: "Never Built", label: "Never Built" },
+                                        { value: "Off-site storage", label: "Off-site storage" },
+                                        { value: "Offsite Shop Repair", label: "Offsite Shop Repair" },
+                                        { value: "Offsite Wash", label: "Offsite Wash" },
+                                        { value: "Onsite Wash", label: "Onsite Wash" },
+                                        { value: "PM Failed", label: "PM Failed" },
+                                        { value: "Parts Delay", label: "Parts Delay" },
+                                        { value: "Parts Storage", label: "Parts Storage" },
+                                        { value: "Pending Delivery", label: "Pending Delivery" },
+                                        { value: "Preventative Maintenance", label: "Preventative Maintenance" },
+                                        { value: "Rental Pending Return", label: "Rental Pending Return" },
+                                        { value: "Rental Returned", label: "Rental Returned" },
+                                        { value: "Reported Stolen", label: "Reported Stolen" },
+                                        { value: "Retired", label: "Retired" },
+                                        { value: "Safety Recall", label: "Safety Recall" },
+                                        { value: "Sensor Detected Damage", label: "Sensor Detected Damage" },
+                                        { value: "Sensor Malfunction", label: "Sensor Malfunction" },
+                                        { value: "Sold", label: "Sold" },
+                                        { value: "Tire Survey", label: "Tire Survey" },
+                                        { value: "To Be Disposed", label: "To Be Disposed" },
+                                        { value: "To Be Returned", label: "To Be Returned" },
+                                        { value: "Totalled", label: "Totalled" },
+                                        { value: "Unaccounted For", label: "Unaccounted For" },
+                                        { value: "Written Off - Lost", label: "Written Off - Lost" },
+                                    ]}
+                                />
+
+                                <DateField name="estimatedDateOfAvailability" label="Estimated Date of Availability" value={formData.estimatedDateOfAvailability} />
+
+                                <DropdownField
+                                    name="purchaseCondition" label="Purchase Condition" value={formData.purchaseCondition}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "New", label: "New" },
+                                        { value: "Used", label: "Used" },
+                                    ]}
+                                />
+
+                                <DateField name="purchaseDate" label="Purchase Date" value={formData.purchaseDate} />
+
+                                <DropdownField
+                                    name="purchaseType" label="Purchase Type" value={formData.purchaseType}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Bought", label: "Bought" },
+                                        { value: "Leased", label: "Leased" },
+                                        { value: "Relay Equipment Marketplace", label: "Relay Equipment Marketplace" },
+                                        { value: "Rental", label: "Rental" },
+                                    ]}
+                                />
                             </div>
                         )}
                     </div>
 
                     {/* Sensors & Electrical */}
                     <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full mb-4"}`}>
-                        <button
-                            onClick={() => toggleSection('sensors')}
-                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
-                        >
-                            <h2 className={`text-sm  font-semibold text-gray-900`}>Sensors & Electrical</h2>
+                        <button onClick={() => toggleSection('sensors')} className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4">
+                            <h2 className="text-sm font-semibold text-gray-900">Sensors & Electrical</h2>
                             <span className="text-gray-400">{expandedSections.sensors ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
                         </button>
 
                         {expandedSections.sensors && (
-                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
-                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="absSensor" className="block text-sm font-medium text-gray-700 mb-2">ABS Sensor</label>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="absSensor"
-                                                value="N/A"
-                                                checked={formData.absSensor === 'N/A'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            N/A
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="absSensor"
-                                                value="Yes"
-                                                checked={formData.absSensor === 'Yes'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            Yes
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="absSensor"
-                                                value="No"
-                                                checked={formData.absSensor === 'No'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            No
-                                        </label>
-                                    </div>
-                                </div>
+                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
+                                <RadioField name="absSensor" label="ABS Sensor" value={formData.absSensor} />
+                                <RadioField name="airTankMonitor" label="Air Tank Monitor" value={formData.airTankMonitor} />
+                                <RadioField name="atisregulator" label="ATIS Regulator" value={formData.atisregulator} />
+                                <RadioField name="lightOutSensor" label="Light Out Sensor" value={formData.lightOutSensor} />
+                                <RadioField name="sensorError" label="Sensor Error" value={formData.sensorError} />
+                                <RadioField name="ultrasonicCargoSensor" label="Ultrasonic Cargo Sensor" value={formData.ultrasonicCargoSensor} />
 
-                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="airTankMonitor" className="block text-sm font-medium text-gray-700 mb-2">Air Tank Monitor</label>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="airTankMonitor"
-                                                value="N/A"
-                                                checked={formData.airTankMonitor === 'N/A'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            N/A
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="airTankMonitor"
-                                                value="Yes"
-                                                checked={formData.airTankMonitor === 'Yes'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            Yes
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="airTankMonitor"
-                                                value="No"
-                                                checked={formData.airTankMonitor === 'No'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            No
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="atisregulator" className="block text-sm font-medium text-gray-700 mb-2">ATIS Regulator</label>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="atisregulator"
-                                                value="N/A"
-                                                checked={formData.atisregulator === 'N/A'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            N/A
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="atisregulator"
-                                                value="Yes"
-                                                checked={formData.atisregulator === 'Yes'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            Yes
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="atisregulator"
-                                                value="No"
-                                                checked={formData.atisregulator === 'No'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            No
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="lightOutSensor" className="block text-sm font-medium text-gray-700 mb-2">Light Out Sensor</label>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="lightOutSensor"
-                                                value="N/A"
-                                                checked={formData.lightOutSensor === 'N/A'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            N/A
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="lightOutSensor"
-                                                value="Yes"
-                                                checked={formData.lightOutSensor === 'Yes'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            Yes
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="lightOutSensor"
-                                                value="No"
-                                                checked={formData.lightOutSensor === 'No'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            No
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="sensorError" className="block text-sm font-medium text-gray-700 mb-2">Sensor Error</label>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="sensorError"
-                                                value="N/A"
-                                                checked={formData.sensorError === 'N/A'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            N/A
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="sensorError"
-                                                value="Yes"
-                                                checked={formData.sensorError === 'Yes'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            Yes
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="sensorError"
-                                                value="No"
-                                                checked={formData.sensorError === 'No'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            No
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-row justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="ultrasonicCargoSensor" className="block text-sm font-medium text-gray-700 mb-2">Ultrasonic Cargo Sensor</label>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="ultrasonicCargoSensor"
-                                                value="N/A"
-                                                checked={formData.ultrasonicCargoSensor === 'N/A'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            N/A
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="ultrasonicCargoSensor"
-                                                value="Yes"
-                                                checked={formData.ultrasonicCargoSensor === 'Yes'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            Yes
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="ultrasonicCargoSensor"
-                                                value="No"
-                                                checked={formData.ultrasonicCargoSensor === 'No'}
-                                                onChange={handleChange}
-                                                className="mr-2"
-                                            />
-                                            No
-                                        </label>
-                                    </div>
-                                </div>
+                                <DropdownField
+                                    name="pulsatingLampManufacturer" label="Pulsating Lamp Manufacturer" value={formData.pulsatingLampManufacturer}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Grote", label: "Grote" },
+                                    ]}
+                                />
+                                <TextFieldWithNA name="pulsatingLampModel" label="Pulsating Lamp Model" value={formData.pulsatingLampModel} />
+                                <RadioField name="pulsatingLampWiring" label="Pulsating Lamp Wiring" value={formData.pulsatingLampWiring} />
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className={`flex  ${prop === "single" ? `md:flex-row flex-col ${expandedSections.dimensions || expandedSections.tireLocation ? "mb-5" : ""}` : "flex-col px-4"} justify-between items-start gap-2 `}>
+                {/* ── Row 2 : Physical Dimensions & Components  |  Tire Location ── */}
+                <div className={`flex ${prop === "single" ? `md:flex-row flex-col ${expandedSections.dimensions || expandedSections.tireLocation ? "mb-5" : ""}` : "flex-col px-4"} justify-between items-start gap-2`}>
+
                     {/* Physical Dimensions & Components */}
                     <div className={`rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full"}`}>
-                        <button
-                            onClick={() => toggleSection('dimensions')}
-                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
-                        >
-                            <h2 className={`text-sm  font-semibold text-gray-900`}>Physical Dimensions & Components</h2>
+                        <button onClick={() => toggleSection('dimensions')} className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4">
+                            <h2 className="text-sm font-semibold text-gray-900">Physical Dimensions & Components</h2>
                             <span className="text-gray-400">{expandedSections.dimensions ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
                         </button>
 
                         {expandedSections.dimensions && (
-                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="length" className="block text-sm font-medium text-gray-700 mb-1">Length</label>
-                                    <CustomDropdown name="length"
-                                        options={isCanadaTrailers ? [
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "28 ft", label: "28 ft" },
-                                            { value: "53 ft", label: "53 ft" },
-                                        ] : [
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "28 ft", label: "28 ft" },
-                                            { value: "48 ft", label: "48 ft" },
-                                            { value: "53 ft", label: "53 ft" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.length}
-                                        onChange={(val) => handleDropdownChange("length", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="height" className="block text-sm font-medium text-gray-700 mb-1">Height</label>
-                                    <CustomDropdown name="height"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "13 ft 6 in", label: "13 ft 6 in" },
-
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.height}
-                                        onChange={(val) => handleDropdownChange("height", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="grossAxleWeightRating" className="block text-sm font-medium text-gray-700 mb-1">Gross Axle Weight Rating</label>
-                                    <CustomDropdown name="grossAxleWeightRating"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "20000 lbs", label: "20000 lbs" },
-                                            { value: "34000 lbs", label: "34000 lbs" },
-
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.grossAxleWeightRating}
-                                        onChange={(val) => handleDropdownChange("grossAxleWeightRating", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="axleType" className="block text-sm font-medium text-gray-700 mb-1">Axle Type</label>
-                                    <CustomDropdown name="axleType"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "Dual Axle", label: "Dual Axle" },
-                                            { value: "Single Axle", label: "Single Axle" },
-
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.axleType}
-                                        onChange={(val) => handleDropdownChange("axleType", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="brakeType" className="block text-sm font-medium text-gray-700 mb-1">Brake Type</label>
-                                    <CustomDropdown name="brakeType"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "Disc", label: "Disc" },
-                                            { value: "Drum", label: "Drum" },
-
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.brakeType}
-                                        onChange={(val) => handleDropdownChange("brakeType", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="suspensionType" className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
-                                    <CustomDropdown name="suspensionType"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "Air", label: "Air" },
-                                            { value: "Spring", label: "Spring" },
-
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.suspensionType}
-                                        onChange={(val) => handleDropdownChange("suspensionType", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="tireModel" className="block text-sm font-medium text-gray-700 mb-1">Tire Model</label>
-                                    <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                        <input
-                                            type="text"
-                                            name="tireModel"
-                                            value={formData.tireModel}
-                                            onChange={handleChange}
-                                            placeholder="Enter value or click N/A"
-                                            className="w-full px-3 py-2 border pr-12 border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSetNA("tireModel")}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                        >
-                                            N/A
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="tireBrand" className="block text-sm font-medium text-gray-700 mb-1">Tire Brand</label>
-                                    <CustomDropdown name="tireBrand"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "Bridgestone", label: "Bridgestone" },
-                                            { value: "Continental", label: "Continental" },
-                                            { value: "Firestone", label: "Firestone" },
-                                            { value: "Goodyear", label: "Goodyear" },
-                                            { value: "Michelin", label: "Michelin" },
-
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.tireBrand}
-                                        onChange={(val) => handleDropdownChange("tireBrand", val)}
-                                    />
-                                </div>
+                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
+                                <DropdownField
+                                    name="length" label="Length" value={formData.length}
+                                    options={isCanadaTrailers ? [
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "28 ft", label: "28 ft" },
+                                        { value: "53 ft", label: "53 ft" },
+                                    ] : [
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "28 ft", label: "28 ft" },
+                                        { value: "48 ft", label: "48 ft" },
+                                        { value: "53 ft", label: "53 ft" },
+                                    ]}
+                                />
+                                <DropdownField
+                                    name="height" label="Height" value={formData.height}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "13 ft 6 in", label: "13 ft 6 in" },
+                                    ]}
+                                />
+                                <DropdownField
+                                    name="grossAxleWeightRating" label="Gross Axle Weight Rating" value={formData.grossAxleWeightRating}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "20000 lbs", label: "20000 lbs" },
+                                        { value: "34000 lbs", label: "34000 lbs" },
+                                    ]}
+                                />
+                                <DropdownField
+                                    name="axleType" label="Axle Type" value={formData.axleType}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Dual Axle", label: "Dual Axle" },
+                                        { value: "Single Axle", label: "Single Axle" },
+                                    ]}
+                                />
+                                <DropdownField
+                                    name="brakeType" label="Brake Type" value={formData.brakeType}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Disc", label: "Disc" },
+                                        { value: "Drum", label: "Drum" },
+                                    ]}
+                                />
+                                <DropdownField
+                                    name="suspensionType" label="Suspension Type" value={formData.suspensionType}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Air", label: "Air" },
+                                        { value: "Spring", label: "Spring" },
+                                    ]}
+                                />
+                                <TextFieldWithNA name="tireModel" label="Tire Model" value={formData.tireModel} />
+                                <DropdownField
+                                    name="tireBrand" label="Tire Brand" value={formData.tireBrand}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Bridgestone", label: "Bridgestone" },
+                                        { value: "Continental", label: "Continental" },
+                                        { value: "Firestone", label: "Firestone" },
+                                        { value: "Goodyear", label: "Goodyear" },
+                                        { value: "Michelin", label: "Michelin" },
+                                    ]}
+                                />
+                                <TextFieldWithNA name="tireSize" label="Tire Size" value={formData.tireSize} />
+                                <RadioField name="cargoLockFitted" label="Cargo Lock Fitted" value={formData.cargoLockFitted} />
+                                <DateField name="cargoLockInstalledDate" label="Cargo Lock Installed Date" value={formData.cargoLockInstalledDate} />
+                                <DropdownField
+                                    name="cargoLockType" label="Cargo Lock Type" value={formData.cargoLockType}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Autida", label: "Autida" },
+                                        { value: "Maple", label: "Maple" },
+                                        { value: "People", label: "People" },
+                                        { value: "iKin", label: "iKin" },
+                                    ]}
+                                />
                             </div>
                         )}
                     </div>
+
                     {/* Tire Location */}
                     <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full mb-4"}`}>
-                        <button
-                            onClick={() => toggleSection('tireLocation')}
-                            className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
-                        >
-                            <h2 className={`text-sm  font-semibold text-gray-900`}>Tire Location</h2>
+                        <button onClick={() => toggleSection('tireLocation')} className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4">
+                            <h2 className="text-sm font-semibold text-gray-900">Tire Location</h2>
                             <span className="text-gray-400">{expandedSections.tireLocation ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
                         </button>
 
                         {expandedSections.tireLocation && (
-                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="leftFrontOuter" className="block text-sm font-medium text-gray-700 mb-1">Left Front Outer</label>
-                                    <CustomDropdown name="leftFrontOuter"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "15/32", label: "15/32" },
-                                            { value: "14/32", label: "14/32" },
-                                            { value: "13/32", label: "13/32" },
-                                            { value: "12/32", label: "12/32" },
-                                            { value: "11/32", label: "11/32" },
-                                            { value: "10/32", label: "10/32" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.leftFrontOuter}
-                                        onChange={(val) => handleDropdownChange("leftFrontOuter", val)}
+                            <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
+                                {tireLocationFields.map(({ key, label }) => (
+                                    <DropdownField
+                                        key={key}
+                                        name={key}
+                                        label={label}
+                                        value={formData[key] as string}
+                                        options={tireDepthOptions}
                                     />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="leftFrontInner" className="block text-sm font-medium text-gray-700 mb-1">Left Front Inner</label>
-                                    <CustomDropdown name="leftFrontInner"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "15/32", label: "15/32" },
-                                            { value: "14/32", label: "14/32" },
-                                            { value: "13/32", label: "13/32" },
-                                            { value: "12/32", label: "12/32" },
-                                            { value: "11/32", label: "11/32" },
-                                            { value: "10/32", label: "10/32" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.leftFrontInner}
-                                        onChange={(val) => handleDropdownChange("leftFrontInner", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="leftRearOuter" className="block text-sm font-medium text-gray-700 mb-1">Left Rear Outer</label>
-                                    <CustomDropdown name="leftRearOuter"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "15/32", label: "15/32" },
-                                            { value: "14/32", label: "14/32" },
-                                            { value: "13/32", label: "13/32" },
-                                            { value: "12/32", label: "12/32" },
-                                            { value: "11/32", label: "11/32" },
-                                            { value: "10/32", label: "10/32" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.leftRearOuter}
-                                        onChange={(val) => handleDropdownChange("leftRearOuter", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="leftRearInner" className="block text-sm font-medium text-gray-700 mb-1">Left Rear Inner</label>
-                                    <CustomDropdown name="leftRearInner"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "15/32", label: "15/32" },
-                                            { value: "14/32", label: "14/32" },
-                                            { value: "13/32", label: "13/32" },
-                                            { value: "12/32", label: "12/32" },
-                                            { value: "11/32", label: "11/32" },
-                                            { value: "10/32", label: "10/32" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.leftRearInner}
-                                        onChange={(val) => handleDropdownChange("leftRearInner", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="rightFrontOuter" className="block text-sm font-medium text-gray-700 mb-1">Right Front Outer</label>
-                                    <CustomDropdown name="rightFrontOuter"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "15/32", label: "15/32" },
-                                            { value: "14/32", label: "14/32" },
-                                            { value: "13/32", label: "13/32" },
-                                            { value: "12/32", label: "12/32" },
-                                            { value: "11/32", label: "11/32" },
-                                            { value: "10/32", label: "10/32" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.rightFrontOuter}
-                                        onChange={(val) => handleDropdownChange("rightFrontOuter", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="rightFrontInner" className="block text-sm font-medium text-gray-700 mb-1">Right Front Inner</label>
-                                    <CustomDropdown name="rightFrontInner"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "15/32", label: "15/32" },
-                                            { value: "14/32", label: "14/32" },
-                                            { value: "13/32", label: "13/32" },
-                                            { value: "12/32", label: "12/32" },
-                                            { value: "11/32", label: "11/32" },
-                                            { value: "10/32", label: "10/32" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.rightFrontInner}
-                                        onChange={(val) => handleDropdownChange("rightFrontInner", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="rightRearOuter" className="block text-sm font-medium text-gray-700 mb-1">Right Rear Outer</label>
-                                    <CustomDropdown name="rightRearOuter"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "15/32", label: "15/32" },
-                                            { value: "14/32", label: "14/32" },
-                                            { value: "13/32", label: "13/32" },
-                                            { value: "12/32", label: "12/32" },
-                                            { value: "11/32", label: "11/32" },
-                                            { value: "10/32", label: "10/32" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.rightRearOuter}
-                                        onChange={(val) => handleDropdownChange("rightRearOuter", val)}
-                                    />
-                                </div>
-
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="rightRearInner" className="block text-sm font-medium text-gray-700 mb-1">Right Rear Inner</label>
-                                    <CustomDropdown name="rightRearInner"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "15/32", label: "15/32" },
-                                            { value: "14/32", label: "14/32" },
-                                            { value: "13/32", label: "13/32" },
-                                            { value: "12/32", label: "12/32" },
-                                            { value: "11/32", label: "11/32" },
-                                            { value: "10/32", label: "10/32" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.rightRearInner}
-                                        onChange={(val) => handleDropdownChange("rightRearInner", val)}
-                                    />
-                                </div>
+                                ))}
                             </div>
                         )}
                     </div>
-
                 </div>
 
-                {/* Features & Appearance */}
+                {/* ── Features & Appearance ── */}
                 <div className={`bg-white rounded-lg ${prop === "single" ? "md:w-1/2 w-full" : "w-full px-4"}`}>
-                    <button
-                        onClick={() => toggleSection('features')}
-                        className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4"
-                    >
-                        <h2 className={`text-sm  font-semibold text-gray-900`}>Features & Appearance</h2>
+                    <button onClick={() => toggleSection('features')} className="w-full px-6 py-4 flex items-center justify-between bg-gray-100 rounded-lg mb-4">
+                        <h2 className="text-sm font-semibold text-gray-900">Features & Appearance</h2>
                         <span className="text-gray-400">{expandedSections.features ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</span>
                     </button>
 
                     {expandedSections.features && (
-                        <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6 "} `}>
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="aerokits" className="block text-sm font-medium text-gray-700 mb-2">Aerokits</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="aerokits"
-                                            value="N/A"
-                                            checked={formData.aerokits === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="aerokits"
-                                            value="Yes"
-                                            checked={formData.aerokits === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="aerokits"
-                                            value="No"
-                                            checked={formData.aerokits === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="doorBranding" className="block text-sm font-medium text-gray-700 mb-1">Door Branding</label>
-                                <div className={`relative ${prop === "single" ? "xl:w-[230px] w-full" : "w-full"}`}>
-                                    <input
-                                        type="text"
-                                        name="doorBranding"
-                                        value={formData.doorBranding}
-                                        onChange={handleChange}
-                                        placeholder="Enter value or click N/A"
-                                        className="w-full px-3 py-2 pr-14 border border-gray-300 rounded-md bg-[#FAF7FF] text-sm"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSetNA("doorBranding")}
-                                        className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200"
-                                    >
-                                        N/A
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="doorColor" className="block text-sm font-medium text-gray-700 mb-1">Door Color</label>
-                                <CustomDropdown name="doorColor"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Pantone 432 C", label: "Pantone 432 C" },
-                                        { value: "White", label: "White" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.doorColor}
-                                    onChange={(val) => handleDropdownChange("doorColor", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="doorSensor" className="block text-sm font-medium text-gray-700 mb-2">Door Sensor</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="doorSensor"
-                                            value="N/A"
-                                            checked={formData.doorSensor === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="doorSensor"
-                                            value="Yes"
-                                            checked={formData.doorSensor === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="doorSensor"
-                                            value="No"
-                                            checked={formData.doorSensor === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="doorType" className="block text-sm font-medium text-gray-700 mb-1">Door Type</label>
-                                <CustomDropdown name="doorType"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Swing", label: "Swing" },
-                                        { value: "Roll", label: "Roll" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.doorType}
-                                    onChange={(val) => handleDropdownChange("doorType", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="lashSystem" className="block text-sm font-medium text-gray-700 mb-2">Lash System</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="lashSystem"
-                                            value="N/A"
-                                            checked={formData.lashSystem === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="lashSystem"
-                                            value="Yes"
-                                            checked={formData.lashSystem === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="lashSystem"
-                                            value="No"
-                                            checked={formData.lashSystem === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="mudFlapType" className="block text-sm font-medium text-gray-700 mb-1">Mud Flap Type</label>
-                                <CustomDropdown name="mudFlapType"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Fast-Flap", label: "Fast-Flap" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.mudFlapType}
-                                    onChange={(val) => handleDropdownChange("mudFlapType", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="panelBranding" className="block text-sm font-medium text-gray-700 mb-1">Panel Branding</label>
-                                <CustomDropdown name="panelBranding"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Bowman", label: "Bowman" },
-                                        { value: "Prime", label: "Prime" },
-                                        { value: "Tape on White", label: "Tape on White" },
-                                        { value: "Smile on Blue 2016", label: "Smile on Blue 2016" },
-                                        { value: "Smile on Blue 2017", label: "Smile on Blue 2017" },
-                                        { value: "Smile on Blue 2018", label: "Smile on Blue 2018" },
-                                        { value: "Smile on White 2019", label: "Smile on White 2019" },
-                                        { value: "Unbranded", label: "Unbranded" },
-                                        { value: "XTRA Lease", label: "XTRA Lease" }
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.panelBranding}
-                                    onChange={(val) => handleDropdownChange("panelBranding", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="noseBranding" className="block text-sm font-medium text-gray-700 mb-1">Nose Branding</label>
-                                <CustomDropdown name="noseBranding"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Captive Mean", label: "Captive Mean" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.noseBranding}
-                                    onChange={(val) => handleDropdownChange("noseBranding", val)}
-                                />
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="skirted" className="block text-sm font-medium text-gray-700 mb-2">Skirted</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="skirted"
-                                            value="N/A"
-                                            checked={formData.skirted === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="skirted"
-                                            value="Yes"
-                                            checked={formData.skirted === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="skirted"
-                                            value="No"
-                                            checked={formData.skirted === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="skirtColor" className="block text-sm font-medium text-gray-700 mb-1">Skirt Color</label>
-                                <CustomDropdown name="skirtColor"
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Ekostinger", label: "Ekostinger" },
-                                        { value: "Pantone 432 C", label: "Pantone 432 C" },
-                                        { value: "Transtex", label: "Transtex" },
-                                        { value: "White", label: "White" },
-
-                                    ]}
-                                    width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                    value={formData.skirtColor}
-                                    onChange={(val) => handleDropdownChange("skirtColor", val)}
-                                />
-                            </div>
-
-                            {isCanadaTrailers && (
-                                <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                    <label data-name="conspicuityTape" className="block text-sm font-medium text-gray-700 mb-2">Conspicuity Tape</label>
-                                    <CustomDropdown name="conspicuityTape"
-                                        options={[
-                                            { value: "N/A", label: "N/A" },
-                                            { value: "Bottom Rear", label: "Bottom Rear" },
-                                            { value: "Full Rear Perimeter", label: "Full Rear Perimeter" },
-                                        ]}
-                                        width={prop === "single" ? "xl:w-[230px] w-full" : "w-full"}
-                                        value={formData.conspicuityTape}
-                                        onChange={(val) => handleDropdownChange("conspicuityTape", val)}
-                                    />
-                                </div>
-                            )}
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="captiveBeam" className="block text-sm font-medium text-gray-700 mb-2">Captive Beam</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="captiveBeam"
-                                            value="N/A"
-                                            checked={formData.captiveBeam === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="captiveBeam"
-                                            value="Yes"
-                                            checked={formData.captiveBeam === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="captiveBeam"
-                                            value="No"
-                                            checked={formData.captiveBeam === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="cargoCameras" className="block text-sm font-medium text-gray-700 mb-2">Cargo Camera</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="cargoCameras"
-                                            value="N/A"
-                                            checked={formData.cargoCameras === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="cargoCameras"
-                                            value="Yes"
-                                            checked={formData.cargoCameras === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="cargoCameras"
-                                            value="No"
-                                            checked={formData.cargoCameras === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="cartbars" className="block text-sm font-medium text-gray-700 mb-2">Cartbars</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="cartbars"
-                                            value="N/A"
-                                            checked={formData.cartbars === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="cartbars"
-                                            value="Yes"
-                                            checked={formData.cartbars === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="cartbars"
-                                            value="No"
-                                            checked={formData.cartbars === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="tpms" className="block text-sm font-medium text-gray-700 mb-2">TPMS</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="tpms"
-                                            value="N/A"
-                                            checked={formData.tpms === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="tpms"
-                                            value="Yes"
-                                            checked={formData.tpms === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="tpms"
-                                            value="No"
-                                            checked={formData.tpms === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col justify-between gap-4  ${prop === "single" ? "xl:flex-row xl:items-center" : ""} `}>
-                                <label data-name="trailerHeightDecal" className="block text-sm font-medium text-gray-700 mb-2">Trailer Height Decal</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="trailerHeightDecal"
-                                            value="N/A"
-                                            checked={formData.trailerHeightDecal === 'N/A'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        N/A
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="trailerHeightDecal"
-                                            value="Yes"
-                                            checked={formData.trailerHeightDecal === 'Yes'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="trailerHeightDecal"
-                                            value="No"
-                                            checked={formData.trailerHeightDecal === 'No'}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        No
-                                    </label>
-                                </div>
-                            </div>
+                        <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
+                            <RadioField name="aerokits" label="Aerokits" value={formData.aerokits} />
+                            <TextFieldWithNA name="doorBranding" label="Door Branding" value={formData.doorBranding} />
+                            <DropdownField
+                                name="doorColor" label="Door Color" value={formData.doorColor}
+                                options={[
+                                    { value: "N/A", label: "N/A" },
+                                    { value: "Pantone 432 C", label: "Pantone 432 C" },
+                                    { value: "White", label: "White" },
+                                ]}
+                            />
+                            <RadioField name="doorSensor" label="Door Sensor" value={formData.doorSensor} />
+                            <DropdownField
+                                name="doorType" label="Door Type" value={formData.doorType}
+                                options={[
+                                    { value: "N/A", label: "N/A" },
+                                    { value: "Swing", label: "Swing" },
+                                    { value: "Roll", label: "Roll" },
+                                ]}
+                            />
+                            <RadioField name="lashSystem" label="Lash System" value={formData.lashSystem} />
+                            <DropdownField
+                                name="mudFlapType" label="Mud Flap Type" value={formData.mudFlapType}
+                                options={[
+                                    { value: "N/A", label: "N/A" },
+                                    { value: "Fast-Flap", label: "Fast-Flap" },
+                                ]}
+                            />
+                            <DropdownField
+                                name="panelBranding" label="Panel Branding" value={formData.panelBranding}
+                                options={[
+                                    { value: "N/A", label: "N/A" },
+                                    { value: "Bowman", label: "Bowman" },
+                                    { value: "Prime", label: "Prime" },
+                                    { value: "Tape on White", label: "Tape on White" },
+                                    { value: "Smile on Blue 2016", label: "Smile on Blue 2016" },
+                                    { value: "Smile on Blue 2017", label: "Smile on Blue 2017" },
+                                    { value: "Smile on Blue 2018", label: "Smile on Blue 2018" },
+                                    { value: "Smile on White 2019", label: "Smile on White 2019" },
+                                    { value: "Unbranded", label: "Unbranded" },
+                                    { value: "XTRA Lease", label: "XTRA Lease" },
+                                ]}
+                            />
+                            <DropdownField
+                                name="noseBranding" label="Nose Branding" value={formData.noseBranding}
+                                options={[
+                                    { value: "N/A", label: "N/A" },
+                                    { value: "Captive Mean", label: "Captive Mean" },
+                                ]}
+                            />
+                            <RadioField name="skirted" label="Skirted" value={formData.skirted} />
+                            <DropdownField
+                                name="skirtColor" label="Skirt Color" value={formData.skirtColor}
+                                options={[
+                                    { value: "N/A", label: "N/A" },
+                                    { value: "Ekostinger", label: "Ekostinger" },
+                                    { value: "Pantone 432 C", label: "Pantone 432 C" },
+                                    { value: "Transtex", label: "Transtex" },
+                                    { value: "White", label: "White" },
+                                ]}
+                            />
+                            {/* Conspicuity Tape — Canada and US have different option sets */}
+                            <DropdownField
+                                name="conspicuityTape" label="Conspicuity Tape" value={formData.conspicuityTape}
+                                options={isCanadaTrailers ? [
+                                    { value: "N/A", label: "N/A" },
+                                    { value: "Bottom Rear", label: "Bottom Rear" },
+                                    { value: "Full Rear Perimeter", label: "Full Rear Perimeter" },
+                                ] : [
+                                    { value: "N/A", label: "N/A" },
+                                    { value: "Bottom Rear", label: "Bottom Rear" },
+                                    { value: "Full Perimeter and Sides", label: "Full Perimeter and Sides" },
+                                    { value: "Full Rear Perimeter", label: "Full Rear Perimeter" },
+                                ]}
+                            />
+                            <DateField name="conspicuityTapeInstallDate" label="Conspicuity Tape Install Date" value={formData.conspicuityTapeInstallDate} />
+                            <RadioField name="captiveBeam" label="Captive Beam" value={formData.captiveBeam} />
+                            <RadioField name="cargoCameras" label="Cargo Camera" value={formData.cargoCameras} />
+                            <RadioField name="cartbars" label="Cartbars" value={formData.cartbars} />
+                            <RadioField name="tpms" label="TPMS" value={formData.tpms} />
+                            <RadioField name="trailerHeightDecal" label="Trailer Height Decal" value={formData.trailerHeightDecal} />
                         </div>
                     )}
                 </div>
+
             </div>
-        </div >
-    )
+        </div>
+    );
 }

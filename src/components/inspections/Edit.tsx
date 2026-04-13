@@ -35,6 +35,7 @@ export interface FormData {
   notes: string;
   poNumber: string;
   owner: string;
+  assetTagId: string;
   equipmentNumber: string;
   vin: string;
   licensePlateId: string;
@@ -42,8 +43,30 @@ export interface FormData {
   licensePlateExpiration: string;
   licensePlateState: string;
   possessionOrigin: string;
+  possessionStart: string;
+  possessionEnd: string;
   manufacturer: string;
   modelYear: string;
+  manufacturerAssetId: string;
+  operator: string;
+  program: string;
+  cargoLockFitted: string;
+  cargoLockInstalledDate: string;
+  cargoLockType: string;
+  conspicuityTapeInstallDate: string;
+  estimatedDateOfAvailability: string;
+  healthScore: string;
+  invoiceNumber: string;
+  lifecycleState: string;
+  lifecycleStateReason: string;
+  pulsatingLampManufacturer: string;
+  pulsatingLampModel: string;
+  pulsatingLampWiring: string;
+  purchaseCondition: string;
+  purchaseDate: string;
+  purchaseType: string;
+  tireSize: string;
+  warrantyBatchId: string;
   absSensor: string;
   airTankMonitor: string;
   atisregulator: string;
@@ -132,6 +155,7 @@ export default function Edit({ type }: { type: string }) {
     notes: '',
     poNumber: '',
     owner: '',
+    assetTagId: '',
     equipmentNumber: '',
     vin: '',
     licensePlateId: '',
@@ -139,8 +163,30 @@ export default function Edit({ type }: { type: string }) {
     licensePlateExpiration: '',
     licensePlateState: '',
     possessionOrigin: '',
+    possessionStart: '',
+    possessionEnd: '',
     manufacturer: '',
     modelYear: '',
+    manufacturerAssetId: '',
+    operator: '',
+    program: '',
+    cargoLockFitted: '',
+    cargoLockInstalledDate: '',
+    cargoLockType: '',
+    conspicuityTapeInstallDate: '',
+    estimatedDateOfAvailability: '',
+    healthScore: '',
+    invoiceNumber: '',
+    lifecycleState: '',
+    lifecycleStateReason: '',
+    pulsatingLampManufacturer: '',
+    pulsatingLampModel: '',
+    pulsatingLampWiring: '',
+    purchaseCondition: '',
+    purchaseDate: '',
+    purchaseType: '',
+    tireSize: '',
+    warrantyBatchId: '',
     absSensor: '',
     airTankMonitor: '',
     atisregulator: '',
