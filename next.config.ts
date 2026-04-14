@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // pdfkit reads font .afm files from disk at runtime — exclude it from
+  // webpack bundling so Node can resolve the paths correctly.
+  serverExternalPackages: ["pdfkit"],
   turbopack: {
     rules: {
       "*.svg": {
