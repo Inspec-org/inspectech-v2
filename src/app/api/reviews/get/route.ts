@@ -65,6 +65,12 @@ export async function POST(req: NextRequest) {
                 }).filter(Boolean)
             ));
 
+            const missingDataCanonical = Array.from(new Set(
+                missingDataRaw
+                    .filter(Boolean)
+                    .map((v: any) => String(v).toLowerCase().trim())
+            ));
+
             const toLabel = (s: string) => (s === "none" ? "None" : s === "incomplete image file" ? "Incomplete Image File" : s === "incomplete checklist" ? "Incomplete Checklist" : s === "incomplete dot form" ? "Incomplete DOT Form" : s);
 
             const options = {
@@ -74,7 +80,7 @@ export async function POST(req: NextRequest) {
                 department: [],
                 dateCreated,
                 reviewRequested,
-                missingData: missingDataRaw.filter(Boolean).map((v: any) => toLabel(String(v))),
+                missingData: missingDataCanonical.map((v: any) => toLabel(String(v))),
                 reviewCompleted,
                 emailNotification: emailRaw.filter(Boolean).map((v: any) => (String(v) === "yes" ? "Yes" : String(v) === "no" ? "No" : String(v) === "manually sent" ? "Manually Sent" : String(v)))
             };
@@ -113,13 +119,14 @@ export async function POST(req: NextRequest) {
             query.departmentId = { $in: deptDocs.map(d => d._id) };
         }
 
-        // --------------------------------------------------
-        // MISSING DATA (Review)
-        // --------------------------------------------------
         if (filters.missingData?.length > 0) {
-            query.missingData = {
-                $in: filters.missingData.map((v: string) => v.toLowerCase())
-            };
+            const targets = filters.missingData.map((v: string) => v.toLowerCase().trim());
+            const expr = { $in: [{ $toLower: "$missingData" }, targets] };
+            if (query.$expr) {
+                query.$expr = { $and: [query.$expr, expr] };
+            } else {
+                query.$expr = expr;
+            }
         }
 
         // --------------------------------------------------

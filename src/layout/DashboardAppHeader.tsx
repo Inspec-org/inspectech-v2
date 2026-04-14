@@ -30,7 +30,14 @@ export default function DashboardAppHeader() {
       const res = await apiRequest(endpoint);
       if (res.ok) {
         const json = await res.json();
-        setDepartments(json.departments || []);
+        // Handle grouped response for admin users
+        if (json.grouped && json.departmentsByVendor) {
+          // Flatten all departments from all vendors
+          const allDepts = json.departmentsByVendor.flatMap((group: any) => group.departments);
+          setDepartments(allDepts);
+        } else {
+          setDepartments(json.departments || []);
+        }
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Failed to fetch departments';

@@ -38,11 +38,34 @@ export async function GET(req: NextRequest) {
           .skip((page - 1) * limit)
           .limit(limit);
       } else {
-        total = await Department.countDocuments();
-        departments = await Department.find()
-          .sort({ createdAt: -1 })
-          .skip((page - 1) * limit)
-          .limit(limit);
+        // If no vendorId provided, return departments grouped by vendor
+        const vendors = await Vendor.find().select("name departmentAccess").lean();
+        
+        // Build a map of vendor departments
+        const departmentsByVendor: any[] = [];
+        for (const vendor of vendors) {
+          const vDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => String(id));
+          
+          if (vDeptIds.length > 0) {
+            const vendorDepts = await Department.find({ _id: { $in: vDeptIds } })
+              .sort({ createdAt: -1 });
+            
+            if (vendorDepts.length > 0) {
+              departmentsByVendor.push({
+                vendorId: vendor._id,
+                vendorName: vendor.name,
+                departments: vendorDepts
+              });
+            }
+          }
+        }
+
+        return NextResponse.json({ 
+          message: "success", 
+          departmentsByVendor,
+          grouped: true,
+          pagination: { page, limit, total: departmentsByVendor.length, totalPages: 1 }
+        });
       }
     } else if (user.role === "admin") {
       const vendorId = url.searchParams.get("vendorId");
@@ -50,19 +73,56 @@ export async function GET(req: NextRequest) {
       if (adminDeptIds.length === 0) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
-      let allowedDeptIds = adminDeptIds;
+
+      // If vendorId is provided, return departments for that specific vendor (flat list)
       if (vendorId) {
         const vendor = await Vendor.findById(vendorId).select("departmentAccess").lean();
         if (!vendor) {
           return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
         }
         const vDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => id.toString());
-        allowedDeptIds = allowedDeptIds.filter((id: string) => vDeptIds.includes(id));
+        const allowedDeptIds = adminDeptIds.filter((id: string) => vDeptIds.includes(id));
+        
+        departments = await Department.find({ _id: { $in: allowedDeptIds } })
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+      } else {
+        // If no vendorId provided, return departments grouped by vendor
+        const adminVendorIds = (user.vendorAccess || []).map((id: any) => id.toString());
+        if (adminVendorIds.length === 0) {
+          return NextResponse.json({ error: "No vendor access configured" }, { status: 401 });
+        }
+
+        // Get all vendors the admin has access to
+        const vendors = await Vendor.find({ _id: { $in: adminVendorIds } }).select("name departmentAccess").lean();
+        
+        // Build a map of vendor departments
+        const departmentsByVendor: any[] = [];
+        for (const vendor of vendors) {
+          const vDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => id.toString());
+          const allowedDeptIds = adminDeptIds.filter((id: string) => vDeptIds.includes(id));
+          
+          if (allowedDeptIds.length > 0) {
+            const vendorDepts = await Department.find({ _id: { $in: allowedDeptIds } })
+              .sort({ createdAt: -1 });
+            
+            if (vendorDepts.length > 0) {
+              departmentsByVendor.push({
+                vendorId: vendor._id,
+                vendorName: vendor.name,
+                departments: vendorDepts
+              });
+            }
+          }
+        }
+
+        return NextResponse.json({ 
+          message: "success", 
+          departmentsByVendor,
+          grouped: true 
+        });
       }
-      departments = await Department.find({ _id: { $in: allowedDeptIds } })
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit);
     } else if (user.role === "user") {
       const vendorIds = [
         ...(user.vendorAccess || []),

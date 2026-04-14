@@ -208,13 +208,34 @@ export async function POST(req: NextRequest) {
 
     const errors: ValidationError[] = [];
     const parsedRows: Record<string, string>[] = [];
-    const unitIdHeaderCandidates = ["unit id", "unitid", "unitid#", "unit"];
-    const equipIdHeaderCandidates = ["equipment id/trailer number", "equipment id", "trailer number", "equipment id #", "equipment", "equipment number"];
-    const unitIdIndex = headers.findIndex(h => unitIdHeaderCandidates.includes(h.trim().toLowerCase()));
-    const equipIdIndex = headers.findIndex(h => equipIdHeaderCandidates.includes(h.trim().toLowerCase()));
+    const unitIdHeaderCandidates = [
+      "unit id",
+      "unitid",
+      "unitid#",
+      "unit",
+    ];
+    const equipIdHeaderCandidates = [
+      "equipment id/trailer number",
+      "equipment id",
+      "trailer number",
+      "equipment id #",
+      "equipment",
+      "equipment number",
+      "equipmentnumber",
+      "equipmentid",
+      "equipmentidtrailernumber",
+    ];
+    const unitIdIndex = headers.findIndex(h =>
+      unitIdHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
+    );
+    const equipIdIndex = headers.findIndex(h =>
+      equipIdHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
+    );
     const seenUnitIds = new Map<string, number>();
     const vinHeaderCandidates = ["vin", "vehicle identification number"];
-    const vinIndex = headers.findIndex(h => normalizeHeader(h) === normalizeHeader("vin"));
+    const vinIndex = headers.findIndex(h =>
+      vinHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
+    );
     const dateHeaderCandidates = ["date", "inspection date", "inspectiondate"];
     const dateIndex = headers.findIndex(h => {
       const n = normalizeHeader(h);
@@ -245,6 +266,14 @@ export async function POST(req: NextRequest) {
         rightfrontinner: { type: "dropdown", key: "rightfrontinner" },
         rightrearouter: { type: "dropdown", key: "rightrearouter" },
         rightrearinner: { type: "dropdown", key: "rightrearinner" },
+        treaddepthleftfrontouter: { type: "dropdown", key: "leftfrontouter" },
+        treaddepthleftfrontinner: { type: "dropdown", key: "leftfrontinner" },
+        treaddepthleftrearouter: { type: "dropdown", key: "leftrearouter" },
+        treaddepthleftrearinner: { type: "dropdown", key: "leftrearinner" },
+        treaddepthrightfrontouter: { type: "dropdown", key: "rightfrontouter" },
+        treaddepthrightfrontinner: { type: "dropdown", key: "rightfrontinner" },
+        treaddepthrightrearouter: { type: "dropdown", key: "rightrearouter" },
+        treaddepthrightrearinner: { type: "dropdown", key: "rightrearinner" },
         doorcolor: { type: "dropdown", key: "doorcolor" },
         doortype: { type: "dropdown", key: "doortype" },
         mudflaptype: { type: "dropdown", key: "mudflaptype" },
@@ -334,7 +363,6 @@ export async function POST(req: NextRequest) {
       const unitVal = unitIdIndex >= 0 ? norm(String(currentRow[unitIdIndex] ?? "")) : "";
       const equipVal = equipIdIndex >= 0 ? norm(String(currentRow[equipIdIndex] ?? "")) : "";
 
-      // ✅ Case 1: Both present → MUST match
       if (unitVal && equipVal && normId(unitVal) !== normId(equipVal)) {
         errors.push({
           row: i + 1,
@@ -344,26 +372,14 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // ✅ Case 2: One missing → throw error (strict mode)
-      if ((unitVal && !equipVal) || (!unitVal && equipVal)) {
-        errors.push({
-          row: i + 1,
-          field: "Unit ID / Equipment Number",
-          value: `${unitVal || "-"} / ${equipVal || "-"}`,
-          message: "Both Unit ID and Equipment Number are required",
-        });
-      }
-
-      // ✅ Case 3: Both missing
       if (!unitVal && !equipVal) {
         errors.push({
           row: i + 1,
           field: "Unit ID",
           value: "",
-          message: "Unit ID and Equipment Number are required",
+          message: "Unit ID or Equipment ID/Trailer Number is required",
         });
       }
-
 
       const effectiveId = unitVal || equipVal;
       if (effectiveId) {
@@ -374,8 +390,6 @@ export async function POST(req: NextRequest) {
         } else {
           seenUnitIds.set(key, i + 1);
         }
-      } else {
-        errors.push({ row: i + 1, field: "Unit ID", value: "", message: "Missing Unit ID or Equipment ID/Trailer Number" });
       }
 
       if (vinIndex >= 0) {

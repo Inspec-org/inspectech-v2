@@ -11,6 +11,8 @@ export interface User {
   avatar?: string;
   role?: string;
   _id?: string;
+  vendorAccess?: any[];
+  departmentAccess?: any[];
 }
 
 interface UserContextType {

@@ -248,9 +248,12 @@ export async function POST(req: NextRequest) {
     const errors: ValidationError[] = [];
     const parsedRows: Record<string, string>[] = [];
 
-    // ✅ FIX: Use normalizeHeader for all candidate matching so camelCase,
-    // snake_case, spaced variants all match correctly (e.g. "equipmentNumber" === "equipment number")
-    const unitIdHeaderCandidates = ["unit id", "unitid", "unitid#", "unit"];
+    const unitIdHeaderCandidates = [
+      "unit id",
+      "unitid",
+      "unitid#",
+      "unit",
+    ];
     const equipIdHeaderCandidates = [
       "equipment id/trailer number",
       "equipment id",
@@ -272,13 +275,11 @@ export async function POST(req: NextRequest) {
 
     const seenUnitIds = new Map<string, number>();
 
-    // ✅ FIX: Use normalizeHeader for VIN header matching
     const vinHeaderCandidates = ["vin", "vehicle identification number"];
     const vinIndex = headers.findIndex(h =>
       vinHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
     );
 
-    // ✅ FIX: Use normalizeHeader for date header matching
     const dateHeaderCandidates = ["date", "inspection date", "inspectiondate"];
     const dateIndex = headers.findIndex(h =>
       dateHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
@@ -306,6 +307,14 @@ export async function POST(req: NextRequest) {
         rightfrontinner: { type: "dropdown", key: "rightfrontinner" },
         rightrearouter: { type: "dropdown", key: "rightrearouter" },
         rightrearinner: { type: "dropdown", key: "rightrearinner" },
+        treaddepthleftfrontouter: { type: "dropdown", key: "leftfrontouter" },
+        treaddepthleftfrontinner: { type: "dropdown", key: "leftfrontinner" },
+        treaddepthleftrearouter: { type: "dropdown", key: "leftrearouter" },
+        treaddepthleftrearinner: { type: "dropdown", key: "leftrearinner" },
+        treaddepthrightfrontouter: { type: "dropdown", key: "rightfrontouter" },
+        treaddepthrightfrontinner: { type: "dropdown", key: "rightfrontinner" },
+        treaddepthrightrearouter: { type: "dropdown", key: "rightrearouter" },
+        treaddepthrightrearinner: { type: "dropdown", key: "rightrearinner" },
         doorcolor: { type: "dropdown", key: "doorcolor" },
         doortype: { type: "dropdown", key: "doortype" },
         mudflaptype: { type: "dropdown", key: "mudflaptype" },
@@ -395,7 +404,6 @@ export async function POST(req: NextRequest) {
       const unitVal = unitIdIndex >= 0 ? norm(String(currentRow[unitIdIndex] ?? "")) : "";
       const equipVal = equipIdIndex >= 0 ? norm(String(currentRow[equipIdIndex] ?? "")) : "";
 
-      // Case 1: Both present → MUST match
       if (unitVal && equipVal && normId(unitVal) !== normId(equipVal)) {
         errors.push({
           row: i + 1,
@@ -405,23 +413,12 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Case 2: One missing → throw error (strict mode)
-      if ((unitVal && !equipVal) || (!unitVal && equipVal)) {
-        errors.push({
-          row: i + 1,
-          field: "Unit ID / Equipment Number",
-          value: `${unitVal || "-"} / ${equipVal || "-"}`,
-          message: "Both Unit ID and Equipment Number are required",
-        });
-      }
-
-      // Case 3: Both missing
       if (!unitVal && !equipVal) {
         errors.push({
           row: i + 1,
           field: "Unit ID",
           value: "",
-          message: "Unit ID and Equipment Number are required",
+          message: "Unit ID or Equipment ID/Trailer Number is required",
         });
       }
 

@@ -702,9 +702,9 @@ const AdminNotificationModal: React.FC<Props> = ({
                                     isOpen={isThirdTimeOpen}
                                     onClose={() => setIsThirdTimeOpen(false)}
                                     onOpen={() => setIsThirdTimeOpen(true)}
-                                    hour={secondSendHour}
-                                    minute={secondSendMinute}
-                                    period={secondSendPeriod as 'AM' | 'PM'}
+                                    hour={thirdSendHour}
+                                    minute={thirdSendMinute}
+                                    period={thirdSendPeriod as 'AM' | 'PM'}
                                     onTimeChange={(h, m, p) => {
                                         setThirdSendHour(h);
                                         setThirdSendMinute(m);
