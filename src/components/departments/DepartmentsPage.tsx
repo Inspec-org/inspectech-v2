@@ -22,12 +22,19 @@ export default function DepartmentsPage() {
 
   const getDepartments = async () => {
     try {
-      const endpoint = "/api/departments/get-departments";
+      const selectedVendorId = Cookies.get('selectedVendorId') || '';
+      // For admin users, always show grouped departments (all vendors)
+      // For superadmin/owner, show specific vendor's departments if vendorId is selected
+      const endpoint = (user?.role === 'admin') 
+        ? "/api/departments/get-departments"
+        : selectedVendorId && (user?.role === 'superadmin' || user?.role === 'owner')
+        ? `/api/departments/get-departments?vendorId=${encodeURIComponent(selectedVendorId)}`
+        : "/api/departments/get-departments";
       const res = await apiRequest(endpoint);
       if (res.ok) {
         const json = await res.json();
         
-        // Handle grouped response for admin users
+        // Handle grouped response for admin/superadmin/owner users
         if (json.grouped && json.departmentsByVendor) {
           const processedGroups = json.departmentsByVendor.map((group: any) => ({
             vendorId: group.vendorId,
@@ -55,7 +62,7 @@ export default function DepartmentsPage() {
           const allDepartments = processedGroups.flatMap((group: any) => group.departments);
           setDepartments(allDepartments);
         } else {
-          // Handle regular response for non-admin users
+          // Handle regular response when vendorId is provided
           const departmentsWithImages = json.departments.map((dept: any) => {
             const icon = String(dept.icon || '');
             const base = icon === 'wrench' ? { image: 'wrench', imageType: 'icon' }

@@ -69,10 +69,6 @@ export async function GET(req: NextRequest) {
       }
     } else if (user.role === "admin") {
       const vendorId = url.searchParams.get("vendorId");
-      const adminDeptIds = (user.departmentAccess || []).map((id: any) => id.toString());
-      if (adminDeptIds.length === 0) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
 
       // If vendorId is provided, return departments for that specific vendor (flat list)
       if (vendorId) {
@@ -81,9 +77,8 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
         }
         const vDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => id.toString());
-        const allowedDeptIds = adminDeptIds.filter((id: string) => vDeptIds.includes(id));
         
-        departments = await Department.find({ _id: { $in: allowedDeptIds } })
+        departments = await Department.find({ _id: { $in: vDeptIds } })
           .sort({ createdAt: -1 })
           .skip((page - 1) * limit)
           .limit(limit);
@@ -101,10 +96,9 @@ export async function GET(req: NextRequest) {
         const departmentsByVendor: any[] = [];
         for (const vendor of vendors) {
           const vDeptIds = (((vendor as any).departmentAccess) || []).map((id: any) => id.toString());
-          const allowedDeptIds = adminDeptIds.filter((id: string) => vDeptIds.includes(id));
           
-          if (allowedDeptIds.length > 0) {
-            const vendorDepts = await Department.find({ _id: { $in: allowedDeptIds } })
+          if (vDeptIds.length > 0) {
+            const vendorDepts = await Department.find({ _id: { $in: vDeptIds } })
               .sort({ createdAt: -1 });
             
             if (vendorDepts.length > 0) {

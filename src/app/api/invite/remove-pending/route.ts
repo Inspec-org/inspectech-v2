@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/db";
 import Invitation from "@/lib/models/Invitation";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const secret = process.env.CRON_SECRET;
     const header = req.headers.get("x-cron-secret");

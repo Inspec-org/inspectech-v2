@@ -436,11 +436,13 @@ const buildEmailHtml = ({
 
 const authorize = (req: NextRequest) => {
     const secret = process.env.CRON_SECRET;
-    const token =
-        req.headers.get("x-cron-secret") ??
-        req.nextUrl.searchParams.get("token");
+    const header = req.headers.get("x-cron-secret");
 
-    return !secret || token === secret;
+    if (!secret || !header || header !== secret) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+
+    return true;
 };
 
 export async function POST(req: NextRequest) {
