@@ -527,10 +527,10 @@ export default function BatchCreateInspections() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-6 border-b border-gray-200">
                         <h2 className="text-lg font-semibold text-purple-700">
-                            Complete CSV Import
+                            Complete CSV / XLSX Import
                         </h2>
                         <p className="text-sm text-gray-600 mt-2">
-                            Upload a complete CSV with all inspection details already filled out for each Unit ID (or Equipment ID/Trailer Number).
+                            Upload a complete CSV / XLSX of maximum 1000 rows with all inspection details already filled out for each Unit ID (or Equipment ID/Trailer Number).
                         </p>
                         <p className="text-sm text-gray-500 mt-1 italic">
                             Note: Unit ID is derived from the Equipment ID/Trailer Number column in the source data.
@@ -551,10 +551,10 @@ export default function BatchCreateInspections() {
                             <div className="flex flex-row items-center justify-between">
                                 <div className='flex flex-col'>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                        Upload complete CSV
+                                        Upload complete CSV / XLSX
                                     </h3>
                                     <p className="text-sm text-gray-600">
-                                        Your CSV should include Unit ID or Equipment ID/Trailer Number and all inspection field values for each unit.
+                                        Your CSV / XLSX should include Unit ID or Equipment ID/Trailer Number and all inspection field values for each unit.
                                     </p>
                                 </div>
 
