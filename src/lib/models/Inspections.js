@@ -209,11 +209,6 @@ const InspectionSchema = new mongoose.Schema({
   vin: { type: String },
   warrantyBatchId: { type: String },
 
-  // Keep old field names for backward compatibility (optional)
-  equipmentNumber: { type: String },
-  licensePlateState: { type: String },
-  possessionOrigin: { type: String },
-  cargoCameras: { type: String },
   noseBranding: { type: String },
   captiveBeam: { type: String },
 

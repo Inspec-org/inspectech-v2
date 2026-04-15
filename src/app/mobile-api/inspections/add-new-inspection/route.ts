@@ -60,7 +60,8 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    ["equipmentNumber", "vin"].forEach((key) => {
+    // Handle both old (equipmentNumber) and new (equipmentId) field names for backward compatibility
+    ["equipmentNumber", "equipmentId", "vin"].forEach((key) => {
       const v = cleaned[key];
       if (
         v === "" ||

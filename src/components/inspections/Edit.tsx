@@ -16,6 +16,8 @@ import { useModal } from '@/hooks/useModal';
 import Cookies from 'js-cookie';
 import { evaluateInspectionData, openDetailedResults as openDetailedResultsReport, ProcessResult } from './processing';
 
+// Old FormData interface - Commented out
+/*
 export interface FormData {
   unitId: string;
   departmentId: string;
@@ -119,6 +121,130 @@ export interface FormData {
   additionalAttachment2: string;
   additionalAttachment3: string;
 }
+*/
+
+// New FormData interface with updated field names
+export interface FormData {
+  unitId: string;
+  departmentId: string;
+  inspectionStatus: string;
+  reviewReason: string;
+  type: string;
+  inspector: string;
+  vendor: string;
+  vendorId: string;
+  location: string;
+  delivered: string;
+  durationMin: string;
+  durationSec: string;
+  dateDay: string;
+  dateMonth: string;
+  dateYear: string;
+  notes: string;
+  poNumber: string;
+  owner: string;
+  assetTagId: string;
+  equipmentId: string;
+  vin: string;
+  licensePlateId: string;
+  licensePlateCountry: string;
+  licensePlateExpiration: string;
+  licensePlateStateOrProvince: string;
+  possessionOriginLocation: string;
+  possessionStart: string;
+  possessionEnd: string;
+  manufacturer: string;
+  modelYear: string;
+  manufacturerAssetId: string;
+  operator: string;
+  program: string;
+  cargoLockFitted: string;
+  cargoLockInstalledDate: string;
+  cargoLockType: string;
+  conspicuityTapeInstallDate: string;
+  estimatedDateOfAvailability: string;
+  healthScore: string;
+  invoiceNumber: string;
+  lifecycleState: string;
+  lifecycleStateReason: string;
+  pulsatingLampInstallationDate: string;
+  pulsatingLampManufacturer: string;
+  pulsatingLampModel: string;
+  pulsatingLampWiring: string;
+  purchaseCondition: string;
+  purchaseDate: string;
+  purchaseType: string;
+  tireSize: string;
+  warrantyBatchId: string;
+  assetIdOrErrorMessage: string;
+  absSensor: string;
+  atisRegulator: string;
+  aerokits: string;
+  airTankMonitor: string;
+  axleType: string;
+  brakeType: string;
+  cargoCamera: string;
+  cartbars: string;
+  conspicuityTape: string;
+  doorBranding: string;
+  doorColor: string;
+  doorSensor: string;
+  doorType: string;
+  grossAxleWeightRating: string;
+  height: string;
+  lashSystem: string;
+  length: string;
+  lightOutSensor: string;
+  mudFlapType: string;
+  panelBranding: string;
+  sensorError: string;
+  skirtColor: string;
+  skirted: string;
+  suspensionType: string;
+  tpms: string;
+  tireBrand: string;
+  tireModel: string;
+  treadDepthLeftFrontOuter: string;
+  treadDepthLeftFrontInner: string;
+  treadDepthLeftRearOuter: string;
+  treadDepthLeftRearInner: string;
+  treadDepthRightFrontOuter: string;
+  treadDepthRightFrontInner: string;
+  treadDepthRightRearOuter: string;
+  treadDepthRightRearInner: string;
+  trailerHeightDecal: string;
+  ultrasonicCargoSensor: string;
+
+  // Keep old field names for backward compatibility
+  equipmentNumber: string;
+  licensePlateState: string;
+  possessionOrigin: string;
+  cargoCameras: string;
+  noseBranding: string;
+  captiveBeam: string;
+  atisregulator: string;
+  leftFrontOuter: string;
+  leftFrontInner: string;
+  leftRearOuter: string;
+  leftRearInner: string;
+  rightFrontOuter: string;
+  rightFrontInner: string;
+  rightRearOuter: string;
+  rightRearInner: string;
+
+  frontLeftSideUrl: string;
+  frontRightSideUrl: string;
+  rearLeftSideUrl: string;
+  rearRightSideUrl: string;
+  insideTrailerImageUrl: string;
+  doorDetailsImageUrl: string;
+  dotFormImageUrl: string;
+  dotFormPdfUrl: string;
+  dotFormPdfFileName?: string;
+  additionalAttachment1: string;
+  additionalAttachment2: string;
+  additionalAttachment3: string;
+}
 
 export default function Edit({ type }: { type: string }) {
   const [activeTab, setActiveTab] = useState('general');
@@ -156,13 +282,13 @@ export default function Edit({ type }: { type: string }) {
     poNumber: '',
     owner: '',
     assetTagId: '',
-    equipmentNumber: '',
+    equipmentId: '',
     vin: '',
     licensePlateId: '',
     licensePlateCountry: '',
     licensePlateExpiration: '',
-    licensePlateState: '',
-    possessionOrigin: '',
+    licensePlateStateOrProvince: '',
+    possessionOriginLocation: '',
     possessionStart: '',
     possessionEnd: '',
     manufacturer: '',
@@ -179,6 +305,7 @@ export default function Edit({ type }: { type: string }) {
     invoiceNumber: '',
     lifecycleState: '',
     lifecycleStateReason: '',
+    pulsatingLampInstallationDate: '',
     pulsatingLampManufacturer: '',
     pulsatingLampModel: '',
     pulsatingLampWiring: '',
@@ -187,20 +314,52 @@ export default function Edit({ type }: { type: string }) {
     purchaseType: '',
     tireSize: '',
     warrantyBatchId: '',
+    assetIdOrErrorMessage: '',
     absSensor: '',
+    atisRegulator: '',
+    aerokits: '',
     airTankMonitor: '',
-    atisregulator: '',
-    lightOutSensor: '',
-    sensorError: '',
-    ultrasonicCargoSensor: '',
-    length: '',
-    height: '',
-    grossAxleWeightRating: '',
     axleType: '',
     brakeType: '',
+    cargoCamera: '',
+    cartbars: '',
+    conspicuityTape: '',
+    doorBranding: '',
+    doorColor: '',
+    doorSensor: '',
+    doorType: '',
+    grossAxleWeightRating: '',
+    height: '',
+    lashSystem: '',
+    length: '',
+    lightOutSensor: '',
+    mudFlapType: '',
+    panelBranding: '',
+    sensorError: '',
+    skirtColor: '',
+    skirted: '',
     suspensionType: '',
-    tireModel: '',
+    tpms: '',
     tireBrand: '',
+    tireModel: '',
+    treadDepthLeftFrontOuter: '',
+    treadDepthLeftFrontInner: '',
+    treadDepthLeftRearOuter: '',
+    treadDepthLeftRearInner: '',
+    treadDepthRightFrontOuter: '',
+    treadDepthRightFrontInner: '',
+    treadDepthRightRearOuter: '',
+    treadDepthRightRearInner: '',
+    trailerHeightDecal: '',
+    ultrasonicCargoSensor: '',
+    // Old field names for backward compatibility
+    equipmentNumber: '',
+    licensePlateState: '',
+    possessionOrigin: '',
+    cargoCameras: '',
+    noseBranding: '',
+    captiveBeam: '',
+    atisregulator: '',
     leftFrontOuter: '',
     leftFrontInner: '',
     leftRearOuter: '',
@@ -209,23 +368,6 @@ export default function Edit({ type }: { type: string }) {
     rightFrontInner: '',
     rightRearOuter: '',
     rightRearInner: '',
-    aerokits: '',
-    conspicuityTape: '',
-    doorBranding: '',
-    doorColor: '',
-    doorSensor: '',
-    doorType: '',
-    lashSystem: '',
-    mudFlapType: '',
-    panelBranding: '',
-    noseBranding: '',
-    skirted: '',
-    skirtColor: '',
-    captiveBeam: '',
-    cargoCameras: '',
-    cartbars: '',
-    tpms: '',
-    trailerHeightDecal: '',
     frontLeftSideUrl: '',
     frontRightSideUrl: '',
     rearLeftSideUrl: '',

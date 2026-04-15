@@ -20,9 +20,9 @@ export async function PUT(req: NextRequest) {
 
     await connectDB();
 
-    // Validate unitId vs equipmentNumber
-    const { unitId, equipmentNumber } = body;
-    console.log(unitId, equipmentNumber)
+    // Validate unitId vs equipmentNumber/equipmentId
+    const { unitId, equipmentNumber, equipmentId } = body;
+    console.log(unitId, equipmentNumber, equipmentId)
 
     const isEmptyOrNA = (v: any) =>
       v === undefined || v === null || v === "" || v === "N/A";
@@ -31,6 +31,13 @@ export async function PUT(req: NextRequest) {
     if (!isEmptyOrNA(equipmentNumber) && equipmentNumber !== unitId) {
       return NextResponse.json(
         { success: false, message: "unitId and Equipment Number must match" },
+        { status: 400 }
+      );
+    }
+    // If equipmentId exists AND is not empty/NA AND different → error
+    if (!isEmptyOrNA(equipmentId) && equipmentId !== unitId) {
+      return NextResponse.json(
+        { success: false, message: "unitId and Equipment ID must match" },
         { status: 400 }
       );
     }
@@ -43,7 +50,8 @@ export async function PUT(req: NextRequest) {
       }
     });
     const unsetDoc: any = {};
-    ["equipmentNumber", "vin"].forEach((key) => {
+    // Handle both old (equipmentNumber) and new (equipmentId) field names for backward compatibility
+    ["equipmentNumber", "equipmentId", "vin"].forEach((key) => {
       const v = cleaned[key];
       if (v === "" || v === null || v === undefined || String(v).trim().toUpperCase() === "N/A") {
         delete cleaned[key];

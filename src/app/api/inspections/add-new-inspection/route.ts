@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
         delete cleaned[key];
       }
     });
-    ["equipmentNumber", "vin"].forEach((key) => {
+    // Handle both old (equipmentNumber) and new (equipmentId) field names for backward compatibility
+    ["equipmentNumber", "equipmentId", "vin"].forEach((key) => {
       const v = cleaned[key];
       if (v === "" || v === null || v === undefined || String(v).trim().toUpperCase() === "N/A") {
         delete cleaned[key];

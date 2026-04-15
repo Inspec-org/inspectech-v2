@@ -175,14 +175,14 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
     ];
 
     const tireLocationFields: { key: keyof FormData; label: string }[] = [
-        { key: 'leftFrontOuter', label: 'Left Front Outer' },
-        { key: 'leftFrontInner', label: 'Left Front Inner' },
-        { key: 'leftRearOuter', label: 'Left Rear Outer' },
-        { key: 'leftRearInner', label: 'Left Rear Inner' },
-        { key: 'rightFrontOuter', label: 'Right Front Outer' },
-        { key: 'rightFrontInner', label: 'Right Front Inner' },
-        { key: 'rightRearOuter', label: 'Right Rear Outer' },
-        { key: 'rightRearInner', label: 'Right Rear Inner' },
+        { key: 'treadDepthLeftFrontOuter', label: 'Tread Depth Left Front Outer' },
+        { key: 'treadDepthLeftFrontInner', label: 'Tread Depth Left Front Inner' },
+        { key: 'treadDepthLeftRearOuter', label: 'Tread Depth Left Rear Outer' },
+        { key: 'treadDepthLeftRearInner', label: 'Tread Depth Left Rear Inner' },
+        { key: 'treadDepthRightFrontOuter', label: 'Tread Depth Right Front Outer' },
+        { key: 'treadDepthRightFrontInner', label: 'Tread Depth Right Front Inner' },
+        { key: 'treadDepthRightRearOuter', label: 'Tread Depth Right Rear Outer' },
+        { key: 'treadDepthRightRearInner', label: 'Tread Depth Right Rear Inner' },
     ];
 
     // ─── Render ──────────────────────────────────────────────────────────────────
@@ -213,13 +213,13 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
                                 <TextFieldWithNA name="poNumber" label="PO Number" value={formData.poNumber} />
                                 <TextFieldWithNA name="owner" label="Owner" value={formData.owner} />
-                                <TextFieldWithNA name="equipmentNumber" label="Equipment ID / Trailer Number" value={formData.equipmentNumber} disabled={prop === "batch"} />
+                                <TextFieldWithNA name="equipmentId" label="Equipment ID" value={formData.equipmentId} disabled={prop === "batch"} />
                                 <TextFieldWithNA name="vin" label="VIN" value={formData.vin} disabled={prop === "batch"} />
                                 <TextFieldWithNA name="licensePlateId" label="License Plate ID" value={formData.licensePlateId} />
                                 <TextFieldWithNA name="licensePlateCountry" label="License Plate Country" value={formData.licensePlateCountry} />
                                 <TextFieldWithNA name="licensePlateExpiration" label="License Plate Expiration" value={formData.licensePlateExpiration} />
-                                <TextFieldWithNA name="licensePlateState" label="License Plate State / Province" value={formData.licensePlateState} />
-                                <TextFieldWithNA name="possessionOrigin" label={<>Possession Origin Location /<br/>Pickup Location</>} value={formData.possessionOrigin} />
+                                <TextFieldWithNA name="licensePlateStateOrProvince" label="License Plate State / Province" value={formData.licensePlateStateOrProvince} />
+                                <TextFieldWithNA name="possessionOriginLocation" label={<>Possession Origin Location</>} value={formData.possessionOriginLocation} />
                                 <DateField name="possessionStart" label="Possession Start" value={formData.possessionStart} />
                                 <DateField name="possessionEnd" label="Possession End" value={formData.possessionEnd} />
 
@@ -368,11 +368,12 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
                                 <RadioField name="absSensor" label="ABS Sensor" value={formData.absSensor} />
                                 <RadioField name="airTankMonitor" label="Air Tank Monitor" value={formData.airTankMonitor} />
-                                <RadioField name="atisregulator" label="ATIS Regulator" value={formData.atisregulator} />
+                                <RadioField name="atisRegulator" label="ATIS Regulator" value={formData.atisRegulator} />
                                 <RadioField name="lightOutSensor" label="Light Out Sensor" value={formData.lightOutSensor} />
                                 <RadioField name="sensorError" label="Sensor Error" value={formData.sensorError} />
                                 <RadioField name="ultrasonicCargoSensor" label="Ultrasonic Cargo Sensor" value={formData.ultrasonicCargoSensor} />
 
+                                <DateField name="pulsatingLampInstallationDate" label="Pulsating Lamp Installation Date" value={formData.pulsatingLampInstallationDate} />
                                 <DropdownField
                                     name="pulsatingLampManufacturer" label="Pulsating Lamp Manufacturer" value={formData.pulsatingLampManufacturer}
                                     options={[
@@ -463,7 +464,14 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         { value: "Michelin", label: "Michelin" },
                                     ]}
                                 />
-                                <TextFieldWithNA name="tireSize" label="Tire Size" value={formData.tireSize} />
+                                <DropdownField name="tireSize" label="Tire Size" value={formData.tireSize}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "295/75R22.5", label: "295/75R22.5" },
+                                        { value: "385/65R22.5", label: "385/65R22.5" },
+                                        { value: "435/50R19.5", label: "435/50R19.5" },
+                                        { value: "445/45R19.5", label: "445/45R19.5" },
+                                    ]} />
                                 <RadioField name="cargoLockFitted" label="Cargo Lock Fitted" value={formData.cargoLockFitted} />
                                 <DateField name="cargoLockInstalledDate" label="Cargo Lock Installed Date" value={formData.cargoLockInstalledDate} />
                                 <DropdownField
@@ -588,7 +596,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             />
                             <DateField name="conspicuityTapeInstallDate" label="Conspicuity Tape Install Date" value={formData.conspicuityTapeInstallDate} />
                             <RadioField name="captiveBeam" label="Captive Beam" value={formData.captiveBeam} />
-                            <RadioField name="cargoCameras" label="Cargo Camera" value={formData.cargoCameras} />
+                            <RadioField name="cargoCamera" label="Cargo Camera" value={formData.cargoCamera} />
                             <RadioField name="cartbars" label="Cartbars" value={formData.cartbars} />
                             <RadioField name="tpms" label="TPMS" value={formData.tpms} />
                             <RadioField name="trailerHeightDecal" label="Trailer Height Decal" value={formData.trailerHeightDecal} />

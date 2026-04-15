@@ -20,15 +20,25 @@ const FIELD_CATEGORIES = {
     "licensePlateId",
     "licensePlateCountry",
     "licensePlateExpiration",
-    "licensePlateState/Province",
-    "possessionOrigin",
+    "licensePlateStateOrProvince",
+    "possessionOriginLocation",
     "manufacturer",
     "modelYear",
+    "assetTagId",
+    "manufacturerAssetId",
+    "operator",
+    "program",
+    "purchaseCondition",
+    "purchaseDate",
+    "purchaseType",
+    "invoiceNumber",
+    "warrantyBatchId",
+    "assetIdOrErrorMessage",
   ],
   sensor: [
     "absSensor",
     "airTankMonitor",
-    "atisregulator",
+    "atisRegulator",
     "lightOutSensor",
     "sensorError",
     "ultrasonicCargoSensor",
@@ -42,14 +52,15 @@ const FIELD_CATEGORIES = {
     "suspensionType",
     "tireModel",
     "tireBrand",
-    "leftFrontOuter",
-    "leftFrontInner",
-    "leftRearOuter",
-    "leftRearInner",
-    "rightFrontOuter",
-    "rightFrontInner",
-    "rightRearOuter",
-    "rightRearInner",
+    "tireSize",
+    "treadDepthLeftFrontOuter",
+    "treadDepthLeftFrontInner",
+    "treadDepthLeftRearOuter",
+    "treadDepthLeftRearInner",
+    "treadDepthRightFrontOuter",
+    "treadDepthRightFrontInner",
+    "treadDepthRightRearOuter",
+    "treadDepthRightRearInner",
   ],
   feature: [
     "aerokits",
@@ -69,6 +80,24 @@ const FIELD_CATEGORIES = {
     "cartbars",
     "tpms",
     "trailerHeightDecal",
+    "cargoLockFitted",
+    "cargoLockInstalledDate",
+    "cargoLockType",
+    "conspicuityTapeInstallDate",
+  ],
+  lifecycle: [
+    "lifecycleState",
+    "lifecycleStateReason",
+    "estimatedDateOfAvailability",
+    "healthScore",
+    "possessionStart",
+    "possessionEnd",
+  ],
+  pulsating: [
+    "pulsatingLampInstallationDate",
+    "pulsatingLampManufacturer",
+    "pulsatingLampModel",
+    "pulsatingLampWiring",
   ],
 };
 
@@ -83,6 +112,7 @@ const getDropdownAllowed = (key?: string, isCanadaTrailers?: boolean): string[] 
     braketype: ["N/A", "Disc", "Drum"],
     suspensiontype: ["N/A", "Air", "Spring"],
     tirebrand: ["N/A", "Bridgestone", "Continental", "Firestone", "Goodyear", "Michelin"],
+    tiresize: ["N/A", "295/75R22.5", "385/65R22.5", "435/50R19.5", "445/45R19.5"],
     leftfrontouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
     leftfrontinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
     leftrearouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
@@ -91,6 +121,14 @@ const getDropdownAllowed = (key?: string, isCanadaTrailers?: boolean): string[] 
     rightfrontinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
     rightrearouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
     rightrearinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    treaddepthleftfrontouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    treaddepthleftfrontinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    treaddepthleftrearouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    treaddepthleftrearinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    treaddepthrightfrontouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    treaddepthrightfrontinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    treaddepthrightrearouter: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
+    treaddepthrightrearinner: ["N/A", "15/32", "14/32", "13/32", "12/32", "11/32", "10/32"],
     doorcolor: ["N/A", "Pantone 432 C", "White"],
     doortype: ["N/A", "Swing", "Roll"],
     mudflaptype: ["N/A", "Fast-Flap"],
@@ -103,12 +141,14 @@ const getDropdownAllowed = (key?: string, isCanadaTrailers?: boolean): string[] 
 };
 
 const countFieldCategories = (headers: string[], isCanada: boolean) => {
-  const counts = { identification: 0, dimensional: 0, feature: 0, sensor: 0 };
+  const counts = { identification: 0, dimensional: 0, feature: 0, sensor: 0, lifecycle: 0, pulsating: 0 };
   const CATS = {
     identification: isCanada ? FIELD_CATEGORIES.identification : FIELD_CATEGORIES.identification.filter(f => f !== "owner"),
     sensor: FIELD_CATEGORIES.sensor,
     dimensional: FIELD_CATEGORIES.dimensional,
     feature: isCanada ? FIELD_CATEGORIES.feature : FIELD_CATEGORIES.feature.filter(f => f !== "conspicuityTape"),
+    lifecycle: FIELD_CATEGORIES.lifecycle,
+    pulsating: FIELD_CATEGORIES.pulsating,
   };
   headers.forEach(header => {
     const n = normalizeHeader(header);
@@ -122,6 +162,8 @@ const countFieldCategories = (headers: string[], isCanada: boolean) => {
     if (CATS.sensor.some(match)) { counts.sensor++; return; }
     if (CATS.feature.some(match)) { counts.feature++; return; }
     if (CATS.dimensional.some(match)) { counts.dimensional++; return; }
+    if (CATS.lifecycle.some(match)) { counts.lifecycle++; return; }
+    if (CATS.pulsating.some(match)) { counts.pulsating++; return; }
   });
   return counts;
 };
@@ -165,6 +207,12 @@ export async function POST(req: NextRequest) {
     rows = rows.filter(r => Array.isArray(r) && r.some(c => c !== null && c !== undefined && String(c).trim() !== ""));
     if (rows.length < 2) {
       return NextResponse.json({ success: false, errors: [{ row: 0, field: "file", value: name, message: "File must contain headers and at least one data row." }] }, { status: 200 });
+    }
+
+    // Limit to 1000 rows max (excluding header)
+    const maxRows = 1000;
+    if (rows.length - 1 > maxRows) {
+      return NextResponse.json({ success: false, errors: [{ row: 0, field: "file", value: name, message: `Maximum ${maxRows} rows allowed. File has ${rows.length - 1} rows.` }] }, { status: 200 });
     }
 
     const headers = (rows[0] as any[]).map(h => (h === null || h === undefined ? "" : String(h))).filter(h => h !== "");
@@ -248,7 +296,7 @@ export async function POST(req: NextRequest) {
 
     const headerKinds = headers.map(h => {
       const n = normalizeHeader(h);
-      const MAP: Record<string, { type: "dropdown" | "radio" | "text" | "year"; key?: string }> = {
+      const MAP: Record<string, { type: "dropdown" | "radio" | "text" | "year" | "date"; key?: string }> = {
         manufacturer: { type: "dropdown", key: "manufacturer" },
         modelyear: { type: "year", key: "modelyear" },
         length: { type: "dropdown", key: "length" },
@@ -258,6 +306,7 @@ export async function POST(req: NextRequest) {
         braketype: { type: "dropdown", key: "braketype" },
         suspensiontype: { type: "dropdown", key: "suspensiontype" },
         tirebrand: { type: "dropdown", key: "tirebrand" },
+        tiresize: { type: "dropdown", key: "tiresize" },
         leftfrontouter: { type: "dropdown", key: "leftfrontouter" },
         leftfrontinner: { type: "dropdown", key: "leftfrontinner" },
         leftrearouter: { type: "dropdown", key: "leftrearouter" },
@@ -266,14 +315,14 @@ export async function POST(req: NextRequest) {
         rightfrontinner: { type: "dropdown", key: "rightfrontinner" },
         rightrearouter: { type: "dropdown", key: "rightrearouter" },
         rightrearinner: { type: "dropdown", key: "rightrearinner" },
-        treaddepthleftfrontouter: { type: "dropdown", key: "leftfrontouter" },
-        treaddepthleftfrontinner: { type: "dropdown", key: "leftfrontinner" },
-        treaddepthleftrearouter: { type: "dropdown", key: "leftrearouter" },
-        treaddepthleftrearinner: { type: "dropdown", key: "leftrearinner" },
-        treaddepthrightfrontouter: { type: "dropdown", key: "rightfrontouter" },
-        treaddepthrightfrontinner: { type: "dropdown", key: "rightfrontinner" },
-        treaddepthrightrearouter: { type: "dropdown", key: "rightrearouter" },
-        treaddepthrightrearinner: { type: "dropdown", key: "rightrearinner" },
+        treaddepthleftfrontouter: { type: "dropdown", key: "treaddepthleftfrontouter" },
+        treaddepthleftfrontinner: { type: "dropdown", key: "treaddepthleftfrontinner" },
+        treaddepthleftrearouter: { type: "dropdown", key: "treaddepthleftrearouter" },
+        treaddepthleftrearinner: { type: "dropdown", key: "treaddepthleftrearinner" },
+        treaddepthrightfrontouter: { type: "dropdown", key: "treaddepthrightfrontouter" },
+        treaddepthrightfrontinner: { type: "dropdown", key: "treaddepthrightfrontinner" },
+        treaddepthrightrearouter: { type: "dropdown", key: "treaddepthrightrearouter" },
+        treaddepthrightrearinner: { type: "dropdown", key: "treaddepthrightrearinner" },
         doorcolor: { type: "dropdown", key: "doorcolor" },
         doortype: { type: "dropdown", key: "doortype" },
         mudflaptype: { type: "dropdown", key: "mudflaptype" },
@@ -297,6 +346,7 @@ export async function POST(req: NextRequest) {
         sensorerror: { type: "radio" },
         ultrasoniccargosensor: { type: "radio" },
         skirted: { type: "radio" },
+        cargolockfitted: { type: "radio" },
         ponumber: { type: "text" },
         equipmentid: { type: "text" },
         equipmentidtrailernumber: { type: "text" },
@@ -306,7 +356,9 @@ export async function POST(req: NextRequest) {
         licenseplatecountry: { type: "text" },
         licenseplateexpiration: { type: "text" },
         licenseplatestateprovince: { type: "text" },
+        licenseplatestateorprovince: { type: "text" },
         possessionorigin: { type: "text" },
+        possessionoriginlocation: { type: "text" },
         doorbranding: { type: "text" },
         tiremodel: { type: "text" },
         owner: { type: "text" },
@@ -315,6 +367,29 @@ export async function POST(req: NextRequest) {
         inspector: { type: "text" },
         location: { type: "text" },
         date: { type: "text" },
+        assettagid: { type: "text" },
+        manufacturerassetid: { type: "text" },
+        operator: { type: "text" },
+        program: { type: "text" },
+        purchasecondition: { type: "text" },
+        purchasedate: { type: "date" },
+        purchasetype: { type: "text" },
+        invoicenumber: { type: "text" },
+        warrantybatchid: { type: "text" },
+        assetidorerrormessage: { type: "text" },
+        lifecyclestate: { type: "text" },
+        lifecyclestatereason: { type: "text" },
+        estimateddateofavailability: { type: "date" },
+        healthscore: { type: "text" },
+        possessionstart: { type: "date" },
+        possessionend: { type: "date" },
+        pulsatinglampinstallationdate: { type: "date" },
+        pulsatinglampmanufacturer: { type: "text" },
+        pulsatinglampmodel: { type: "text" },
+        pulsatinglampwiring: { type: "text" },
+        cargolockinstalleddate: { type: "date" },
+        cargolocktype: { type: "text" },
+        conspicuitytapeinstalldate: { type: "date" },
       };
       return MAP[n] || { type: "text" };
     });

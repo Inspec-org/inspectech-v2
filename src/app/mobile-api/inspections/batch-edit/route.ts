@@ -55,7 +55,8 @@ export async function PUT(req: NextRequest) {
       if (isEmptyOrNA(cleaned[key])) delete cleaned[key];
     });
 
-    ["equipmentNumber", "vin"].forEach((key) => {
+    // Handle both old (equipmentNumber) and new (equipmentId) field names for backward compatibility
+    ["equipmentNumber", "equipmentId", "vin"].forEach((key) => {
       if (isEmptyOrNA(cleaned[key])) {
         delete cleaned[key];
         unsetDoc[key] = "";

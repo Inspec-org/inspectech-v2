@@ -32,6 +32,15 @@ export async function POST(req: NextRequest) {
     const payloads = Array.isArray(body?.payloads) ? body.payloads : [];
     console.log("📦 Payload count:", payloads.length);
 
+    // Limit to 1000 rows max
+    if (payloads.length > 1000) {
+      console.warn("⚠️ Payload count exceeds maximum of 1000");
+      return NextResponse.json(
+        { success: false, message: "Maximum 1000 rows allowed" },
+        { status: 400 }
+      );
+    }
+
     if (!payloads.length) {
       console.warn("⚠️ No payloads provided");
       return NextResponse.json(
@@ -76,6 +85,31 @@ export async function POST(req: NextRequest) {
 
       const doc: any = { ...p, unitId, vendorId, departmentId };
 
+      // Handle old field names to new field names mapping for backward compatibility
+      const fieldMapping: Record<string, string> = {
+        equipmentNumber: "equipmentId",
+        licensePlateState: "licensePlateStateOrProvince",
+        possessionOrigin: "possessionOriginLocation",
+        atisregulator: "atisRegulator",
+        cargoCameras: "cargoCamera",
+        leftFrontOuter: "treadDepthLeftFrontOuter",
+        leftFrontInner: "treadDepthLeftFrontInner",
+        leftRearOuter: "treadDepthLeftRearOuter",
+        leftRearInner: "treadDepthLeftRearInner",
+        rightFrontOuter: "treadDepthRightFrontOuter",
+        rightFrontInner: "treadDepthRightFrontInner",
+        rightRearOuter: "treadDepthRightRearOuter",
+        rightRearInner: "treadDepthRightRearInner",
+      };
+
+      // Apply field mapping
+      Object.keys(fieldMapping).forEach((oldName) => {
+        if (doc[oldName] !== undefined && doc[fieldMapping[oldName]] === undefined) {
+          doc[fieldMapping[oldName]] = doc[oldName];
+          delete doc[oldName];
+        }
+      });
+
       ["inspectionStatus", "reviewReason", "delivered"].forEach((key) => {
         if (normalizeEmpty(doc[key])) {
           delete doc[key];
@@ -112,6 +146,9 @@ export async function POST(req: NextRequest) {
     const equipmentNumbers = cleanedDocs
       .map((d) => String(d.equipmentNumber || "").trim())
       .filter((v) => v && v.toLowerCase() !== "n/a");
+    const equipmentIds = cleanedDocs
+      .map((d) => String(d.equipmentId || "").trim())
+      .filter((v) => v && v.toLowerCase() !== "n/a");
     const vins = cleanedDocs
       .map((d) => String(d.vin || "").trim())
       .filter((v) => v && v.toLowerCase() !== "n/a");
@@ -120,6 +157,7 @@ export async function POST(req: NextRequest) {
       unitIds,
       vendorIds,
       equipmentNumbers,
+      equipmentIds,
       vins,
     });
 
@@ -134,6 +172,14 @@ export async function POST(req: NextRequest) {
               },
             ]
           : []),
+        ...(equipmentIds.length
+          ? [
+              {
+                vendorId: { $in: vendorIds },
+                equipmentId: { $in: equipmentIds },
+              },
+            ]
+          : []),
         ...(vins.length
           ? [
               {
@@ -144,7 +190,7 @@ export async function POST(req: NextRequest) {
           : []),
       ],
     })
-      .select("unitId equipmentNumber vin vendorId")
+      .select("unitId equipmentNumber equipmentId vin vendorId")
       .lean();
 
     console.log("📄 Existing docs found:", existingDocs.length);
@@ -157,6 +203,11 @@ export async function POST(req: NextRequest) {
         (d: any) => `${String(d.vendorId)}:${String(d.equipmentNumber || "")}`
       )
     );
+    const existingEquipIds = new Set(
+      existingDocs.map(
+        (d: any) => `${String(d.vendorId)}:${String(d.equipmentId || "")}`
+      )
+    );
     const existingVins = new Set(
       existingDocs.map(
         (d: any) => `${String(d.vendorId)}:${String(d.vin || "")}`
@@ -165,6 +216,7 @@ export async function POST(req: NextRequest) {
 
     const seenUnitIds = new Set<string>();
     const seenEquipNums = new Set<string>();
+    const seenEquipIds = new Set<string>();
     const seenVins = new Set<string>();
 
     const toInsert: any[] = [];
@@ -174,6 +226,7 @@ export async function POST(req: NextRequest) {
       const uid = String(doc.unitId);
       const vendorKey = String(doc.vendorId);
       const eq = String(doc.equipmentNumber || "").trim();
+      const eqId = String(doc.equipmentId || "").trim();
       const v = String(doc.vin || "").trim();
 
       if (existingUnitIds.has(uid) || seenUnitIds.has(uid)) {
@@ -183,12 +236,20 @@ export async function POST(req: NextRequest) {
       }
 
       const eqKey = `${vendorKey}:${eq}`;
+      const eqIdKey = `${vendorKey}:${eqId}`;
       const vinKey = `${vendorKey}:${v}`;
 
       if (eq && eq.toLowerCase() !== "n/a" &&
           (existingEquipNums.has(eqKey) || seenEquipNums.has(eqKey))) {
         console.warn("🚫 Duplicate equipmentNumber:", eqKey);
         duplicates.push({ unitId: uid, field: "equipmentNumber", value: eq });
+        continue;
+      }
+
+      if (eqId && eqId.toLowerCase() !== "n/a" &&
+          (existingEquipIds.has(eqIdKey) || seenEquipIds.has(eqIdKey))) {
+        console.warn("🚫 Duplicate equipmentId:", eqIdKey);
+        duplicates.push({ unitId: uid, field: "equipmentId", value: eqId });
         continue;
       }
 
@@ -201,6 +262,7 @@ export async function POST(req: NextRequest) {
 
       seenUnitIds.add(uid);
       if (eq) seenEquipNums.add(eqKey);
+      if (eqId) seenEquipIds.add(eqIdKey);
       if (v) seenVins.add(vinKey);
 
       toInsert.push(doc);
