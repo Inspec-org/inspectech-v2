@@ -55,13 +55,8 @@ export async function PUT(req: NextRequest) {
       if (isEmptyOrNA(cleaned[key])) delete cleaned[key];
     });
 
-    // Handle both old (equipmentNumber) and new (equipmentId) field names for backward compatibility
-    ["equipmentNumber", "equipmentId", "vin"].forEach((key) => {
-      if (isEmptyOrNA(cleaned[key])) {
-        delete cleaned[key];
-        unsetDoc[key] = "";
-      }
-    });
+    // Don't unset equipmentId, equipmentNumber, and vin - empty values mean leave unchanged
+    // These fields should only be updated if explicitly provided with a non-empty value
 
     if (cleaned["delivered_status"] && !cleaned["delivered"]) {
       cleaned["delivered"] = cleaned["delivered_status"];

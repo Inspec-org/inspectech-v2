@@ -1,9 +1,45 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
 import { FormData } from './Edit';
 import YearPicker from '../ui/YearPicker';
 import Cookies from 'js-cookie';
+
+const TextFieldWithNA = React.memo(({
+    name, label, value, disabled, w, colRow, onChange, onSetNA
+}: {
+    name: string;
+    label: React.ReactNode;
+    value: string;
+    disabled?: boolean;
+    w: string;
+    colRow: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSetNA: (field: string) => void;
+}) => (
+    <div className={colRow}>
+        <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <div className={`relative ${w}`}>
+            <input
+                type="text"
+                name={name}
+                value={value}
+                onChange={onChange}
+                placeholder="Enter value or click N/A"
+                className="w-full px-3 py-2 pr-14 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none disabled:opacity-50"
+                disabled={disabled}
+            />
+            <button
+                type="button"
+                onClick={() => onSetNA(name)}
+                disabled={disabled}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50"
+            >
+                N/A
+            </button>
+        </div>
+    </div>
+));
 
 export default function CheckList({ prop, formData, setFormData, missingKeys }: { prop: string; formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>>; missingKeys?: string[] }) {
 
@@ -15,7 +51,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
         tireLocation: true,
     });
 
-    const isCanadaTrailers = ((Cookies.get('selectedDepartment') || '').toLowerCase() === 'canada trailers');
+    const isUSTrailer = ((Cookies.get('selectedDepartment') || '').toLowerCase() === 'us purchase trailers');
 
     useEffect(() => {
         const labelCls = 'missing-field-label';
@@ -56,22 +92,22 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
         });
     }, [missingKeys]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    }, [setFormData]);
 
-    const handleDropdownChange = (name: string, value: string) => {
+    const handleDropdownChange = useCallback((name: string, value: string) => {
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    }, [setFormData]);
 
     const toggleSection = (section: keyof typeof expandedSections) => {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
-    const handleSetNA = (field: string) => {
+    const handleSetNA = useCallback((field: string) => {
         setFormData(prev => ({ ...prev, [field]: "N/A" }));
-    };
+    }, [setFormData]);
 
     // ─── Layout helpers ──────────────────────────────────────────────────────────
 
@@ -81,34 +117,8 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
     // ─── Reusable field components ───────────────────────────────────────────────
 
-    /** Plain text input with an N/A shortcut button */
-    const TextFieldWithNA = ({ name, label, value, disabled }: { name: string; label: React.ReactNode; value: string; disabled?: boolean; }) => (
-        <div className={colRow}>
-            <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-            <div className={`relative ${w}`}>
-                <input
-                    type="text"
-                    name={name}
-                    value={value}
-                    onChange={handleChange}
-                    placeholder="Enter value or click N/A"
-                    className="w-full px-3 py-2 pr-14 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none disabled:opacity-50"
-                    disabled={disabled}
-                />
-                <button
-                    type="button"
-                    onClick={() => handleSetNA(name)}
-                    disabled={disabled}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 text-sm px-2 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50"
-                >
-                    N/A
-                </button>
-            </div>
-        </div>
-    );
-
     /** Date input with an N/A shortcut button */
-    const DateField = ({ name, label, value }: { name: string; label: string; value: string }) => (
+    const DateField = memo(({ name, label, value }: { name: string; label: string; value: string }) => (
         <div className={colRow}>
             <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">
                 {label}
@@ -124,10 +134,10 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                 />
             </div>
         </div>
-    );
+    ));
 
     /** Three-way radio: N/A | Yes | No */
-    const RadioField = ({ name, label, value }: { name: string; label: string; value: string; }) => (
+    const RadioField = memo(({ name, label, value }: { name: string; label: string; value: string; }) => (
         <div className={flexRow}>
             <label data-name={name} className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
             <div className="flex gap-4">
@@ -146,10 +156,10 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                 ))}
             </div>
         </div>
-    );
+    ));
 
     /** CustomDropdown wrapped in consistent label + layout */
-    const DropdownField = ({ name, label, value, options }: { name: string; label: string; value: string; options: { value: string; label: string }[]; }) => (
+    const DropdownField = memo(({ name, label, value, options }: { name: string; label: string; value: string; options: { value: string; label: string }[]; }) => (
         <div className={colRow}>
             <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
             <CustomDropdown
@@ -160,7 +170,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                 onChange={(val) => handleDropdownChange(name, val)}
             />
         </div>
-    );
+    ));
 
     // ─── Static option sets ──────────────────────────────────────────────────────
 
@@ -211,18 +221,48 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                         {expandedSections.identification && (
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
 
-                                <TextFieldWithNA name="poNumber" label="PO Number" value={formData.poNumber} />
-                                <TextFieldWithNA name="owner" label="Owner" value={formData.owner} />
-                                <TextFieldWithNA name="equipmentId" label="Equipment ID" value={formData.equipmentId} disabled={prop === "batch"} />
-                                <TextFieldWithNA name="vin" label="VIN" value={formData.vin} disabled={prop === "batch"} />
-                                <TextFieldWithNA name="licensePlateId" label="License Plate ID" value={formData.licensePlateId} />
-                                <TextFieldWithNA name="licensePlateCountry" label="License Plate Country" value={formData.licensePlateCountry} />
-                                <TextFieldWithNA name="licensePlateExpiration" label="License Plate Expiration" value={formData.licensePlateExpiration} />
-                                <TextFieldWithNA name="licensePlateStateOrProvince" label="License Plate State / Province" value={formData.licensePlateStateOrProvince} />
-                                <TextFieldWithNA name="possessionOriginLocation" label={<>Possession Origin Location</>} value={formData.possessionOriginLocation} />
-                                <DateField name="possessionStart" label="Possession Start" value={formData.possessionStart} />
-                                <DateField name="possessionEnd" label="Possession End" value={formData.possessionEnd} />
-
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="poNumber" label="PO Number" value={formData.poNumber} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="owner" label="Owner" value={formData.owner} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="equipmentId" label="Equipment ID" value={formData.equipmentId} disabled={prop === "batch"} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="vin" label="VIN" value={formData.vin} disabled={prop === "batch"} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="licensePlateId" label="License Plate ID" value={formData.licensePlateId} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="licensePlateCountry" label="License Plate Country" value={formData.licensePlateCountry} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="licensePlateExpiration" label="License Plate Expiration" value={formData.licensePlateExpiration} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="licensePlateStateOrProvince" label="License Plate State / Province" value={formData.licensePlateStateOrProvince} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="possessionOriginLocation" label={<>Possession Origin Location</>} value={formData.possessionOriginLocation} />
+                                {isUSTrailer && (
+                                    <>
+                                        <DateField name="possessionStart" label="Possession Start" value={formData.possessionStart} />
+                                        <DateField name="possessionEnd" label="Possession End" value={formData.possessionEnd} />
+                                    </>
+                                )}
                                 <DropdownField
                                     name="manufacturer" label="Manufacturer" value={formData.manufacturer}
                                     options={[
@@ -259,100 +299,123 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     />
                                 </div>
 
-                                <TextFieldWithNA name="manufacturerAssetId" label="Manufacturer Asset ID" value={formData.manufacturerAssetId} />
-                                <TextFieldWithNA name="assetTagId" label="Asset Tag ID" value={formData.assetTagId} />
-                                <TextFieldWithNA name="operator" label="Operator" value={formData.operator} />
+                                {isUSTrailer && (
+                                    <>
 
-                                <DropdownField
-                                    name="program" label="Program" value={formData.program}
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "ATS", label: "ATS" },
-                                        { value: "UTP", label: "UTP" },
-                                    ]}
-                                />
+                                        <TextFieldWithNA w={w}
+                                            colRow={colRow}
+                                            onChange={handleChange}
+                                            onSetNA={handleSetNA} name="manufacturerAssetId" label="Manufacturer Asset ID" value={formData.manufacturerAssetId} />
+                                        <TextFieldWithNA w={w}
+                                            colRow={colRow}
+                                            onChange={handleChange}
+                                            onSetNA={handleSetNA} name="assetTagId" label="Asset Tag ID" value={formData.assetTagId} />
+                                        <TextFieldWithNA w={w}
+                                            colRow={colRow}
+                                            onChange={handleChange}
+                                            onSetNA={handleSetNA} name="operator" label="Operator" value={formData.operator} />
 
-                                <TextFieldWithNA name="invoiceNumber" label="Invoice Number" value={formData.invoiceNumber} />
-                                <TextFieldWithNA name="warrantyBatchId" label="Warranty Batch ID" value={formData.warrantyBatchId} />
-                                <TextFieldWithNA name="healthScore" label="Health Score" value={formData.healthScore} />
+                                        <DropdownField
+                                            name="program" label="Program" value={formData.program}
+                                            options={[
+                                                { value: "N/A", label: "N/A" },
+                                                { value: "ATS", label: "ATS" },
+                                                { value: "UTP", label: "UTP" },
+                                            ]}
+                                        />
 
-                                <DropdownField
-                                    name="lifecycleState" label="Lifecycle State" value={formData.lifecycleState}
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Active", label: "Active" },
-                                        { value: "End of Life", label: "End of Life" },
-                                        { value: "Ordered", label: "Ordered" },
-                                        { value: "Unavailable", label: "Unavailable" },
-                                    ]}
-                                />
+                                        <TextFieldWithNA w={w}
+                                            colRow={colRow}
+                                            onChange={handleChange}
+                                            onSetNA={handleSetNA} name="invoiceNumber" label="Invoice Number" value={formData.invoiceNumber} />
+                                        <TextFieldWithNA w={w}
+                                            colRow={colRow}
+                                            onChange={handleChange}
+                                            onSetNA={handleSetNA} name="warrantyBatchId" label="Warranty Batch ID" value={formData.warrantyBatchId} />
+                                        <TextFieldWithNA w={w}
+                                            colRow={colRow}
+                                            onChange={handleChange}
+                                            onSetNA={handleSetNA} name="healthScore" label="Health Score" value={formData.healthScore} />
 
-                                <DropdownField
-                                    name="lifecycleStateReason" label="Lifecycle State Reason" value={formData.lifecycleStateReason}
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Injection - Out of State Movement", label: "Injection - Out of State Movement" },
-                                        { value: "Accident", label: "Accident" },
-                                        { value: "Campaign", label: "Campaign" },
-                                        { value: "Damaged-Moderate", label: "Damaged-Moderate" },
-                                        { value: "Damaged-Severe", label: "Damaged-Severe" },
-                                        { value: "Expired Inspection", label: "Expired Inspection" },
-                                        { value: "GPS Malfunctioning", label: "GPS Malfunctioning" },
-                                        { value: "Healthy", label: "Healthy" },
-                                        { value: "Impounded/Tow", label: "Impounded/Tow" },
-                                        { value: "LP investigation", label: "LP investigation" },
-                                        { value: "Legal Hold - Do Not Repair", label: "Legal Hold - Do Not Repair" },
-                                        { value: "License or Permit Issue", label: "License or Permit Issue" },
-                                        { value: "Never Built", label: "Never Built" },
-                                        { value: "Off-site storage", label: "Off-site storage" },
-                                        { value: "Offsite Shop Repair", label: "Offsite Shop Repair" },
-                                        { value: "Offsite Wash", label: "Offsite Wash" },
-                                        { value: "Onsite Wash", label: "Onsite Wash" },
-                                        { value: "PM Failed", label: "PM Failed" },
-                                        { value: "Parts Delay", label: "Parts Delay" },
-                                        { value: "Parts Storage", label: "Parts Storage" },
-                                        { value: "Pending Delivery", label: "Pending Delivery" },
-                                        { value: "Preventative Maintenance", label: "Preventative Maintenance" },
-                                        { value: "Rental Pending Return", label: "Rental Pending Return" },
-                                        { value: "Rental Returned", label: "Rental Returned" },
-                                        { value: "Reported Stolen", label: "Reported Stolen" },
-                                        { value: "Retired", label: "Retired" },
-                                        { value: "Safety Recall", label: "Safety Recall" },
-                                        { value: "Sensor Detected Damage", label: "Sensor Detected Damage" },
-                                        { value: "Sensor Malfunction", label: "Sensor Malfunction" },
-                                        { value: "Sold", label: "Sold" },
-                                        { value: "Tire Survey", label: "Tire Survey" },
-                                        { value: "To Be Disposed", label: "To Be Disposed" },
-                                        { value: "To Be Returned", label: "To Be Returned" },
-                                        { value: "Totalled", label: "Totalled" },
-                                        { value: "Unaccounted For", label: "Unaccounted For" },
-                                        { value: "Written Off - Lost", label: "Written Off - Lost" },
-                                    ]}
-                                />
+                                        <DropdownField
+                                            name="lifecycleState" label="Lifecycle State" value={formData.lifecycleState}
+                                            options={[
+                                                { value: "N/A", label: "N/A" },
+                                                { value: "Active", label: "Active" },
+                                                { value: "End of Life", label: "End of Life" },
+                                                { value: "Ordered", label: "Ordered" },
+                                                { value: "Unavailable", label: "Unavailable" },
+                                            ]}
+                                        />
 
-                                <DateField name="estimatedDateOfAvailability" label="Estimated Date of Availability" value={formData.estimatedDateOfAvailability} />
+                                        <DropdownField
+                                            name="lifecycleStateReason" label="Lifecycle State Reason" value={formData.lifecycleStateReason}
+                                            options={[
+                                                { value: "N/A", label: "N/A" },
+                                                { value: "Injection - Out of State Movement", label: "Injection - Out of State Movement" },
+                                                { value: "Accident", label: "Accident" },
+                                                { value: "Campaign", label: "Campaign" },
+                                                { value: "Damaged-Moderate", label: "Damaged-Moderate" },
+                                                { value: "Damaged-Severe", label: "Damaged-Severe" },
+                                                { value: "Expired Inspection", label: "Expired Inspection" },
+                                                { value: "GPS Malfunctioning", label: "GPS Malfunctioning" },
+                                                { value: "Healthy", label: "Healthy" },
+                                                { value: "Impounded/Tow", label: "Impounded/Tow" },
+                                                { value: "LP investigation", label: "LP investigation" },
+                                                { value: "Legal Hold - Do Not Repair", label: "Legal Hold - Do Not Repair" },
+                                                { value: "License or Permit Issue", label: "License or Permit Issue" },
+                                                { value: "Never Built", label: "Never Built" },
+                                                { value: "Off-site storage", label: "Off-site storage" },
+                                                { value: "Offsite Shop Repair", label: "Offsite Shop Repair" },
+                                                { value: "Offsite Wash", label: "Offsite Wash" },
+                                                { value: "Onsite Wash", label: "Onsite Wash" },
+                                                { value: "PM Failed", label: "PM Failed" },
+                                                { value: "Parts Delay", label: "Parts Delay" },
+                                                { value: "Parts Storage", label: "Parts Storage" },
+                                                { value: "Pending Delivery", label: "Pending Delivery" },
+                                                { value: "Preventative Maintenance", label: "Preventative Maintenance" },
+                                                { value: "Rental Pending Return", label: "Rental Pending Return" },
+                                                { value: "Rental Returned", label: "Rental Returned" },
+                                                { value: "Reported Stolen", label: "Reported Stolen" },
+                                                { value: "Retired", label: "Retired" },
+                                                { value: "Safety Recall", label: "Safety Recall" },
+                                                { value: "Sensor Detected Damage", label: "Sensor Detected Damage" },
+                                                { value: "Sensor Malfunction", label: "Sensor Malfunction" },
+                                                { value: "Sold", label: "Sold" },
+                                                { value: "Tire Survey", label: "Tire Survey" },
+                                                { value: "To Be Disposed", label: "To Be Disposed" },
+                                                { value: "To Be Returned", label: "To Be Returned" },
+                                                { value: "Totalled", label: "Totalled" },
+                                                { value: "Unaccounted For", label: "Unaccounted For" },
+                                                { value: "Written Off - Lost", label: "Written Off - Lost" },
+                                            ]}
+                                        />
 
-                                <DropdownField
-                                    name="purchaseCondition" label="Purchase Condition" value={formData.purchaseCondition}
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "New", label: "New" },
-                                        { value: "Used", label: "Used" },
-                                    ]}
-                                />
+                                        <DateField name="estimatedDateOfAvailability" label="Estimated Date of Availability" value={formData.estimatedDateOfAvailability} />
 
-                                <DateField name="purchaseDate" label="Purchase Date" value={formData.purchaseDate} />
+                                        <DropdownField
+                                            name="purchaseCondition" label="Purchase Condition" value={formData.purchaseCondition}
+                                            options={[
+                                                { value: "N/A", label: "N/A" },
+                                                { value: "New", label: "New" },
+                                                { value: "Used", label: "Used" },
+                                            ]}
+                                        />
 
-                                <DropdownField
-                                    name="purchaseType" label="Purchase Type" value={formData.purchaseType}
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Bought", label: "Bought" },
-                                        { value: "Leased", label: "Leased" },
-                                        { value: "Relay Equipment Marketplace", label: "Relay Equipment Marketplace" },
-                                        { value: "Rental", label: "Rental" },
-                                    ]}
-                                />
+                                        <DateField name="purchaseDate" label="Purchase Date" value={formData.purchaseDate} />
+
+                                        <DropdownField
+                                            name="purchaseType" label="Purchase Type" value={formData.purchaseType}
+                                            options={[
+                                                { value: "N/A", label: "N/A" },
+                                                { value: "Bought", label: "Bought" },
+                                                { value: "Leased", label: "Leased" },
+                                                { value: "Relay Equipment Marketplace", label: "Relay Equipment Marketplace" },
+                                                { value: "Rental", label: "Rental" },
+                                            ]}
+                                        />
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -373,16 +436,23 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 <RadioField name="sensorError" label="Sensor Error" value={formData.sensorError} />
                                 <RadioField name="ultrasonicCargoSensor" label="Ultrasonic Cargo Sensor" value={formData.ultrasonicCargoSensor} />
 
-                                <DateField name="pulsatingLampInstallationDate" label="Pulsating Lamp Installation Date" value={formData.pulsatingLampInstallationDate} />
-                                <DropdownField
-                                    name="pulsatingLampManufacturer" label="Pulsating Lamp Manufacturer" value={formData.pulsatingLampManufacturer}
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Grote", label: "Grote" },
-                                    ]}
-                                />
-                                <TextFieldWithNA name="pulsatingLampModel" label="Pulsating Lamp Model" value={formData.pulsatingLampModel} />
-                                <RadioField name="pulsatingLampWiring" label="Pulsating Lamp Wiring" value={formData.pulsatingLampWiring} />
+                                {isUSTrailer && (
+                                    <>
+                                        <DateField name="pulsatingLampInstallationDate" label="Pulsating Lamp Installation Date" value={formData.pulsatingLampInstallationDate} />
+                                        <DropdownField
+                                            name="pulsatingLampManufacturer" label="Pulsating Lamp Manufacturer" value={formData.pulsatingLampManufacturer}
+                                            options={[
+                                                { value: "N/A", label: "N/A" },
+                                                { value: "Grote", label: "Grote" },
+                                            ]}
+                                        />
+                                        <TextFieldWithNA w={w}
+                                            colRow={colRow}
+                                            onChange={handleChange}
+                                            onSetNA={handleSetNA} name="pulsatingLampModel" label="Pulsating Lamp Model" value={formData.pulsatingLampModel} />
+                                        <RadioField name="pulsatingLampWiring" label="Pulsating Lamp Wiring" value={formData.pulsatingLampWiring} />
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -402,7 +472,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
                                 <DropdownField
                                     name="length" label="Length" value={formData.length}
-                                    options={isCanadaTrailers ? [
+                                    options={isUSTrailer ? [
                                         { value: "N/A", label: "N/A" },
                                         { value: "28 ft", label: "28 ft" },
                                         { value: "53 ft", label: "53 ft" },
@@ -452,7 +522,10 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         { value: "Spring", label: "Spring" },
                                     ]}
                                 />
-                                <TextFieldWithNA name="tireModel" label="Tire Model" value={formData.tireModel} />
+                                <TextFieldWithNA w={w}
+                                    colRow={colRow}
+                                    onChange={handleChange}
+                                    onSetNA={handleSetNA} name="tireModel" label="Tire Model" value={formData.tireModel} />
                                 <DropdownField
                                     name="tireBrand" label="Tire Brand" value={formData.tireBrand}
                                     options={[
@@ -464,26 +537,31 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         { value: "Michelin", label: "Michelin" },
                                     ]}
                                 />
-                                <DropdownField name="tireSize" label="Tire Size" value={formData.tireSize}
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "295/75R22.5", label: "295/75R22.5" },
-                                        { value: "385/65R22.5", label: "385/65R22.5" },
-                                        { value: "435/50R19.5", label: "435/50R19.5" },
-                                        { value: "445/45R19.5", label: "445/45R19.5" },
-                                    ]} />
-                                <RadioField name="cargoLockFitted" label="Cargo Lock Fitted" value={formData.cargoLockFitted} />
-                                <DateField name="cargoLockInstalledDate" label="Cargo Lock Installed Date" value={formData.cargoLockInstalledDate} />
-                                <DropdownField
-                                    name="cargoLockType" label="Cargo Lock Type" value={formData.cargoLockType}
-                                    options={[
-                                        { value: "N/A", label: "N/A" },
-                                        { value: "Autida", label: "Autida" },
-                                        { value: "Maple", label: "Maple" },
-                                        { value: "People", label: "People" },
-                                        { value: "iKin", label: "iKin" },
-                                    ]}
-                                />
+
+                                {isUSTrailer && (
+                                    <>
+                                        <DropdownField name="tireSize" label="Tire Size" value={formData.tireSize}
+                                            options={[
+                                                { value: "N/A", label: "N/A" },
+                                                { value: "295/75R22.5", label: "295/75R22.5" },
+                                                { value: "385/65R22.5", label: "385/65R22.5" },
+                                                { value: "435/50R19.5", label: "435/50R19.5" },
+                                                { value: "445/45R19.5", label: "445/45R19.5" },
+                                            ]} />
+                                        <RadioField name="cargoLockFitted" label="Cargo Lock Fitted" value={formData.cargoLockFitted} />
+                                        <DateField name="cargoLockInstalledDate" label="Cargo Lock Installed Date" value={formData.cargoLockInstalledDate} />
+                                        <DropdownField
+                                            name="cargoLockType" label="Cargo Lock Type" value={formData.cargoLockType}
+                                            options={[
+                                                { value: "N/A", label: "N/A" },
+                                                { value: "Autida", label: "Autida" },
+                                                { value: "Maple", label: "Maple" },
+                                                { value: "People", label: "People" },
+                                                { value: "iKin", label: "iKin" },
+                                            ]}
+                                        />
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -521,7 +599,10 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                     {expandedSections.features && (
                         <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
                             <RadioField name="aerokits" label="Aerokits" value={formData.aerokits} />
-                            <TextFieldWithNA name="doorBranding" label="Door Branding" value={formData.doorBranding} />
+                            <TextFieldWithNA w={w}
+                                colRow={colRow}
+                                onChange={handleChange}
+                                onSetNA={handleSetNA} name="doorBranding" label="Door Branding" value={formData.doorBranding} />
                             <DropdownField
                                 name="doorColor" label="Door Color" value={formData.doorColor}
                                 options={[
@@ -583,7 +664,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             {/* Conspicuity Tape — Canada and US have different option sets */}
                             <DropdownField
                                 name="conspicuityTape" label="Conspicuity Tape" value={formData.conspicuityTape}
-                                options={isCanadaTrailers ? [
+                                options={isUSTrailer ? [
                                     { value: "N/A", label: "N/A" },
                                     { value: "Bottom Rear", label: "Bottom Rear" },
                                     { value: "Full Rear Perimeter", label: "Full Rear Perimeter" },

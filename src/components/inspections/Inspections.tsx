@@ -436,6 +436,7 @@ function Inspections() {
 
             const imageHeaders = ['frontLeftSideUrl', 'frontRightSideUrl', 'rearLeftSideUrl', 'rearRightSideUrl', 'doorDetailsImageUrl', 'insideTrailerImageUrl', 'dotFormImageUrl', 'dotFormPdfUrl', 'additionalAttachment1', 'additionalAttachment2', 'additionalAttachment3'];
             const isCanada = (deptName || '').toLowerCase() === 'canada trailers';
+            const isUSTrailer = (deptName || '').toLowerCase() === 'us purchase trailers';
 
             const generalOrder = [
                 'unitId',
@@ -463,6 +464,8 @@ function Inspections() {
                 'licensePlateExpiration',
                 'licensePlateState',
                 'possessionOriginLocation',
+                'possessionStart',
+                'possessionEnd',
                 'manufacturer',
                 'modelYear',
                 // Sensors & Electrical
@@ -472,6 +475,10 @@ function Inspections() {
                 'lightOutSensor',
                 'sensorError',
                 'ultrasonicCargoSensor',
+                'pulsatingLampInstallationDate',
+                'pulsatingLampManufacturer',
+                'pulsatingLampModel',
+                'pulsatingLampWiring',
                 // Physical Dimensions & Components
                 'length',
                 'height',
@@ -481,6 +488,10 @@ function Inspections() {
                 'suspensionType',
                 'tireModel',
                 'tireBrand',
+                'tireSize',
+                'cargoLockFitted',
+                'cargoLockInstalledDate',
+                'cargoLockType',
                 // Tire Location
                 'leftFrontOuter',
                 'leftFrontInner',
@@ -490,6 +501,20 @@ function Inspections() {
                 'rightFrontInner',
                 'rightRearOuter',
                 'rightRearInner',
+                // Lifecycle & Purchase (US Purchase Trailers only)
+                'manufacturerAssetId',
+                'assetTagId',
+                'operator',
+                'program',
+                'invoiceNumber',
+                'warrantyBatchId',
+                'healthScore',
+                'lifecycleState',
+                'lifecycleStateReason',
+                'estimatedDateOfAvailability',
+                'purchaseCondition',
+                'purchaseDate',
+                'purchaseType',
                 // Features & Appearance
                 'aerokits',
                 'doorBranding',
@@ -511,6 +536,36 @@ function Inspections() {
             ];
             if (!isCanada) {
                 checklistOrder = checklistOrder.filter(h => h !== 'owner' && h !== 'conspicuityTape');
+            }
+            if (!isUSTrailer) {
+                const usOnlyFields = [
+                    'possessionStart',
+                    'possessionEnd',
+                    'manufacturerAssetId',
+                    'assetTagId',
+                    'operator',
+                    'program',
+                    'invoiceNumber',
+                    'warrantyBatchId',
+                    'healthScore',
+                    'lifecycleState',
+                    'lifecycleStateReason',
+                    'estimatedDateOfAvailability',
+                    'purchaseCondition',
+                    'purchaseDate',
+                    'purchaseType',
+                    'pulsatingLampInstallationDate',
+                    'pulsatingLampManufacturer',
+                    'pulsatingLampModel',
+                    'pulsatingLampWiring',
+                    'tireSize',
+                    'cargoLockFitted',
+                    'cargoLockInstalledDate',
+                    'cargoLockType',
+                ];
+                checklistOrder = checklistOrder.filter(h => !usOnlyFields.includes(h));
+                // Also filter from allHeaders to prevent them from appearing in additionalHeaders
+                allHeaders.splice(0, allHeaders.length, ...allHeaders.filter(h => !usOnlyFields.includes(h)));
             }
 
             const generalHeaders = generalOrder;

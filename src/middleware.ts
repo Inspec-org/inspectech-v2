@@ -44,8 +44,18 @@ export async function middleware(req: NextRequest) {
           const url = req.nextUrl.clone();
           url.pathname = (role === "superadmin" || role === "owner") ? "/superadmin" : `/${role}/departments`;
           return NextResponse.redirect(url);
+        } else {
+          // Clear invalid session cookie
+          const res = NextResponse.next();
+          res.cookies.delete("session_id");
+          return res;
         }
-      } catch {}
+      } catch {
+        // Clear invalid session cookie on error
+        const res = NextResponse.next();
+        res.cookies.delete("session_id");
+        return res;
+      }
     }
     if (hasRefresh) {
       try {
@@ -71,8 +81,18 @@ export async function middleware(req: NextRequest) {
               }
             } catch {}
           }
+        } else {
+          // Clear invalid refresh token
+          const res = NextResponse.next();
+          res.cookies.delete("refreshToken");
+          return res;
         }
-      } catch {}
+      } catch {
+        // Clear invalid refresh token on error
+        const res = NextResponse.next();
+        res.cookies.delete("refreshToken");
+        return res;
+      }
     }
     return NextResponse.next();
   }
@@ -97,9 +117,18 @@ export async function middleware(req: NextRequest) {
           const url = req.nextUrl.clone();
           url.pathname = (role === "superadmin" || role === "owner") ? "/superadmin" : `/${role}/departments`;
           return NextResponse.redirect(url);
+        } else {
+          // Clear invalid session cookie
+          const res = NextResponse.next();
+          res.cookies.delete("session_id");
+          const to = req.nextUrl.clone();
+          to.pathname = "/signin";
+          return NextResponse.redirect(to);
         }
       } catch {
-        // Internal fetch failed (e.g. bad origin on GCP) — fall through to refresh or signin
+        // Internal fetch failed — clear session and fall through to refresh or signin
+        const res = NextResponse.next();
+        res.cookies.delete("session_id");
       }
     }
 
@@ -130,14 +159,32 @@ export async function middleware(req: NextRequest) {
                   sameSite: "lax",
                 });
                 return res;
+              } else {
+                // fetch_user failed — clear refresh token
+                const res = NextResponse.next();
+                res.cookies.delete("refreshToken");
+                const to = req.nextUrl.clone();
+                to.pathname = "/signin";
+                return NextResponse.redirect(to);
               }
             } catch {
-              // fetch_user failed — fall through to signin
+              // fetch_user failed — clear refresh token
+              const res = NextResponse.next();
+              res.cookies.delete("refreshToken");
+              const to = req.nextUrl.clone();
+              to.pathname = "/signin";
+              return NextResponse.redirect(to);
             }
           }
+        } else {
+          // refresh failed — clear refresh token
+          const res = NextResponse.next();
+          res.cookies.delete("refreshToken");
         }
       } catch {
-        // refresh fetch failed — fall through to signin
+        // refresh fetch failed — clear refresh token
+        const res = NextResponse.next();
+        res.cookies.delete("refreshToken");
       }
     }
 
@@ -169,15 +216,30 @@ export async function middleware(req: NextRequest) {
           sameSite: "lax",
         });
         return res;
+      } else {
+        // refresh failed — clear refresh token
+        const res = NextResponse.next();
+        res.cookies.delete("refreshToken");
+        const url = req.nextUrl.clone();
+        url.pathname = "/signin";
+        return NextResponse.redirect(url);
       }
+    } else {
+      // refresh failed — clear refresh token
+      const res = NextResponse.next();
+      res.cookies.delete("refreshToken");
+      const url = req.nextUrl.clone();
+      url.pathname = "/signin";
+      return NextResponse.redirect(url);
     }
   } catch {
-    // refresh fetch failed — redirect to signin
+    // refresh fetch failed — clear refresh token and redirect to signin
+    const res = NextResponse.next();
+    res.cookies.delete("refreshToken");
+    const url = req.nextUrl.clone();
+    url.pathname = "/signin";
+    return NextResponse.redirect(url);
   }
-
-  const url = req.nextUrl.clone();
-  url.pathname = "/signin";
-  return NextResponse.redirect(url);
 }
 
 export const config = { matcher: ["/(.*)" ] };

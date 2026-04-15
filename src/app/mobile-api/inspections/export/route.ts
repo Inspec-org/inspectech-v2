@@ -63,6 +63,9 @@ export async function POST(req: NextRequest) {
     const includeCanadaFields = docs.some(
       (d: any) => String(d?.departmentId?.name || "").trim().toLowerCase() === "canada trailers"
     );
+    const includeUSTrailerFields = docs.some(
+      (d: any) => String(d?.departmentId?.name || "").trim().toLowerCase() === "us purchase trailers"
+    );
 
     const normalize = (val: unknown): string => {
       if (val instanceof Date) return new Date(val).toISOString();
@@ -246,6 +249,36 @@ export async function POST(req: NextRequest) {
     ];
     if (!includeCanadaFields) {
       checklistHeaders = checklistHeaders.filter((h) => h !== "owner" && h !== "conspicuityTape");
+    }
+    if (!includeUSTrailerFields) {
+      const usOnlyFields = [
+        "possessionStart",
+        "possessionEnd",
+        "manufacturerAssetId",
+        "assetTagId",
+        "operator",
+        "program",
+        "invoiceNumber",
+        "warrantyBatchId",
+        "healthScore",
+        "lifecycleState",
+        "lifecycleStateReason",
+        "estimatedDateOfAvailability",
+        "purchaseCondition",
+        "purchaseDate",
+        "purchaseType",
+        "pulsatingLampInstallationDate",
+        "pulsatingLampManufacturer",
+        "pulsatingLampModel",
+        "pulsatingLampWiring",
+        "tireSize",
+        "cargoLockFitted",
+        "cargoLockInstalledDate",
+        "cargoLockType",
+      ];
+      checklistHeaders = checklistHeaders.filter((h) => !usOnlyFields.includes(h));
+      // Also filter from allHeaders to prevent them from appearing in additionalHeaders
+      allHeaders.splice(0, allHeaders.length, ...allHeaders.filter((h) => !usOnlyFields.includes(h)));
     }
 
     const baseHeaders: string[] = [...generalHeaders, ...checklistHeaders, ...imageHeaders];

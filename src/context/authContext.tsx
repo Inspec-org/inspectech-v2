@@ -56,28 +56,26 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
       });
 
-      
-
       if (!response.ok) {
-        // if ([401, 403].includes(response.status)) {
-        //   ;
-        //   setUser(null);
-        //   Cookies.remove("session_id");
-        //   localStorage.removeItem("session_id");
-        //   setSession_id("");
-        // }
+        // Clear invalid session and redirect to signin
+        setUser(null);
+        Cookies.remove("session_id");
+        localStorage.removeItem("session_id");
+        setSession_id("");
+        router.replace("/signin");
         throw new Error("Failed to fetch Admin");
       }
 
       const data = await response.json();
-      
+
       setUser(data.user);
     } catch (err) {
-      ;
-      // Clear invalid session
+      // Clear invalid session and redirect to signin
       setUser(null);
       Cookies.remove("session_id");
+      localStorage.removeItem("session_id");
       setSession_id("");
+      router.replace("/signin");
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
 // /Users/mlb/Desktop/InspecTech/src/components/Modals/BatchEditInspectionsModal.tsx
-import React, { useContext } from 'react';
+import React, { useContext, useRef, useEffect } from 'react';
 import { Edit3 } from 'lucide-react';
 import { Modal } from '../ui/modal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -24,6 +24,28 @@ type Props = {
 
 const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData, setFormData, onChange, onDropdownChange, selectedUnitIds, onUpdated }) => {
   const { user } = useContext(UserContext)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollPosition = useRef<number>(0);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      // Save scroll position on scroll
+      const handleScroll = () => {
+        scrollPosition.current = container.scrollTop;
+      };
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container && scrollPosition.current > 0) {
+      // Restore scroll position after re-render
+      container.scrollTop = scrollPosition.current;
+    }
+  }, [formData]);
   const handleUpdate = async () => {
     const protectedStatuses = new Set([
       'pass',
@@ -47,7 +69,7 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
     if (formData.durationSec) updates.durationSec = formData.durationSec;
     if (formData.delivered_status) updates.delivered = formData.delivered_status;
 
-    const excluded = new Set(['status', 'delivered_status', 'date', 'duration', 'dateMonth', 'dateDay', 'dateYear', 'createdAt', 'dateCreated']);
+    const excluded = new Set(['status', 'delivered_status', 'date', 'duration', 'dateMonth', 'dateDay', 'dateYear', 'createdAt', 'dateCreated', 'equipmentId', 'equipmentNumber', 'vin']);
     Object.keys(formData).forEach((key) => {
       const val = formData[key];
       if (val === '' || val === undefined || val === null) return;
@@ -108,7 +130,7 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
           </div>
         </div>
 
-        <div className="overflow-y-auto flex-1">
+        <div ref={scrollContainerRef} className="overflow-y-auto flex-1">
           <h2 className="text-md font-semibold flex gap-2 items-center pl-4 mt-2">General Information</h2>
           <div className="p-4 space-y-5 mb-4">
             {/* inspection status */}

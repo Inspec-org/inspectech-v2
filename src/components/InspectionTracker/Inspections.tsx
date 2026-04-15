@@ -243,7 +243,7 @@ function TrackingInspections() {
                         const jo = await oRes.json();
                         setFullOptions(jo.options || {});
                     }
-                } catch (e) {}
+                } catch (e) { }
             })();
         };
         const onVendor = () => {
@@ -265,7 +265,7 @@ function TrackingInspections() {
                         const jo = await oRes.json();
                         setFullOptions(jo.options || {});
                     }
-                } catch (e) {}
+                } catch (e) { }
             })();
         };
         window.addEventListener('selectedDepartmentChanged', onDept as EventListener);
@@ -353,10 +353,10 @@ function TrackingInspections() {
                                 ...r,
                                 email_notifcation: label,
                                 review_completed:
-                                  label === 'No' ? 'Pending' :
-                                  label === 'Manually Sent' ? display :
-                                  r.review_completed,
-                              }
+                                    label === 'No' ? 'Pending' :
+                                        label === 'Manually Sent' ? display :
+                                            r.review_completed,
+                            }
                             : r
                     )
                 );
@@ -427,15 +427,15 @@ function TrackingInspections() {
                         department: departments.find(d => d._id === editingValues.departmentId)?.name || r.department,
                         departmentId: editingValues.departmentId || r.departmentId,
                         review_requested: editingValues.reviewRequested
-                          ? (editingValues.reviewRequested.includes('/')
-                              ? editingValues.reviewRequested
-                              : (() => { const [y,m,d] = editingValues.reviewRequested.split('-'); return `${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${y}`; })())
-                          : '—',
+                            ? (editingValues.reviewRequested.includes('/')
+                                ? editingValues.reviewRequested
+                                : (() => { const [y, m, d] = editingValues.reviewRequested.split('-'); return `${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}/${y}`; })())
+                            : '—',
                         review_completed: editingValues.reviewCompleted
-                          ? (editingValues.reviewCompleted.includes('/')
-                              ? editingValues.reviewCompleted
-                              : (() => { const [y,m,d] = editingValues.reviewCompleted.split('-'); return `${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${y}`; })())
-                          : 'Pending'
+                            ? (editingValues.reviewCompleted.includes('/')
+                                ? editingValues.reviewCompleted
+                                : (() => { const [y, m, d] = editingValues.reviewCompleted.split('-'); return `${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}/${y}`; })())
+                            : 'Pending'
                     } : r));
                     toast.success('Inspection updated.');
                 }
@@ -631,7 +631,7 @@ function TrackingInspections() {
             accessor: "vendor",
             cell: (row) => (
                 <div className="relative">
-                    {editingField?.rowId === row.id && editingField?.field === 'vendor' ? (
+                    {/* {editingField?.rowId === row.id && editingField?.field === 'vendor' ? (
                         <div className="flex items-center gap-2">
                             <ReportDropdown
                                 options={vendors.map(v => ({ value: v._id, label: v.name }))}
@@ -649,7 +649,13 @@ function TrackingInspections() {
                                 <Edit3 className="w-4 h-4 text-gray-400" />
                             </button>
                         </div>
-                    )}
+                    )} */}
+                    <div className="group relative pr-6">
+                        <div className="opacity-70">{row.vendor}</div>
+                        {/* <button onClick={(e) => { e.stopPropagation(); startEditing(row, 'vendor'); }} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Edit3 className="w-4 h-4 text-gray-400" />
+                        </button> */}
+                    </div>
                 </div>
             ),
         },
@@ -658,8 +664,14 @@ function TrackingInspections() {
             accessor: "department",
             cell: (row) => (
                 <div>
-                    {editingField?.rowId === row.id && editingField?.field === 'department' ? (
+                    {/* {editingField?.rowId === row.id && editingField?.field === 'department' ? (
                         <div className="flex items-center gap-2">
+                            <ReportDropdown
+                                options={vendors.map(v => ({ value: v._id, label: v.name }))}
+                                width="200px"
+                                value={editingValues?.vendorId || row.vendorId || ''}
+                                onChange={(val) => setEditingValues((p: any) => ({ ...(p || {}), vendorId: val }))}
+                            />
                             <ReportDropdown
                                 options={departments.map(d => ({ value: d._id, label: d.name }))}
                                 width="200px"
@@ -676,7 +688,13 @@ function TrackingInspections() {
                                 <Edit3 className="w-4 h-4 text-gray-400" />
                             </button>
                         </div>
-                    )}
+                    )} */}
+                    <div className="group relative pr-6">
+                        <div className="opacity-70">{row.department}</div>
+                        {/* <button onClick={(e) => { e.stopPropagation(); startEditing(row, 'department'); }} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Edit3 className="w-4 h-4 text-gray-400" />
+                        </button> */}
+                    </div>
                 </div>
             ),
         },
@@ -896,7 +914,7 @@ function TrackingInspections() {
                 />,
         },
     ];
-    
+
     const filterCount = Object.values(selectedFilters).reduce((acc, arr) => acc + arr.length, 0);
     return (
         <Suspense fallback={<div>Loading...</div>}>
@@ -923,7 +941,7 @@ function TrackingInspections() {
                                     try {
                                         const d = new Date(valueId);
                                         formatted = d.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
-                                    } catch {}
+                                    } catch { }
                                     const kindMap: any = { dateCreated: 'Date Created', reviewRequested: 'Review Requested', reviewCompleted: 'Review Completed' };
                                     const labelText = `${idx === 0 ? 'From' : 'To'} ${kindMap[filterKey]}`;
                                     return (
