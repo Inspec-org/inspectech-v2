@@ -7,6 +7,7 @@ const PUBLIC_PATHS = new Set([
   "/reset-password",
   "/accept-invitation",
   "/two-factor-setup",
+  "/privacy-policy",
 ]);
 
 function getBaseUrl(origin: string): string {
