@@ -91,7 +91,6 @@ export async function POST(req: NextRequest) {
         licensePlateState: "licensePlateStateOrProvince",
         possessionOrigin: "possessionOriginLocation",
         atisregulator: "atisRegulator",
-        cargoCameras: "cargoCamera",
         leftFrontOuter: "treadDepthLeftFrontOuter",
         leftFrontInner: "treadDepthLeftFrontInner",
         leftRearOuter: "treadDepthLeftRearOuter",
@@ -184,7 +183,7 @@ export async function POST(req: NextRequest) {
           ? [
               {
                 vendorId: { $in: vendorIds },
-                vin: { $in: vins },
+                vin: { $in: vins.map(v => new RegExp(`^${v}$`, 'i')) },
               },
             ]
           : []),

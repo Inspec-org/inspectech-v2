@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
       "skirted",
       "skirtColor",
       "captiveBeam",
-      "cargoCameras",
+      "cargoCamera",
       "cartbars",
       "tpms",
       "trailerHeightDecal",

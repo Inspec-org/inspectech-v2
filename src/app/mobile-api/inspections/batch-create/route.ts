@@ -89,7 +89,6 @@ export async function POST(req: NextRequest) {
         licensePlateState: "licensePlateStateOrProvince",
         possessionOrigin: "possessionOriginLocation",
         atisregulator: "atisRegulator",
-        cargoCameras: "cargoCamera",
         leftFrontOuter: "treadDepthLeftFrontOuter",
         leftFrontInner: "treadDepthLeftFrontInner",
         leftRearOuter: "treadDepthLeftRearOuter",

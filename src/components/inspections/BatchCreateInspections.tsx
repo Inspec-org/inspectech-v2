@@ -116,6 +116,20 @@ export default function BatchCreateInspections() {
         duration: '',
         notes: ''
     });
+    const [generalInfo, setGeneralInfo] = useState({
+        inspectionStatus: '',
+        reviewReason: '',
+        type: '',
+        inspector: '',
+        location: '',
+        delivered: '',
+        durationMin: '',
+        durationSec: '',
+        dateMonth: '',
+        dateDay: '',
+        dateYear: '',
+        notes: ''
+    });
 
     useEffect(() => {
         const deptId = Cookies.get('selectedDepartmentId') || '';
@@ -308,7 +322,6 @@ export default function BatchCreateInspections() {
             const fieldMap: Record<string, string[]> = {
                 poNumber: ['po', 'ponumber', 'purchaseorder', 'purchaseordernumber'],
                 owner: ['owner'],
-                assetTagId: ['assettagid', 'assetid', 'asset'],
                 equipmentNumber: ['equipmentnumber', 'equipment', 'equipmentid', 'equipmentidtrailernumber', 'trailer', 'trailernumber', 'trailerno', 'unit'],
                 vin: ['vin', 'vehicleidentificationnumber'],
                 licensePlateId: ['licenseplate', 'licenseplateid', 'licenseno', 'platenumber', 'plate'],
@@ -357,7 +370,7 @@ export default function BatchCreateInspections() {
                 skirted: ['skirted', 'skirt'],
                 skirtColor: ['skirtcolor'],
                 captiveBeam: ['captivebeam', 'beam'],
-                cargoCameras: ['cargocamera', 'cargocameras', 'camera', 'cameras'],
+                cargoCamera: ['cargocamera', 'cargo', 'camera'],
                 cartbars: ['cartbars', 'cart', 'bars'],
                 tpms: ['tpms', 'tirepressure'],
                 trailerHeightDecal: ['trailerheightdecal', 'heightdecal', 'decal'],
@@ -367,10 +380,6 @@ export default function BatchCreateInspections() {
                 conspicuityTape: ['conspicuitytape'],
                 conspicuityTapeInstallDate: ['conspicuitytapeinstalldate', 'conspicuitytapeinstalleddate'],
                 estimatedDateOfAvailability: ['estimateddateofavailability', 'availabledate'],
-                healthScore: ['healthscore'],
-                invoiceNumber: ['invoicenumber', 'invoice'],
-                lifecycleState: ['lifecyclestate', 'lifecycle'],
-                lifecycleStateReason: ['lifecyclestatereason', 'lifecyclereason'],
                 pulsatingLampManufacturer: ['pulsatinglampmanufacturer', 'lampmanufacturer', 'grote'],
                 pulsatingLampModel: ['pulsatinglampmodel', 'lampmodel'],
                 pulsatingLampWiring: ['pulsatinglampwiring', 'lampwiring'],
@@ -378,7 +387,7 @@ export default function BatchCreateInspections() {
                 purchaseDate: ['purchasedate'],
                 purchaseType: ['purchasetype'],
                 tireSize: ['tiresize'],
-                warrantyBatchId: ['warrantbatchid', 'warrantybatchid'],
+                assetId: ['assetid', 'asset', 'asset id', 'asset id or error message', 'assetidorerrormessage'],
                 inspectionStatus: ['inspectionstatus', 'status'],
                 inspector: ['inspector', 'inspectedby', 'technician'],
                 location: ['location', 'loc', 'site'],
@@ -457,9 +466,28 @@ export default function BatchCreateInspections() {
                             Object.assign(payload, parseDuration(String(v ?? '')));
                         } else {
                             const key = findBestMatch(h);
-                            if (key) payload[key] = v;
+                            if (key) {
+                                payload[key] = v;
+                            }
                         }
                     });
+                // Apply general information to all inspections
+                if (generalInfo.inspectionStatus) payload.inspectionStatus = generalInfo.inspectionStatus;
+                if (generalInfo.reviewReason) payload.reviewReason = generalInfo.reviewReason;
+                if (generalInfo.type) payload.type = generalInfo.type;
+                if (generalInfo.inspector) payload.inspector = generalInfo.inspector;
+                if (generalInfo.location) payload.location = generalInfo.location;
+                if (generalInfo.delivered) payload.delivered = generalInfo.delivered;
+                if (generalInfo.durationMin || generalInfo.durationSec) {
+                    payload.durationMin = generalInfo.durationMin;
+                    payload.durationSec = generalInfo.durationSec;
+                }
+                if (generalInfo.dateMonth || generalInfo.dateDay || generalInfo.dateYear) {
+                    payload.dateMonth = generalInfo.dateMonth;
+                    payload.dateDay = generalInfo.dateDay;
+                    payload.dateYear = generalInfo.dateYear;
+                }
+                if (generalInfo.notes) payload.notes = generalInfo.notes;
                 payloads.push(payload);
             }
             const res = await apiRequest('/api/inspections/batch-create', {
@@ -675,14 +703,21 @@ export default function BatchCreateInspections() {
                                     </div>
                                 </div>
 
-                                <div className="p-4 border-t border-gray-200 flex justify-end gap-3">
+                                <div className="p-4 border-t border-gray-200 flex justify-between gap-3">
                                     <button
-                                        onClick={handleClearErrors}
-                                        className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                        onClick={openModal}
+                                        className="px-6 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors font-medium"
                                     >
-                                        Cancel Import
+                                        Add General Information
                                     </button>
-                                    {/* Add General Information button temporarily disabled */}
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={handleClearErrors}
+                                            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                        >
+                                            Cancel Import
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -820,7 +855,200 @@ export default function BatchCreateInspections() {
                         </button>
                     </div>
                 </div>
-            </Modal> */}
+            </Modal>
+
+            {/* General Information Modal */}
+            <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[600px]">
+                <div className="bg-white rounded-lg w-full">
+                    <div className="p-6 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-900">General Information</h2>
+                        <p className="text-sm text-gray-600 mt-1">This information will be applied to all inspections in this batch</p>
+                    </div>
+                    <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                        {/* Inspection Status */}
+                        <div className="flex items-center gap-4">
+                            <label className="w-40 text-gray-700 font-medium">Inspection Status</label>
+                            <CustomDropdown
+                                options={[
+                                    { value: "incomplete", label: "INCOMPLETE" },
+                                    { value: "complete", label: "COMPLETE" },
+                                ]}
+                                width="full"
+                                value={generalInfo.inspectionStatus}
+                                onChange={(val) => setGeneralInfo(prev => ({ ...prev, inspectionStatus: val }))}
+                            />
+                        </div>
+
+                        {/* Review Reason */}
+                        {generalInfo.inspectionStatus === "needs review" && (
+                            <div className="flex items-center gap-4">
+                                <label className="w-40 text-gray-700 font-medium">Review Reason</label>
+                                <CustomDropdown
+                                    options={[
+                                        { value: "incomplete_image", label: "Incomplete Image File" },
+                                        { value: "incomplete_dot", label: "Incomplete DOT Form" },
+                                        { value: "incomplete_checklist", label: "Incomplete Checklist" },
+                                    ]}
+                                    width="flex-1"
+                                    value={generalInfo.reviewReason}
+                                    onChange={(val) => setGeneralInfo(prev => ({ ...prev, reviewReason: val }))}
+                                />
+                            </div>
+                        )}
+
+                        {/* Type */}
+                        <div className="flex items-center gap-4">
+                            <label className="w-40 text-gray-700 font-medium">Type</label>
+                            <input
+                                type="text"
+                                value={generalInfo.type}
+                                onChange={(e) => setGeneralInfo(prev => ({ ...prev, type: e.target.value }))}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF]"
+                            />
+                        </div>
+
+                        {/* Inspector */}
+                        <div className="flex items-center gap-4">
+                            <label className="w-40 text-gray-700 font-medium">Inspector</label>
+                            <input
+                                type="text"
+                                value={generalInfo.inspector}
+                                onChange={(e) => setGeneralInfo(prev => ({ ...prev, inspector: e.target.value }))}
+                                placeholder="Enter Inspector Name"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF]"
+                            />
+                        </div>
+
+                        {/* Location */}
+                        <div className="flex items-center gap-4">
+                            <label className="w-40 text-gray-700 font-medium">Location</label>
+                            <input
+                                type="text"
+                                value={generalInfo.location}
+                                onChange={(e) => setGeneralInfo(prev => ({ ...prev, location: e.target.value }))}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF]"
+                            />
+                        </div>
+
+                        {/* Delivered */}
+                        <div className="flex items-center gap-4">
+                            <label className="w-40 text-gray-700 font-medium">Delivered</label>
+                            <CustomDropdown
+                                options={[
+                                    { value: "", label: "Leave unchanged" },
+                                    { value: "no", label: "NO" },
+                                    { value: "yes", label: "YES" },
+                                ]}
+                                width="flex-1"
+                                value={generalInfo.delivered}
+                                onChange={(val) => setGeneralInfo(prev => ({ ...prev, delivered: val }))}
+                            />
+                        </div>
+
+                        {/* Duration */}
+                        <div className="flex items-center gap-4">
+                            <label className="w-40 text-gray-700 font-medium">Duration</label>
+                            <div className="flex gap-2 items-center flex-1">
+                                <input
+                                    type="number" min={0} max={60}
+                                    value={generalInfo.durationMin}
+                                    onChange={(e) => {
+                                        const raw = Number(e.target.value);
+                                        const value = Math.min(60, Math.max(0, raw));
+                                        setGeneralInfo(prev => ({ ...prev, durationMin: value.toString() }));
+                                    }}
+                                    className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-md text-center"
+                                />
+                                <span className="text-sm text-gray-500">min</span>
+                                <input
+                                    type="number" min={0} max={60}
+                                    value={generalInfo.durationSec}
+                                    onChange={(e) => {
+                                        const raw = Number(e.target.value);
+                                        const value = Math.min(60, Math.max(0, raw));
+                                        setGeneralInfo(prev => ({ ...prev, durationSec: value.toString() }));
+                                    }}
+                                    className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-md text-center"
+                                />
+                                <span className="text-sm text-gray-500">sec</span>
+                            </div>
+                        </div>
+
+                        {/* Date */}
+                        <div className="flex items-center gap-4">
+                            <label className="w-40 text-gray-700 font-medium">Date</label>
+                            <div className="flex gap-2 items-center flex-1">
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={12}
+                                    value={generalInfo.dateMonth}
+                                    onChange={(e) => {
+                                        const raw = Number(e.target.value);
+                                        const value = Math.min(12, Math.max(1, raw));
+                                        setGeneralInfo(prev => ({ ...prev, dateMonth: value.toString() }));
+                                    }}
+                                    className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-md text-center"
+                                />
+                                <span className="text-gray-400">/</span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={31}
+                                    value={generalInfo.dateDay}
+                                    onChange={(e) => {
+                                        const raw = Number(e.target.value);
+                                        const value = Math.min(31, Math.max(1, raw));
+                                        setGeneralInfo(prev => ({ ...prev, dateDay: value.toString() }));
+                                    }}
+                                    className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-md text-center"
+                                />
+                                <span className="text-gray-400">/</span>
+                                <input
+                                    type="number" min={2000}
+                                    value={generalInfo.dateYear}
+                                    onChange={(e) => {
+                                        const currentYear = new Date().getFullYear();
+                                        const raw = Number(e.target.value);
+                                        const value = Math.min(currentYear, Math.max(2000, raw));
+                                        setGeneralInfo(prev => ({ ...prev, dateYear: value.toString() }));
+                                    }}
+                                    className="w-20 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-md text-center"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Notes */}
+                        <div className="flex items-start gap-4">
+                            <label className="w-40 text-gray-700 font-medium pt-3">Notes</label>
+                            <textarea
+                                value={generalInfo.notes}
+                                onChange={(e) => setGeneralInfo(prev => ({ ...prev, notes: e.target.value }))}
+                                rows={3}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-[#FAF7FF] resize-none"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 p-4 border-t">
+                        <button
+                            onClick={closeModal}
+                            className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => {
+                                // Apply general info to all inspections logic will be handled in handleCreateInspections
+                                closeModal();
+                            }}
+                            className="px-6 py-2.5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition font-medium"
+                        >
+                            Save Information
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

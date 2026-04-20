@@ -24,16 +24,10 @@ const FIELD_CATEGORIES = {
     "possessionOriginLocation",
     "manufacturer",
     "modelYear",
-    "assetTagId",
-    "manufacturerAssetId",
-    "operator",
-    "program",
+    "assetId",
     "purchaseCondition",
     "purchaseDate",
     "purchaseType",
-    "invoiceNumber",
-    "warrantyBatchId",
-    "assetIdOrErrorMessage",
   ],
   sensor: [
     "absSensor",
@@ -86,12 +80,7 @@ const FIELD_CATEGORIES = {
     "conspicuityTapeInstallDate",
   ],
   lifecycle: [
-    "lifecycleState",
-    "lifecycleStateReason",
     "estimatedDateOfAvailability",
-    "healthScore",
-    "possessionStart",
-    "possessionEnd",
   ],
   pulsating: [
     "pulsatingLampInstallationDate",
@@ -265,6 +254,7 @@ export async function POST(req: NextRequest) {
     const equipIdHeaderCandidates = [
       "equipment id/trailer number",
       "equipment id",
+      "trailer id",
       "trailer number",
       "equipment id #",
       "equipment",
@@ -280,10 +270,14 @@ export async function POST(req: NextRequest) {
       equipIdHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
     );
     const seenUnitIds = new Map<string, number>();
-    const vinHeaderCandidates = ["vin", "vehicle identification number"];
-    const vinIndex = headers.findIndex(h =>
-      vinHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
-    );
+    const vinHeaderCandidates = ["vin", "vehicle identification number", "vin number", "vin#", "vehicle id", "vehicle identification", "v.i.n."];
+    const vinIndex = headers.findIndex(h => {
+      const n = normalizeHeader(h);
+      return vinHeaderCandidates.some(c => {
+        const cNorm = normalizeHeader(c);
+        return n === cNorm || n === cNorm.replace(/\s+/g, "");
+      });
+    });
     const dateHeaderCandidates = ["date", "inspection date", "inspectiondate"];
     const dateIndex = headers.findIndex(h => {
       const n = normalizeHeader(h);
@@ -335,7 +329,6 @@ export async function POST(req: NextRequest) {
         lashsystem: { type: "radio" },
         captivebeam: { type: "radio" },
         cargocamera: { type: "radio" },
-        cargocameras: { type: "radio" },
         cartbars: { type: "radio" },
         tpms: { type: "radio" },
         trailerheightdecal: { type: "radio" },
@@ -367,22 +360,11 @@ export async function POST(req: NextRequest) {
         inspector: { type: "text" },
         location: { type: "text" },
         date: { type: "text" },
-        assettagid: { type: "text" },
-        manufacturerassetid: { type: "text" },
-        operator: { type: "text" },
-        program: { type: "text" },
+        assetid: { type: "text" },
         purchasecondition: { type: "text" },
         purchasedate: { type: "date" },
         purchasetype: { type: "text" },
-        invoicenumber: { type: "text" },
-        warrantybatchid: { type: "text" },
-        assetidorerrormessage: { type: "text" },
-        lifecyclestate: { type: "text" },
-        lifecyclestatereason: { type: "text" },
         estimateddateofavailability: { type: "date" },
-        healthscore: { type: "text" },
-        possessionstart: { type: "date" },
-        possessionend: { type: "date" },
         pulsatinglampinstallationdate: { type: "date" },
         pulsatinglampmanufacturer: { type: "text" },
         pulsatinglampmodel: { type: "text" },
@@ -535,17 +517,17 @@ export async function POST(req: NextRequest) {
     const vinValues = vinIndex >= 0
       ? parsedRows.map(r => String(r[headers[vinIndex]] || "").trim().toLowerCase()).filter(v => v && v !== "n/a")
       : [];
-
+  
     const existingDocs = await Inspection.find({
       $or: [
         { unitId: { $in: unitIdsToCheck } },
-        ...(vinValues.length ? [{ vendorId, vin: { $in: vinValues } }] : []),
+        ...(vinValues.length ? [{ vin: { $in: vinValues.map(v => new RegExp(`^${v}$`, 'i')) } }] : []),
       ],
     }).select("unitId vin vendorId").lean();
 
     const existingUnitSet = new Set(existingDocs.map(d => String(d.unitId).trim().toLowerCase()));
     const existingVINSet = new Set(existingDocs.map(d => String(d.vin || "").trim().toLowerCase()).filter(v => v));
-
+   
     parsedRows.forEach((row, i) => {
       const uid = String(row["Unit ID"] || "").trim().toLowerCase();
       if (uid && existingUnitSet.has(uid)) {

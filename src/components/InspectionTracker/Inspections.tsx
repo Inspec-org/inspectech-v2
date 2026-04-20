@@ -1,6 +1,6 @@
 'use client'
 import { Edit3, FileText, Filter, Mail, Trash2, X, Check } from 'lucide-react';
-import React, { Suspense, useEffect, useState } from 'react'
+import React, { Suspense, useContext, useEffect, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import GenericDataTable, { Column } from '../tables/GenericDataTable';
 import { ReportDropdown } from '../ui/dropdown/reportsDropdown';
@@ -16,6 +16,8 @@ import { InspectionData } from '../inspections/Inspections';
 import FilterTrackingModal from '../Modals/FilterTrackingModal';
 import { Header } from './components';
 import BatchEditReviewModal from '../Modals/BatchEditReviewModal';
+import { UserContext } from '@/context/authContext';
+import Swal from 'sweetalert2';
 
 
 type ReportData = {
@@ -34,6 +36,7 @@ type ReportData = {
 
 
 function TrackingInspections() {
+    const { user } = useContext(UserContext);
     const [openGeneratedReport, setOpenGeneratedReport] = useState(false);
     const [selectedCount, setSelectedCount] = useState(0);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -470,8 +473,55 @@ function TrackingInspections() {
         setIsNotificationModalOpen(true);
     };
 
-    const handleRemoveFromHistory = () => {
-        ;
+    const handleRemoveFromHistory = async () => {
+        if (selectedRows.length === 0) {
+            toast.warning('Please select at least one item to remove');
+            return;
+        }
+
+        const vId = vendorId || Cookies.get('selectedVendorId') || '';
+        const dId = departmentId || Cookies.get('selectedDepartmentId') || '';
+
+        if (!vId || !dId) {
+            toast.error('Please select vendor and department first');
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: `You are about to remove ${selectedRows.length} items from the review history. This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, remove them',
+            cancelButtonText: 'Cancel',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await apiRequest('/api/admin-review/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        unitIds: selectedRows,
+                        vendorId: vId,
+                        departmentId: dId,
+                    }),
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    toast.success(data.message || 'Successfully removed from review history');
+                    handleClearSelection();
+                    getReviews(true);
+                } else {
+                    toast.error(data.message || 'Failed to remove from review history');
+                }
+            } catch (e: any) {
+                toast.error(e.message || 'Server error');
+            }
+        }
     };
     const handleClearSelection = () => {
         setSelectedRows([]);
@@ -931,6 +981,7 @@ function TrackingInspections() {
                     onClearSelection={handleClearSelection}
                     hasActiveFilters={Object.values(selectedFilters).some(arr => arr.length > 0)}
                     filterCount={filterCount}
+                    userRole={user?.role}
                 />
                 {filterCount > 0 && (
                     <div className='flex items-center gap-2 px-4 flex-wrap mb-4'>

@@ -242,7 +242,7 @@ export async function POST(req: NextRequest) {
       "skirtColor",
       "conspicuityTape",
       "captiveBeam",
-      "cargoCameras",
+      "cargoCamera",
       "cartbars",
       "tpms",
       "trailerHeightDecal",
@@ -252,17 +252,6 @@ export async function POST(req: NextRequest) {
     }
     if (!includeUSTrailerFields) {
       const usOnlyFields = [
-        "possessionStart",
-        "possessionEnd",
-        "manufacturerAssetId",
-        "assetTagId",
-        "operator",
-        "program",
-        "invoiceNumber",
-        "warrantyBatchId",
-        "healthScore",
-        "lifecycleState",
-        "lifecycleStateReason",
         "estimatedDateOfAvailability",
         "purchaseCondition",
         "purchaseDate",

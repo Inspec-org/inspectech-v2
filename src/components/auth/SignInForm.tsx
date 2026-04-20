@@ -108,7 +108,7 @@ export default function SignInForm() {
       });
 
       const result = await response.json();
-      
+
 
       if (!response.ok) {
         throw new Error(result?.message || result.error)
@@ -120,11 +120,10 @@ export default function SignInForm() {
         return;
       }
 
-      const role=result.user.role
+      const role = result.user.role
       login(result.token)
-      
-      if(role==="superadmin" || role==="owner")
-      {
+
+      if (role === "superadmin" || role === "owner") {
         router.push(`/${role}`);
       }
       else
@@ -177,175 +176,176 @@ export default function SignInForm() {
           </h1>
         </div>
         <p className="text-sm text-gray-500 ">
-        {step === 1 ? "Sign in to access your secure dashboard" : "Enter the 6-digit code sent to your email"}
-      </p>
-    </div>
-    <div>
-      {step === 1 ? (
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="">
-                  <Image
-                    width={14}
-                    height={14}
-                    className=""
-                    src="/images/auth/email.svg"
-                    alt="Logo"
-                  />
+          {step === 1 ? "Sign in to access your secure dashboard" : "Enter the 6-digit code sent to your email"}
+        </p>
+      </div>
+      <div>
+        {step === 1 ? (
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="">
+                    <Image
+                      width={14}
+                      height={14}
+                      className=""
+                      src="/images/auth/email.svg"
+                      alt="Logo"
+                    />
+                  </div>
+                  <Label>
+                    Email Address <span className="text-error-500">*</span>{" "}
+                  </Label>
                 </div>
-                <Label>
-                  Email Address <span className="text-error-500">*</span>{" "}
-                </Label>
-              </div>
-              <div className="relative">
-                <span
-                  className="absolute z-30 -translate-y-1/2 cursor-pointer left-4 top-1/2"
-                >
-                  <Image
-                    width={14}
-                    height={14}
-                    className=""
-                    src="/images/auth/email.svg"
-                    alt="Logo"
-                  />
-                </span>
-                <Input
-                  name="email"
-                  placeholder="info@gmail.com"
-                  type="email"
-                  value={formdata.email}
-                  onChange={handleChange}
-                  required
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="">
-                  <Image
-                    width={14}
-                    height={14}
-                    className=""
-                    src="/images/auth/password.svg"
-                    alt="Logo"
-                  />
-                </div>
-                <Label>
-                  Password <span className="text-error-500">*</span>{" "}
-                </Label>
-              </div>
-              <div className="relative">
-                <Input
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={formdata.password}
-                  onChange={handleChange}
-                  required
-                  className="pl-10"
-                />
-                <span
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute z-30 -translate-y-1/2 cursor-pointer left-4 top-1/2"
-                >
-                  <Image
-                    width={14}
-                    height={14}
-                    className=""
-                    src="/images/auth/password.svg"
-                    alt="Logo"
-                  />
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center justify-end">
-              <Link
-                href="/forget-password"
-                className="text-sm  hover:text-text-blue hover:underline "
-              >
-                Forgot password?
-              </Link>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center justify-start gap-2">
-                <div className="">
-                  <input
+                <div className="relative">
+                  <span
+                    className="absolute z-30 -translate-y-1/2 cursor-pointer left-4 top-1/2"
+                  >
+                    <Image
+                      width={14}
+                      height={14}
+                      className=""
+                      src="/images/auth/email.svg"
+                      alt="Logo"
+                    />
+                  </span>
+                  <Input
                     name="email"
                     placeholder="info@gmail.com"
-                    type="checkbox"
+                    type="email"
+                    value={formdata.email}
+                    onChange={handleChange}
+                    required
                     className="pl-10"
                   />
                 </div>
-                <Label>
-                  Remember Me
-                </Label>
               </div>
-              <Link
-                href="/two-factor-setup"
-                className="text-sm font-medium text-text-blue hover:underline"
-              >
-                Setup 2FA
-              </Link>
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="">
+                    <Image
+                      width={14}
+                      height={14}
+                      className=""
+                      src="/images/auth/password.svg"
+                      alt="Logo"
+                    />
+                  </div>
+                  <Label>
+                    Password <span className="text-error-500">*</span>{" "}
+                  </Label>
+                </div>
+                <div className="relative">
+                  <Input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={formdata.password}
+                    onChange={handleChange}
+                    required
+                    className="pl-10"
+                  />
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute z-30 -translate-y-1/2 cursor-pointer left-4 top-1/2"
+                  >
+                    <Image
+                      width={14}
+                      height={14}
+                      className=""
+                      src="/images/auth/password.svg"
+                      alt="Logo"
+                    />
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-end">
+                <Link
+                  href="/forget-password"
+                  className="text-sm  hover:text-text-blue hover:underline "
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center justify-start gap-2">
+                  <div className="">
+                    <input
+                      name="email"
+                      placeholder="info@gmail.com"
+                      type="checkbox"
+                      className="pl-10"
+                    />
+                  </div>
+                  <Label>
+                    Remember Me
+                  </Label>
+                </div>
+
+              </div>
+              <div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="sm"
+                  disabled={isLoading}
+                >
+                  {isLoading ? <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Signing in...</> : "Sign in"}
+                </Button>
+                <Link
+                  href="/two-factor-setup"
+                  className="text-sm font-medium text-text-blue hover:underline text-center block mt-2"
+                >
+                  Two Factor Authentication
+                </Link>
+              </div>
+              <div className="text-center py-2 text-sm">
+                Need an account? Contact your administrator
+              </div>
             </div>
-            <div>
-              <Button
-                type="submit"
-                className="w-full"
-                size="sm"
-                disabled={isLoading}
-              >
-                {isLoading ? <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Signing in...</> : "Sign in"}
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp}>
+            <div className="space-y-6">
+              <div className="flex justify-between gap-2">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => { otpRefs.current[index] = el; }}
+                    type="text"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+                    required
+                  />
+                ))}
+              </div>
+
+              <Button type="submit" className="w-full" size="sm" disabled={isLoading}>
+                {isLoading ? "Verifying..." : "Verify OTP"}
               </Button>
-            </div>
-            <div className="text-center py-2 text-sm">
-              Need an account? Contact your administrator
-            </div>
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={handleVerifyOtp}>
-          <div className="space-y-6">
-            <div className="flex justify-between gap-2">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => { otpRefs.current[index] = el; }}
-                  type="text"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                  required
-                />
-              ))}
-            </div>
 
-            <Button type="submit" className="w-full" size="sm" disabled={isLoading}>
-              {isLoading ? "Verifying..." : "Verify OTP"}
-            </Button>
-
-            <div className="text-center py-2">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="text-sm text-gray-500 hover:text-text-blue hover:underline"
-              >
-                Back to Sign In
-              </button>
+              <div className="text-center py-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-sm text-gray-500 hover:text-text-blue hover:underline"
+                >
+                  Back to Sign In
+                </button>
+              </div>
             </div>
-          </div>
-        </form>
-      )}
-    </div>
+          </form>
+        )}
+      </div>
     </div>
 
   );

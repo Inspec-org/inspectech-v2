@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
       "skirted",
       "skirtColor",
       "captiveBeam",
-      "cargoCameras",
+      "cargoCamera",
       "cartbars",
       "tpms",
       "trailerHeightDecal",

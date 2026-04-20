@@ -257,6 +257,7 @@ export async function POST(req: NextRequest) {
     const equipIdHeaderCandidates = [
       "equipment id/trailer number",
       "equipment id",
+      "trailer id",
       "trailer number",
       "equipment id #",
       "equipment",
@@ -275,10 +276,14 @@ export async function POST(req: NextRequest) {
 
     const seenUnitIds = new Map<string, number>();
 
-    const vinHeaderCandidates = ["vin", "vehicle identification number"];
-    const vinIndex = headers.findIndex(h =>
-      vinHeaderCandidates.some(c => normalizeHeader(h) === normalizeHeader(c))
-    );
+    const vinHeaderCandidates = ["vin", "vehicle identification number", "vin number", "vin#", "vehicle id", "vehicle identification", "v.i.n."];
+    const vinIndex = headers.findIndex(h => {
+      const n = normalizeHeader(h);
+      return vinHeaderCandidates.some(c => {
+        const cNorm = normalizeHeader(c);
+        return n === cNorm || n === cNorm.replace(/\s+/g, "");
+      });
+    });
 
     const dateHeaderCandidates = ["date", "inspection date", "inspectiondate"];
     const dateIndex = headers.findIndex(h =>
@@ -327,7 +332,6 @@ export async function POST(req: NextRequest) {
         lashsystem: { type: "radio" },
         captivebeam: { type: "radio" },
         cargocamera: { type: "radio" },
-        cargocameras: { type: "radio" },
         cartbars: { type: "radio" },
         tpms: { type: "radio" },
         trailerheightdecal: { type: "radio" },
@@ -490,7 +494,7 @@ export async function POST(req: NextRequest) {
     const existingDocs = await Inspection.find({
       $or: [
         { unitId: { $in: unitIdsToCheck } },
-        ...(vinValues.length ? [{ vendorId, vin: { $in: vinValues } }] : []),
+        ...(vinValues.length ? [{ vin: { $in: vinValues.map(v => new RegExp(`^${v}$`, 'i')) } }] : []),
       ],
     }).select("unitId vin vendorId").lean();
 

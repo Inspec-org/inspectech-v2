@@ -37,7 +37,6 @@ export interface FormData {
   notes: string;
   poNumber: string;
   owner: string;
-  assetTagId: string;
   equipmentNumber: string;
   vin: string;
   licensePlateId: string;
@@ -104,7 +103,7 @@ export interface FormData {
   skirted: string;
   skirtColor: string;
   captiveBeam: string;
-  cargoCameras: string;
+  cargoCamera: string;
   cartbars: string;
   tpms: string;
   trailerHeightDecal: string;
@@ -143,7 +142,6 @@ export interface FormData {
   notes: string;
   poNumber: string;
   owner: string;
-  assetTagId: string;
   equipmentId: string;
   vin: string;
   licensePlateId: string;
@@ -151,22 +149,13 @@ export interface FormData {
   licensePlateExpiration: string;
   licensePlateStateOrProvince: string;
   possessionOriginLocation: string;
-  possessionStart: string;
-  possessionEnd: string;
   manufacturer: string;
   modelYear: string;
-  manufacturerAssetId: string;
-  operator: string;
-  program: string;
   cargoLockFitted: string;
   cargoLockInstalledDate: string;
   cargoLockType: string;
   conspicuityTapeInstallDate: string;
   estimatedDateOfAvailability: string;
-  healthScore: string;
-  invoiceNumber: string;
-  lifecycleState: string;
-  lifecycleStateReason: string;
   pulsatingLampInstallationDate: string;
   pulsatingLampManufacturer: string;
   pulsatingLampModel: string;
@@ -175,8 +164,7 @@ export interface FormData {
   purchaseDate: string;
   purchaseType: string;
   tireSize: string;
-  warrantyBatchId: string;
-  assetIdOrErrorMessage: string;
+  assetId: string;
   absSensor: string;
   atisRegulator: string;
   aerokits: string;
@@ -219,7 +207,6 @@ export interface FormData {
   equipmentNumber: string;
   licensePlateState: string;
   possessionOrigin: string;
-  cargoCameras: string;
   noseBranding: string;
   captiveBeam: string;
   atisregulator: string;
@@ -281,7 +268,6 @@ export default function Edit({ type }: { type: string }) {
     notes: '',
     poNumber: '',
     owner: '',
-    assetTagId: '',
     equipmentId: '',
     vin: '',
     licensePlateId: '',
@@ -289,22 +275,13 @@ export default function Edit({ type }: { type: string }) {
     licensePlateExpiration: '',
     licensePlateStateOrProvince: '',
     possessionOriginLocation: '',
-    possessionStart: '',
-    possessionEnd: '',
     manufacturer: '',
     modelYear: '',
-    manufacturerAssetId: '',
-    operator: '',
-    program: '',
     cargoLockFitted: '',
     cargoLockInstalledDate: '',
     cargoLockType: '',
     conspicuityTapeInstallDate: '',
     estimatedDateOfAvailability: '',
-    healthScore: '',
-    invoiceNumber: '',
-    lifecycleState: '',
-    lifecycleStateReason: '',
     pulsatingLampInstallationDate: '',
     pulsatingLampManufacturer: '',
     pulsatingLampModel: '',
@@ -313,8 +290,7 @@ export default function Edit({ type }: { type: string }) {
     purchaseDate: '',
     purchaseType: '',
     tireSize: '',
-    warrantyBatchId: '',
-    assetIdOrErrorMessage: '',
+    assetId: '',
     absSensor: '',
     atisRegulator: '',
     aerokits: '',
@@ -356,7 +332,6 @@ export default function Edit({ type }: { type: string }) {
     equipmentNumber: '',
     licensePlateState: '',
     possessionOrigin: '',
-    cargoCameras: '',
     noseBranding: '',
     captiveBeam: '',
     atisregulator: '',
@@ -437,7 +412,7 @@ export default function Edit({ type }: { type: string }) {
                 ...doc,
                 additionalAttachments: Array.isArray(doc.additionalAttachments) ? doc.additionalAttachments : [],
               };
-              setFormData(prev => ({ ...prev, ...normalized }));
+              setFormData(normalized);
               setInspectionId(doc._id ?? null);
               setHasSavedOnce(true);
               setLastSaved(normalized);
@@ -465,11 +440,13 @@ export default function Edit({ type }: { type: string }) {
   }, [formData, lastSaved]);
 
 
-  const saveInspection = async () => {
-    if (!formData.unitId || formData.unitId.trim() === '') return;
+  const saveInspection = async (silent = false) => {
+    if (!formData.unitId || formData.unitId.trim() === '') return false;
     try {
       setSaveLoading(true);
-      if (!hasSavedOnce) {
+      // Check if this is a new inspection (no inspectionId) or an existing one
+      const isNewInspection = !inspectionId;
+      if (isNewInspection) {
         const res = await apiRequest('/api/inspections/add-new-inspection', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -482,10 +459,17 @@ export default function Edit({ type }: { type: string }) {
           setLastSaved(formData);
           setIsSaved(true);
           toast.success('Initial inspection saved');
+          return true;
         } else {
           toast.error(data.message || 'Failed to save inspection');
+          return false;
         }
       } else {
+        // Only call update API if there are actual changes
+        if (isSaved) {
+          if (!silent) toast.info('No changes to save');
+          return false;
+        }
         const res = await apiRequest('/api/inspections/update-inspection', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -495,14 +479,16 @@ export default function Edit({ type }: { type: string }) {
         if (res.ok && data.success) {
           setLastSaved(formData);
           setIsSaved(true);
-          toast.success('Inspection updated');
+          if (!silent) toast.success('Inspection updated');
+          return true;
         } else {
           toast.error(data.message || 'Failed to update inspection');
+          return false;
         }
       }
     } catch (error: any) {
       toast.error(error.message || 'Server error');
-      ;
+      return false;
     }
     finally {
       setSaveLoading(false);
@@ -574,12 +560,27 @@ export default function Edit({ type }: { type: string }) {
   };
 
 
-  const processInspectionData = () => {
-    const source = lastSaved ?? formData;
-    const res = evaluateInspectionData(source);
-    setProcessResult(res);
-    setShowProcessDetails(false);
+  const processInspectionData = async () => {
+    // Save changes first if there are unsaved changes
+    let didSave = false;
+    if (!isSaved) {
+      didSave = await saveInspection(true);
+    }
+    // Only process if either:
+    // 1. There were no unsaved changes (isSaved was true), or
+    // 2. The save actually saved something (didSave is true)
+    if (isSaved || didSave) {
+      const source = lastSaved ?? formData;
+      const res = evaluateInspectionData(source);
+      setProcessResult(res);
+      setShowProcessDetails(false);
+    }
   };
+
+  // Reset processResult on component mount to clear stale validation results
+  useEffect(() => {
+    setProcessResult(null);
+  }, []);
 
   const openDetailedResults = () => {
     const source = lastSaved ?? formData;
@@ -622,7 +623,7 @@ export default function Edit({ type }: { type: string }) {
                   <button
                     className="group flex gap-2 items-center bg-white hover:bg-[#0075FF] border border-[#0075FF] text-sm rounded-xl text-[#0075FF] hover:text-white px-3 py-2 disabled:opacity-60 whitespace-nowrap shrink-0"
                     disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
-                    onClick={saveInspection}
+                    onClick={() => saveInspection()}
                   >
                     {saveLoading ? (
                       <>
@@ -669,7 +670,7 @@ export default function Edit({ type }: { type: string }) {
                       : 'bg-[#7522BB] border-white text-white hover:bg-[#5a1a95]'
                       }`}
                     disabled={!formData.unitId || formData.unitId.trim() === '' || saveLoading}
-                    onClick={saveInspection}
+                    onClick={() => saveInspection()}
                   >
                     {saveLoading ? (
                       <>

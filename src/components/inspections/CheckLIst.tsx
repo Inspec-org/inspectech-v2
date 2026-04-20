@@ -6,7 +6,7 @@ import YearPicker from '../ui/YearPicker';
 import Cookies from 'js-cookie';
 
 const TextFieldWithNA = React.memo(({
-    name, label, value, disabled, w, colRow, onChange, onSetNA
+    name, label, value, disabled, w, colRow, onChange, onSetNA, onFocus
 }: {
     name: string;
     label: React.ReactNode;
@@ -16,6 +16,7 @@ const TextFieldWithNA = React.memo(({
     colRow: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSetNA: (field: string) => void;
+    onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
 }) => (
     <div className={colRow}>
         <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
@@ -25,6 +26,7 @@ const TextFieldWithNA = React.memo(({
                 name={name}
                 value={value}
                 onChange={onChange}
+                onFocus={onFocus}
                 placeholder="Enter value or click N/A"
                 className="w-full px-3 py-2 pr-14 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none disabled:opacity-50"
                 disabled={disabled}
@@ -38,6 +40,73 @@ const TextFieldWithNA = React.memo(({
                 N/A
             </button>
         </div>
+    </div>
+));
+
+const DateField = memo(({ name, label, value, handleChange, w, colRow }: {
+    name: string; label: string; value: string; w: string; colRow: string;
+    handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+}) => (
+    <div className={colRow}>
+        <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <div className={`relative ${w}`} data-field={name}>  {/* ← move back to inner wrapper */}
+            <input
+                type="date"
+                name={name}
+                value={value || ''}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none cursor-pointer"
+                onClick={(e) => { e.preventDefault(); (e.target as HTMLInputElement).showPicker?.(); }}
+            />
+        </div>
+    </div>
+));
+
+const RadioField = memo(({ name, label, value, handleChange, flexRow }: {
+    name: string; label: string; value: string; flexRow: string;
+    handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+}) => (
+    <div className={flexRow}>
+        <label
+            data-name={name}
+            className="block text-sm font-medium text-gray-700 mb-2"
+        >
+            {label}
+        </label>
+
+        {/* 👇 Wrap radios separately */}
+        <div className="flex gap-4" data-radio-group={name}>
+            {['N/A', 'Yes', 'No'].map(opt => (
+                <label key={opt} className="flex items-center">
+                    <input
+                        type="radio"
+                        name={name}
+                        value={opt}
+                        checked={value === opt}
+                        onChange={handleChange}
+                        className="mr-2"
+                    />
+                    {opt}
+                </label>
+            ))}
+        </div>
+    </div>
+));
+
+const DropdownField = memo(({ name, label, value, options, handleDropdownChange, w, colRow }: {
+    name: string; label: string; value: string; options: { value: string; label: string }[];
+    w: string; colRow: string;
+    handleDropdownChange: (name: string, value: string) => void;
+}) => (
+    <div className={colRow}>
+        <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <CustomDropdown
+            name={name}
+            options={options}
+            width={w}
+            value={value}
+            onChange={(val) => handleDropdownChange(name, val)}
+        />
     </div>
 ));
 
@@ -58,44 +127,55 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
         const fieldCls = 'missing-field-input';
         document.querySelectorAll('.' + labelCls).forEach(el => el.classList.remove(labelCls));
         document.querySelectorAll('.' + fieldCls).forEach(el => el.classList.remove(fieldCls));
+
         (missingKeys || []).forEach((key) => {
-            const input = document.querySelector<HTMLInputElement>(`input[name="${key}"]`);
+            const fieldValue = formData[key as keyof FormData];
+            const hasValue = fieldValue &&
+                String(fieldValue).trim() !== '' &&
+                String(fieldValue).toUpperCase() !== 'DATE' &&
+                String(fieldValue) !== 'dd/mm/yyyy' &&
+                String(fieldValue) !== 'mm/dd/yyyy' &&
+                String(fieldValue) !== 'yyyy-mm-dd';
+            if (hasValue) return;
+
             const labelElExplicit = document.querySelector<HTMLElement>(`label[data-name="${key}"]`);
             if (labelElExplicit) labelElExplicit.classList.add(labelCls);
-            if (input) {
-                let container: HTMLElement | null = input.closest('div.relative') as HTMLElement | null;
-                let groupLabel: HTMLElement | null = labelElExplicit;
-                if (!container && groupLabel) {
-                    container = groupLabel.nextElementSibling as HTMLElement | null;
-                }
-                if (!container) {
-                    container = input.closest('div.flex') as HTMLElement | null;
-                }
-                if (!groupLabel && container) {
-                    groupLabel = (container.parentElement?.querySelector('label') as HTMLElement | null) || (container.querySelector('label') as HTMLElement | null);
-                }
-                if (groupLabel) groupLabel.classList.add(labelCls);
-                if (!container) {
-                    container = input.closest('div') as HTMLElement | null;
-                    while (container && !container.classList.contains('flex') && !(container.previousElementSibling && container.previousElementSibling.tagName.toLowerCase() === 'label')) {
-                        container = container.parentElement as HTMLElement | null;
-                    }
-                }
-                if (container) container.classList.add(fieldCls);
+
+            // 1. Date fields
+            const dataFieldDiv = document.querySelector<HTMLElement>(`div[data-field="${key}"]`);
+            if (dataFieldDiv) {
+                dataFieldDiv.classList.add(fieldCls);
+                return;
             }
-            const dd = document.querySelector<HTMLElement>(`div.relative[data-name="${key}"]`);
+
+            // 2. Text inputs only (not radio)
+            const input = document.querySelector<HTMLInputElement>(`input[name="${key}"]`);
+            if (input && input.type !== 'radio') {
+                input.parentElement?.classList.add(fieldCls);
+                return;
+            }
+
+            // 3. Dropdowns (CustomDropdown renders a div with data-name)
+            const dd = document.querySelector<HTMLElement>(`div[data-name="${key}"]`);
             if (dd) {
                 dd.classList.add(fieldCls);
-                const labelEl = dd.parentElement?.querySelector('label') as HTMLElement | null;
-                if (labelEl) labelEl.classList.add(labelCls);
+                return;
+            }
+
+            // 4. Radio fields and anything else — highlight the whole row via label's parent
+            const radioGroup = document.querySelector<HTMLElement>(`div[data-radio-group="${key}"]`);
+            if (radioGroup) {
+                radioGroup.classList.add(fieldCls);
             }
         });
-    }, [missingKeys]);
+    }, [missingKeys, formData]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     }, [setFormData]);
+
 
     const handleDropdownChange = useCallback((name: string, value: string) => {
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -114,63 +194,6 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
     const w = prop === "single" ? "xl:w-[230px] w-full" : "w-full";
     const colRow = `flex flex-col justify-between gap-4 ${prop === "single" ? "xl:flex-row xl:items-center" : ""}`;
     const flexRow = `flex flex-row justify-between gap-4 ${prop === "single" ? "xl:flex-row xl:items-center" : ""}`;
-
-    // ─── Reusable field components ───────────────────────────────────────────────
-
-    /** Date input with an N/A shortcut button */
-    const DateField = memo(({ name, label, value }: { name: string; label: string; value: string }) => (
-        <div className={colRow}>
-            <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">
-                {label}
-            </label>
-            <div className={`relative ${w}`}>
-                <input
-                    type="date"
-                    name={name}
-                    value={value || ''}           // ensure controlled empty string, never undefined
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border text-sm border-gray-300 rounded-md bg-[#FAF7FF] focus:outline-none cursor-pointer"
-                    onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}  // programmatically open picker on click
-                />
-            </div>
-        </div>
-    ));
-
-    /** Three-way radio: N/A | Yes | No */
-    const RadioField = memo(({ name, label, value }: { name: string; label: string; value: string; }) => (
-        <div className={flexRow}>
-            <label data-name={name} className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-            <div className="flex gap-4">
-                {['N/A', 'Yes', 'No'].map(opt => (
-                    <label key={opt} className="flex items-center">
-                        <input
-                            type="radio"
-                            name={name}
-                            value={opt}
-                            checked={value === opt}
-                            onChange={handleChange}
-                            className="mr-2"
-                        />
-                        {opt}
-                    </label>
-                ))}
-            </div>
-        </div>
-    ));
-
-    /** CustomDropdown wrapped in consistent label + layout */
-    const DropdownField = memo(({ name, label, value, options }: { name: string; label: string; value: string; options: { value: string; label: string }[]; }) => (
-        <div className={colRow}>
-            <label data-name={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-            <CustomDropdown
-                name={name}
-                options={options}
-                width={w}
-                value={value}
-                onChange={(val) => handleDropdownChange(name, val)}
-            />
-        </div>
-    ));
 
     // ─── Static option sets ──────────────────────────────────────────────────────
 
@@ -200,10 +223,11 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
     return (
         <div className="">
             <style jsx global>{`
-              .missing-field-label { color: #ef4444 !important; }
-              .missing-field-input { background-color: #fee2e2 !important; border: 1px solid #ef4444 !important; border-radius: 8px; }
-              .missing-field-input :is(button, input, select, textarea) { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
-              .missing-field-input input[type="radio"] { accent-color: #ef4444 !important; }
+                .missing-field-label { color: #ef4444 !important; }
+                .missing-field-input { background-color: #fee2e2 !important; border: 1px solid #ef4444 !important; border-radius: 8px; padding: 2px; }
+                .missing-field-input :is(button, input, select, textarea) { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
+                .missing-field-input input[type="radio"] { accent-color: #ef4444 !important; }
+                .missing-field-input input[type="date"] { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
             `}</style>
 
             <div className="">
@@ -220,19 +244,26 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
                         {expandedSections.identification && (
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
-
+                                {isUSTrailer && (
+                                    <TextFieldWithNA w={w}
+                                        colRow={colRow}
+                                        onChange={handleChange}
+                                        onSetNA={handleSetNA} name="assetId" label="Asset ID or Error Message" value={formData.assetId} />
+                                )}
                                 <TextFieldWithNA w={w}
                                     colRow={colRow}
                                     onChange={handleChange}
                                     onSetNA={handleSetNA} name="poNumber" label="PO Number" value={formData.poNumber} />
+                                {!isUSTrailer && (
+                                    <TextFieldWithNA w={w}
+                                        colRow={colRow}
+                                        onChange={handleChange}
+                                        onSetNA={handleSetNA} name="owner" label="Owner" value={formData.owner} />
+                                )}
                                 <TextFieldWithNA w={w}
                                     colRow={colRow}
                                     onChange={handleChange}
-                                    onSetNA={handleSetNA} name="owner" label="Owner" value={formData.owner} />
-                                <TextFieldWithNA w={w}
-                                    colRow={colRow}
-                                    onChange={handleChange}
-                                    onSetNA={handleSetNA} name="equipmentId" label="Equipment ID" value={formData.equipmentId} disabled={prop === "batch"} />
+                                    onSetNA={handleSetNA} name="equipmentId" label={`${isUSTrailer ? "Trailer" : "Equipment"} ID`} value={formData.equipmentId} disabled={prop === "batch"} />
                                 <TextFieldWithNA w={w}
                                     colRow={colRow}
                                     onChange={handleChange}
@@ -253,18 +284,21 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     colRow={colRow}
                                     onChange={handleChange}
                                     onSetNA={handleSetNA} name="licensePlateStateOrProvince" label="License Plate State / Province" value={formData.licensePlateStateOrProvince} />
-                                <TextFieldWithNA w={w}
-                                    colRow={colRow}
-                                    onChange={handleChange}
-                                    onSetNA={handleSetNA} name="possessionOriginLocation" label={<>Possession Origin Location</>} value={formData.possessionOriginLocation} />
-                                {isUSTrailer && (
+                                {!isUSTrailer && (
+                                    <TextFieldWithNA w={w}
+                                        colRow={colRow}
+                                        onChange={handleChange}
+                                        onSetNA={handleSetNA} name="possessionOriginLocation" label={<>Possession Origin Location</>} value={formData.possessionOriginLocation} />
+                                )}
+                                {/* {isUSTrailer && (
                                     <>
                                         <DateField name="possessionStart" label="Possession Start" value={formData.possessionStart} />
                                         <DateField name="possessionEnd" label="Possession End" value={formData.possessionEnd} />
                                     </>
-                                )}
+                                )} */}
                                 <DropdownField
-                                    name="manufacturer" label="Manufacturer" value={formData.manufacturer}
+                                    name="manufacturer" label="Manufacturer" value={formData.manufacturer} w={w} colRow={colRow}
+                                    handleDropdownChange={handleDropdownChange}
                                     options={[
                                         { value: "N/A", label: "N/A" },
                                         { value: "Atro", label: "Atro" },
@@ -302,15 +336,11 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 {isUSTrailer && (
                                     <>
 
-                                        <TextFieldWithNA w={w}
+                                        {/* <TextFieldWithNA w={w}
                                             colRow={colRow}
                                             onChange={handleChange}
-                                            onSetNA={handleSetNA} name="manufacturerAssetId" label="Manufacturer Asset ID" value={formData.manufacturerAssetId} />
-                                        <TextFieldWithNA w={w}
-                                            colRow={colRow}
-                                            onChange={handleChange}
-                                            onSetNA={handleSetNA} name="assetTagId" label="Asset Tag ID" value={formData.assetTagId} />
-                                        <TextFieldWithNA w={w}
+                                            onSetNA={handleSetNA} name="manufacturerAssetId" label="Manufacturer Asset ID" value={formData.manufacturerAssetId} /> */}
+                                        {/* <TextFieldWithNA w={w}
                                             colRow={colRow}
                                             onChange={handleChange}
                                             onSetNA={handleSetNA} name="operator" label="Operator" value={formData.operator} />
@@ -327,15 +357,15 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         <TextFieldWithNA w={w}
                                             colRow={colRow}
                                             onChange={handleChange}
-                                            onSetNA={handleSetNA} name="invoiceNumber" label="Invoice Number" value={formData.invoiceNumber} />
+                                                                                        onSetNA={handleSetNA} name="invoiceNumber" label="Invoice Number" value={formData.invoiceNumber} />
                                         <TextFieldWithNA w={w}
                                             colRow={colRow}
                                             onChange={handleChange}
-                                            onSetNA={handleSetNA} name="warrantyBatchId" label="Warranty Batch ID" value={formData.warrantyBatchId} />
+                                                                                        onSetNA={handleSetNA} name="warrantyBatchId" label="Warranty Batch ID" value={formData.warrantyBatchId} />
                                         <TextFieldWithNA w={w}
                                             colRow={colRow}
                                             onChange={handleChange}
-                                            onSetNA={handleSetNA} name="healthScore" label="Health Score" value={formData.healthScore} />
+                                                                                        onSetNA={handleSetNA} name="healthScore" label="Health Score" value={formData.healthScore} />
 
                                         <DropdownField
                                             name="lifecycleState" label="Lifecycle State" value={formData.lifecycleState}
@@ -389,12 +419,13 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                                 { value: "Unaccounted For", label: "Unaccounted For" },
                                                 { value: "Written Off - Lost", label: "Written Off - Lost" },
                                             ]}
-                                        />
+                                        /> */}
 
-                                        <DateField name="estimatedDateOfAvailability" label="Estimated Date of Availability" value={formData.estimatedDateOfAvailability} />
+                                        <DateField name="estimatedDateOfAvailability" label="Estimated Date of Availability" value={formData.estimatedDateOfAvailability} w={w} colRow={colRow} handleChange={handleChange} />
 
                                         <DropdownField
                                             name="purchaseCondition" label="Purchase Condition" value={formData.purchaseCondition}
+                                            w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                             options={[
                                                 { value: "N/A", label: "N/A" },
                                                 { value: "New", label: "New" },
@@ -402,10 +433,11 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                             ]}
                                         />
 
-                                        <DateField name="purchaseDate" label="Purchase Date" value={formData.purchaseDate} />
+                                        <DateField name="purchaseDate" label="Purchase Date" value={formData.purchaseDate} w={w} colRow={colRow} handleChange={handleChange} />
 
                                         <DropdownField
                                             name="purchaseType" label="Purchase Type" value={formData.purchaseType}
+                                            w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                             options={[
                                                 { value: "N/A", label: "N/A" },
                                                 { value: "Bought", label: "Bought" },
@@ -429,18 +461,19 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
                         {expandedSections.sensors && (
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
-                                <RadioField name="absSensor" label="ABS Sensor" value={formData.absSensor} />
-                                <RadioField name="airTankMonitor" label="Air Tank Monitor" value={formData.airTankMonitor} />
-                                <RadioField name="atisRegulator" label="ATIS Regulator" value={formData.atisRegulator} />
-                                <RadioField name="lightOutSensor" label="Light Out Sensor" value={formData.lightOutSensor} />
-                                <RadioField name="sensorError" label="Sensor Error" value={formData.sensorError} />
-                                <RadioField name="ultrasonicCargoSensor" label="Ultrasonic Cargo Sensor" value={formData.ultrasonicCargoSensor} />
+                                <RadioField name="absSensor" label="ABS Sensor" value={formData.absSensor} flexRow={flexRow} handleChange={handleChange} />
+                                <RadioField name="airTankMonitor" label="Air Tank Monitor" value={formData.airTankMonitor} flexRow={flexRow} handleChange={handleChange} />
+                                <RadioField name="atisRegulator" label="ATIS Regulator" value={formData.atisRegulator} flexRow={flexRow} handleChange={handleChange} />
+                                <RadioField name="lightOutSensor" label="Light Out Sensor" value={formData.lightOutSensor} flexRow={flexRow} handleChange={handleChange} />
+                                <RadioField name="sensorError" label="Sensor Error" value={formData.sensorError} flexRow={flexRow} handleChange={handleChange} />
+                                <RadioField name="ultrasonicCargoSensor" label="Ultrasonic Cargo Sensor" value={formData.ultrasonicCargoSensor} flexRow={flexRow} handleChange={handleChange} />
 
                                 {isUSTrailer && (
                                     <>
-                                        <DateField name="pulsatingLampInstallationDate" label="Pulsating Lamp Installation Date" value={formData.pulsatingLampInstallationDate} />
+                                        <DateField name="pulsatingLampInstallationDate" label="Pulsating Lamp Installation Date" value={formData.pulsatingLampInstallationDate} w={w} colRow={colRow} handleChange={handleChange} />
                                         <DropdownField
                                             name="pulsatingLampManufacturer" label="Pulsating Lamp Manufacturer" value={formData.pulsatingLampManufacturer}
+                                            w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                             options={[
                                                 { value: "N/A", label: "N/A" },
                                                 { value: "Grote", label: "Grote" },
@@ -450,7 +483,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                             colRow={colRow}
                                             onChange={handleChange}
                                             onSetNA={handleSetNA} name="pulsatingLampModel" label="Pulsating Lamp Model" value={formData.pulsatingLampModel} />
-                                        <RadioField name="pulsatingLampWiring" label="Pulsating Lamp Wiring" value={formData.pulsatingLampWiring} />
+                                        <RadioField name="pulsatingLampWiring" label="Pulsating Lamp Wiring" value={formData.pulsatingLampWiring} flexRow={flexRow} handleChange={handleChange} />
                                     </>
                                 )}
                             </div>
@@ -472,6 +505,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
                                 <DropdownField
                                     name="length" label="Length" value={formData.length}
+                                    w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                     options={isUSTrailer ? [
                                         { value: "N/A", label: "N/A" },
                                         { value: "28 ft", label: "28 ft" },
@@ -485,6 +519,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 />
                                 <DropdownField
                                     name="height" label="Height" value={formData.height}
+                                    w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                     options={[
                                         { value: "N/A", label: "N/A" },
                                         { value: "13 ft 6 in", label: "13 ft 6 in" },
@@ -492,6 +527,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 />
                                 <DropdownField
                                     name="grossAxleWeightRating" label="Gross Axle Weight Rating" value={formData.grossAxleWeightRating}
+                                    w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                     options={[
                                         { value: "N/A", label: "N/A" },
                                         { value: "20000 lbs", label: "20000 lbs" },
@@ -500,6 +536,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 />
                                 <DropdownField
                                     name="axleType" label="Axle Type" value={formData.axleType}
+                                    w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                     options={[
                                         { value: "N/A", label: "N/A" },
                                         { value: "Dual Axle", label: "Dual Axle" },
@@ -508,6 +545,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 />
                                 <DropdownField
                                     name="brakeType" label="Brake Type" value={formData.brakeType}
+                                    w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                     options={[
                                         { value: "N/A", label: "N/A" },
                                         { value: "Disc", label: "Disc" },
@@ -516,6 +554,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 />
                                 <DropdownField
                                     name="suspensionType" label="Suspension Type" value={formData.suspensionType}
+                                    w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                     options={[
                                         { value: "N/A", label: "N/A" },
                                         { value: "Air", label: "Air" },
@@ -528,6 +567,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     onSetNA={handleSetNA} name="tireModel" label="Tire Model" value={formData.tireModel} />
                                 <DropdownField
                                     name="tireBrand" label="Tire Brand" value={formData.tireBrand}
+                                    w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                     options={[
                                         { value: "N/A", label: "N/A" },
                                         { value: "Bridgestone", label: "Bridgestone" },
@@ -541,6 +581,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 {isUSTrailer && (
                                     <>
                                         <DropdownField name="tireSize" label="Tire Size" value={formData.tireSize}
+                                            w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                             options={[
                                                 { value: "N/A", label: "N/A" },
                                                 { value: "295/75R22.5", label: "295/75R22.5" },
@@ -548,10 +589,11 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                                 { value: "435/50R19.5", label: "435/50R19.5" },
                                                 { value: "445/45R19.5", label: "445/45R19.5" },
                                             ]} />
-                                        <RadioField name="cargoLockFitted" label="Cargo Lock Fitted" value={formData.cargoLockFitted} />
-                                        <DateField name="cargoLockInstalledDate" label="Cargo Lock Installed Date" value={formData.cargoLockInstalledDate} />
+                                        <RadioField name="cargoLockFitted" label="Cargo Lock Fitted" value={formData.cargoLockFitted} handleChange={handleChange} flexRow={flexRow} />
+                                        <DateField name="cargoLockInstalledDate" label="Cargo Lock Installed Date" value={formData.cargoLockInstalledDate} w={w} colRow={colRow} handleChange={handleChange} />
                                         <DropdownField
                                             name="cargoLockType" label="Cargo Lock Type" value={formData.cargoLockType}
+                                            w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                             options={[
                                                 { value: "N/A", label: "N/A" },
                                                 { value: "Autida", label: "Autida" },
@@ -582,6 +624,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         label={label}
                                         value={formData[key] as string}
                                         options={tireDepthOptions}
+                                        w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                     />
                                 ))}
                             </div>
@@ -598,31 +641,34 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
                     {expandedSections.features && (
                         <div className={`space-y-4 w-full ${prop === "batch" ? "" : "border border-gray-300 rounded-lg px-6 py-6"}`}>
-                            <RadioField name="aerokits" label="Aerokits" value={formData.aerokits} />
+                            <RadioField name="aerokits" label="Aerokits" value={formData.aerokits} handleChange={handleChange} flexRow={flexRow} />
                             <TextFieldWithNA w={w}
                                 colRow={colRow}
                                 onChange={handleChange}
                                 onSetNA={handleSetNA} name="doorBranding" label="Door Branding" value={formData.doorBranding} />
                             <DropdownField
                                 name="doorColor" label="Door Color" value={formData.doorColor}
+                                w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                 options={[
                                     { value: "N/A", label: "N/A" },
                                     { value: "Pantone 432 C", label: "Pantone 432 C" },
                                     { value: "White", label: "White" },
                                 ]}
                             />
-                            <RadioField name="doorSensor" label="Door Sensor" value={formData.doorSensor} />
+                            <RadioField name="doorSensor" label="Door Sensor" value={formData.doorSensor} handleChange={handleChange} flexRow={flexRow} />
                             <DropdownField
                                 name="doorType" label="Door Type" value={formData.doorType}
+                                w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                 options={[
                                     { value: "N/A", label: "N/A" },
                                     { value: "Swing", label: "Swing" },
                                     { value: "Roll", label: "Roll" },
                                 ]}
                             />
-                            <RadioField name="lashSystem" label="Lash System" value={formData.lashSystem} />
+                            <RadioField name="lashSystem" label="Lash System" value={formData.lashSystem} handleChange={handleChange} flexRow={flexRow} />
                             <DropdownField
                                 name="mudFlapType" label="Mud Flap Type" value={formData.mudFlapType}
+                                w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                 options={[
                                     { value: "N/A", label: "N/A" },
                                     { value: "Fast-Flap", label: "Fast-Flap" },
@@ -630,6 +676,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             />
                             <DropdownField
                                 name="panelBranding" label="Panel Branding" value={formData.panelBranding}
+                                w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                 options={[
                                     { value: "N/A", label: "N/A" },
                                     { value: "Bowman", label: "Bowman" },
@@ -643,16 +690,20 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     { value: "XTRA Lease", label: "XTRA Lease" },
                                 ]}
                             />
-                            <DropdownField
-                                name="noseBranding" label="Nose Branding" value={formData.noseBranding}
-                                options={[
-                                    { value: "N/A", label: "N/A" },
-                                    { value: "Captive Mean", label: "Captive Mean" },
-                                ]}
-                            />
-                            <RadioField name="skirted" label="Skirted" value={formData.skirted} />
+                            {!isUSTrailer && (
+                                <DropdownField
+                                    name="noseBranding" label="Nose Branding" value={formData.noseBranding}
+                                    w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
+                                    options={[
+                                        { value: "N/A", label: "N/A" },
+                                        { value: "Captive Mean", label: "Captive Mean" },
+                                    ]}
+                                />
+                            )}
+                            <RadioField name="skirted" label="Skirted" value={formData.skirted} handleChange={handleChange} flexRow={flexRow} />
                             <DropdownField
                                 name="skirtColor" label="Skirt Color" value={formData.skirtColor}
+                                w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                 options={[
                                     { value: "N/A", label: "N/A" },
                                     { value: "Ekostinger", label: "Ekostinger" },
@@ -664,6 +715,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             {/* Conspicuity Tape — Canada and US have different option sets */}
                             <DropdownField
                                 name="conspicuityTape" label="Conspicuity Tape" value={formData.conspicuityTape}
+                                w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                 options={isUSTrailer ? [
                                     { value: "N/A", label: "N/A" },
                                     { value: "Bottom Rear", label: "Bottom Rear" },
@@ -675,12 +727,16 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     { value: "Full Rear Perimeter", label: "Full Rear Perimeter" },
                                 ]}
                             />
-                            <DateField name="conspicuityTapeInstallDate" label="Conspicuity Tape Install Date" value={formData.conspicuityTapeInstallDate} />
-                            <RadioField name="captiveBeam" label="Captive Beam" value={formData.captiveBeam} />
-                            <RadioField name="cargoCamera" label="Cargo Camera" value={formData.cargoCamera} />
-                            <RadioField name="cartbars" label="Cartbars" value={formData.cartbars} />
-                            <RadioField name="tpms" label="TPMS" value={formData.tpms} />
-                            <RadioField name="trailerHeightDecal" label="Trailer Height Decal" value={formData.trailerHeightDecal} />
+                            {isUSTrailer && (
+                                <DateField name="conspicuityTapeInstallDate" label="Conspicuity Tape Install Date" value={formData.conspicuityTapeInstallDate} handleChange={handleChange} w={w} colRow={colRow} />
+                            )}
+                            {!isUSTrailer && (
+                                <RadioField name="captiveBeam" label="Captive Beam" value={formData.captiveBeam} handleChange={handleChange} flexRow={flexRow} />
+                            )}
+                            <RadioField name="cargoCamera" label="Cargo Camera" value={formData.cargoCamera} handleChange={handleChange} flexRow={flexRow} />
+                            <RadioField name="cartbars" label="Cartbars" value={formData.cartbars} handleChange={handleChange} flexRow={flexRow} />
+                            <RadioField name="tpms" label="TPMS" value={formData.tpms} handleChange={handleChange} flexRow={flexRow} />
+                            <RadioField name="trailerHeightDecal" label="Trailer Height Decal" value={formData.trailerHeightDecal} handleChange={handleChange} flexRow={flexRow} />
                         </div>
                     )}
                 </div>

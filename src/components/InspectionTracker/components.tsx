@@ -18,6 +18,7 @@ export const Header: React.FC<{
     onClearSelection: () => void;
     hasActiveFilters: boolean;
     filterCount: number;
+    userRole?: string;
 }> = ({
     title,
     description,
@@ -30,6 +31,7 @@ export const Header: React.FC<{
     onClearSelection,
     hasActiveFilters = false,
     filterCount = 0,
+    userRole,
 }) => {
         return (
             <div className="rounded-lg p-4">
@@ -77,13 +79,15 @@ export const Header: React.FC<{
                         // disabled={selectedCount === 0}
                         onClick={onSendNotification}
                     />
-                    <ActionButton
-                        icon={<Trash2 className="w-4 h-4" />}
-                        label="Remove from Status History"
-                        variant="danger"
-                        onClick={onRemoveFromHistory}
-                        disabled
-                    />
+                    {(userRole === 'superadmin' || userRole === 'owner') && (
+                        <ActionButton
+                            icon={<Trash2 className="w-4 h-4" />}
+                            label="Remove from Status History"
+                            variant="danger"
+                            onClick={onRemoveFromHistory}
+                            disabled={selectedCount === 0}
+                        />
+                    )}
 
                     {selectedCount > 0 && (
                         <SelectionBadge count={selectedCount} onClear={onClearSelection} />
