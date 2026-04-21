@@ -126,11 +126,11 @@ const InspectionSchema = new mongoose.Schema({
   inspector: { type: String },
   location: { type: String },
   delivered: { type: String, enum: ['yes', 'no'], default: 'no' },
-  durationMin: { type: String },
-  durationSec: { type: String },
-  dateDay: { type: String },
-  dateMonth: { type: String },
-  dateYear: { type: String },
+  durationMin: { type: String, default:"0" },
+  durationSec: { type: String, default:"0" },
+  dateDay: { type: String, default:"0" },
+  dateMonth: { type: String , default:"0"},
+  dateYear: { type: String , default:"0"},
   notes: { type: String },
 
   // New field names based on provided list

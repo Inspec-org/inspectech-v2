@@ -363,7 +363,7 @@ export default function Edit({ type }: { type: string }) {
     setFormData(prev => ({ ...prev, departmentId: deptId }));
   }, []);
 
-  useEffect(() => {
+  const getVendor = () => {
     const vendorName = Cookies.get('selectedVendor') || '';
     const vendorId = Cookies.get('selectedVendorId') || '';
     (async () => {
@@ -380,6 +380,12 @@ export default function Edit({ type }: { type: string }) {
         }
       } catch (e: any) { }
     })();
+  };
+
+  useEffect(() => {
+    if (type !== "edit") {
+      getVendor();
+    }
   }, []);
 
   useEffect(() => {
@@ -408,11 +414,20 @@ export default function Edit({ type }: { type: string }) {
             if (res.ok && data.success && data.inspection) {
               const doc = data.inspection;
 
+              const emptyBase = Object.fromEntries(
+                Object.keys(formData).map(k => [k, ''])
+              ) as unknown as FormData;
+
+
+              console.log("doc", doc)
               const normalized: any = {
+                ...emptyBase,
                 ...doc,
                 additionalAttachments: Array.isArray(doc.additionalAttachments) ? doc.additionalAttachments : [],
               };
+
               setFormData(normalized);
+              getVendor();
               setInspectionId(doc._id ?? null);
               setHasSavedOnce(true);
               setLastSaved(normalized);

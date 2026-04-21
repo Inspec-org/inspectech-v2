@@ -575,6 +575,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                         { value: "Firestone", label: "Firestone" },
                                         { value: "Goodyear", label: "Goodyear" },
                                         { value: "Michelin", label: "Michelin" },
+                                        { value: "Hankook", label: "Hankook" },
                                     ]}
                                 />
 
