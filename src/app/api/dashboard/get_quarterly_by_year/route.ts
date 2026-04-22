@@ -29,34 +29,63 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    // Fetch inspections by stored year
-    const inspections = await Inspection.find({
-      departmentId,
-      vendorId,
-      dateYear: y,
-    });
+    const result = await Inspection.aggregate([
+      {
+        $match: {
+          $expr: {
+            $and: [
+              // ObjectId → compare as string
+              { $eq: [{ $toString: "$departmentId" }, departmentId] },
+              { $eq: [{ $toString: "$vendorId" }, vendorId] },
 
-    // Q1–Q4
+              // dateYear stored as string → cast to int
+              { $eq: [{ $toInt: "$dateYear" }, y] },
+            ],
+          },
+        },
+      },
+      {
+        // compute quarter (0–3) with safe casting
+        $addFields: {
+          quarter: {
+            $floor: {
+              $divide: [
+                { $subtract: [{ $toInt: "$dateMonth" }, 1] },
+                3,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$quarter",
+          pass: {
+            $sum: {
+              $cond: [{ $eq: ["$inspectionStatus", "pass"] }, 1, 0],
+            },
+          },
+          fail: {
+            $sum: {
+              $cond: [{ $eq: ["$inspectionStatus", "fail"] }, 1, 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    // normalize output to always 4 quarters
     const quarterly = Array.from({ length: 4 }, () => ({
       pass: 0,
       fail: 0,
     }));
 
-    for (const i of inspections) {
-      /**
-       * dateMonth expected: 1–12
-       * Quarter formula:
-       * 1–3   → Q0
-       * 4–6   → Q1
-       * 7–9   → Q2
-       * 10–12 → Q3
-       */
-      const q = Math.floor((i.dateMonth - 1) / 3);
-
-      if (i.inspectionStatus === "pass") {
-        quarterly[q].pass++;
-      } else if (i.inspectionStatus === "fail") {
-        quarterly[q].fail++;
+    for (const r of result) {
+      if (r._id >= 0 && r._id < 4) {
+        quarterly[r._id] = {
+          pass: r.pass,
+          fail: r.fail,
+        };
       }
     }
 

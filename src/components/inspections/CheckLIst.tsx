@@ -199,6 +199,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
 
     const tireDepthOptions = [
         { value: "N/A", label: "N/A" },
+        { value: "16/32", label: "16/32" },
         { value: "15/32", label: "15/32" },
         { value: "14/32", label: "14/32" },
         { value: "13/32", label: "13/32" },
@@ -683,6 +684,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     { value: "Bowman", label: "Bowman" },
                                     { value: "Prime", label: "Prime" },
                                     { value: "Tape on White", label: "Tape on White" },
+                                    { value: "Smile on Blue", label: "Smile on Blue" },
                                     { value: "Smile on Blue 2016", label: "Smile on Blue 2016" },
                                     { value: "Smile on Blue 2017", label: "Smile on Blue 2017" },
                                     { value: "Smile on Blue 2018", label: "Smile on Blue 2018" },
@@ -726,6 +728,7 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                     { value: "Bottom Rear", label: "Bottom Rear" },
                                     { value: "Full Perimeter and Sides", label: "Full Perimeter and Sides" },
                                     { value: "Full Rear Perimeter", label: "Full Rear Perimeter" },
+                                    { value: "Full Rear Perimeter and Sides", label: "Full Rear Perimeter and Sides" },
                                 ]}
                             />
                             {isUSTrailer && (
