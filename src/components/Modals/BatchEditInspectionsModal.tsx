@@ -1,5 +1,5 @@
 // /Users/mlb/Desktop/InspecTech/src/components/Modals/BatchEditInspectionsModal.tsx
-import React, { useContext, useRef, useEffect } from 'react';
+import React, { useContext, useRef, useEffect, useState } from 'react';
 import { Edit3 } from 'lucide-react';
 import { Modal } from '../ui/modal';
 import { CustomDropdown } from '../ui/dropdown/CustomDropdown';
@@ -26,6 +26,9 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
   const { user } = useContext(UserContext)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPosition = useRef<number>(0);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const canEditDate = user?.role === 'superadmin' || user?.role === 'owner';
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -69,6 +72,13 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
     if (formData.durationSec) updates.durationSec = formData.durationSec;
     if (formData.delivered_status) updates.delivered = formData.delivered_status;
 
+    // Only include date fields in the payload for superadmin / owner
+    if (canEditDate) {
+      if (formData.dateDay) updates.dateDay = formData.dateDay;
+      if (formData.dateMonth) updates.dateMonth = formData.dateMonth;
+      if (formData.dateYear) updates.dateYear = formData.dateYear;
+    }
+
     const excluded = new Set(['status', 'delivered_status', 'date', 'duration', 'dateMonth', 'dateDay', 'dateYear', 'createdAt', 'dateCreated', 'equipmentId', 'equipmentNumber', 'vin']);
     Object.keys(formData).forEach((key) => {
       const val = formData[key];
@@ -80,6 +90,7 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
     });
 
     try {
+      setIsUpdating(true);
       const results = await Promise.allSettled(
         (selectedUnitIds || []).map((unitId: string) =>
           apiRequest('/api/inspections/update-inspection', {
@@ -115,6 +126,8 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
       onClose();
     } catch (e: any) {
       toast.error(e.message || 'Server error');
+    } finally {
+      setIsUpdating(false);
     }
   };
   return (
@@ -146,9 +159,9 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
                   { value: "incomplete", label: "INCOMPLETE" },
                   { value: "complete", label: "COMPLETE" },
                 ]}
-              width='w-full'
-              value={formData.status}
-              onChange={(val) => onDropdownChange('status', val)}
+                width='w-full'
+                value={formData.status}
+                onChange={(val) => onDropdownChange('status', val)}
               />
             </div>
             {/* Type */}
@@ -220,17 +233,56 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
             </div>
             {/* date */}
             <div className="flex flex-col items-start gap-4">
-              <label className="w-full text-gray-400 text-sm font-medium">
-                <span>Date (UnEditable)</span>
-                <br />
-                <span className="text-xs">Date field tracks initial database creation timestamp and remains inactive for data integrity preservation.</span>
+              <label className={`w-full text-sm font-medium ${canEditDate ? 'text-gray-700' : 'text-gray-400'}`}>
+                <span>Date {!canEditDate && '(UnEditable)'}</span>
+                {!canEditDate && (
+                  <>
+                    <br />
+                    <span className="text-xs">Date field tracks initial database creation timestamp and remains inactive for data integrity preservation.</span>
+                  </>
+                )}
               </label>
               <div className="flex gap-2 items-center">
-                <input type="number" min={0} placeholder="MM" value={formData.dateDay} onChange={(e) => onChange('dateDay', e.target.value)} disabled className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-400 text-center" />
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={formData.dateMonth}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const raw = Number(e.target.value);
+                    const value = Math.min(12, Math.max(1, raw));
+                    onChange("dateMonth", value.toString());
+                  }}
+                  disabled={!canEditDate}
+                  className={`w-16 px-3 py-2 border border-gray-300 rounded-lg text-center ${canEditDate ? 'bg-[#FAF7FF] text-gray-700' : 'bg-[#FAF7FF] text-gray-400 cursor-not-allowed'}`}
+                />
                 <span className="text-gray-400">/</span>
-                <input type="number" min={0} placeholder="DD" value={formData.dateMonth} onChange={(e) => onChange('dateMonth', e.target.value)} disabled className="w-16 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-400 text-center" />
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={formData.dateDay}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const raw = Number(e.target.value);
+                    const value = Math.min(31, Math.max(1, raw));
+                    onChange("dateDay", value.toString());
+                  }}
+                  disabled={!canEditDate}
+                  className={`w-16 px-3 py-2 border border-gray-300 rounded-lg text-center ${canEditDate ? 'bg-[#FAF7FF] text-gray-700' : 'bg-[#FAF7FF] text-gray-400 cursor-not-allowed'}`}
+                />
                 <span className="text-gray-400">/</span>
-                <input type="number" min={0} placeholder="YYYY" value={formData.dateYear} onChange={(e) => onChange('dateYear', e.target.value)} disabled className="w-20 px-3 py-2 bg-[#FAF7FF] border border-gray-300 rounded-lg text-gray-400 text-center" />
+                <input
+                  type="number" min={2000}
+                  value={formData.dateYear}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const currentYear = new Date().getFullYear();
+                    const raw = Number(e.target.value);
+                    const value = Math.min(currentYear, Math.max(2000, raw));
+                    onChange("dateYear", value.toString());
+                  }}
+                  disabled={!canEditDate}
+                  className={`w-20 px-3 py-2 border border-gray-300 rounded-lg text-center ${canEditDate ? 'bg-[#FAF7FF] text-gray-700' : 'bg-[#FAF7FF] text-gray-400 cursor-not-allowed'}`}
+                />
               </div>
             </div>
             {/* delivered status */}
@@ -255,10 +307,21 @@ const BatchEditInspectionsModal: React.FC<Props> = ({ isOpen, onClose, formData,
           <button onClick={onClose} className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium">
             Cancel
           </button>
-          <button onClick={handleUpdate} className="px-6 py-2.5 text-white bg-[#059669] rounded-lg hover:bg-[#059669]/90 transition font-medium flex gap-2 items-center">
-            <Edit3 className="w-4 h-4" />
-            Update
-          </button>
+          <button
+            onClick={handleUpdate}
+            disabled={isUpdating}
+            className="px-6 py-2.5 text-white bg-[#059669] rounded-lg hover:bg-[#059669]/90 transition font-medium flex gap-2 items-center disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isUpdating ? (
+              <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <Edit3 className="w-4 h-4" />
+            )}
+            {isUpdating ? 'Updating...' : 'Update'}
+          </button>ƒ
         </div>
       </div>
     </Modal>

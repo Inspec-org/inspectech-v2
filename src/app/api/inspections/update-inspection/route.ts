@@ -58,6 +58,13 @@ export async function PUT(req: NextRequest) {
       delete cleaned["delivered_status"];
     }
 
+    // Strip date fields for non-superadmin / non-owner roles
+    const canEditDate = user.role === "superadmin" || user.role === "owner";
+    if (!canEditDate) {
+      const dateKeys = ["dateDay", "dateMonth", "dateYear", "date", "dateCreated", "createdAt"];
+      dateKeys.forEach((key) => delete cleaned[key]);
+    }
+
     const existing = await Inspection.findOne({ unitId: cleaned.unitId }).select("inspectionStatus notes");
 
     const protectedStatuses = new Set([

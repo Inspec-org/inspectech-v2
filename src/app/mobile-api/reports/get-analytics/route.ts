@@ -3,72 +3,63 @@ import { connectDB } from "@/lib/db/db";
 import Inspection from "@/lib/models/Inspections";
 import { getUserFromToken } from "@/lib/getUserFromToken";
 
-type TimeRange = "All Time" | "Last Month" | "Last 3 Months" | "Last 6 Months" | "Last Year";
+type TimeRange =
+  | "All Time"
+  | "Last Month"
+  | "Last 3 Months"
+  | "Last 6 Months"
+  | "Last Year";
 
-function getRangeStart(timeRange?: TimeRange) {
+function getRange(timeRange?: TimeRange) {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
+
+  let start: Date | null = null;
+  let end: Date | null = null;
 
   switch (timeRange) {
     case "Last Month": {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - 1);
-      d.setDate(1);
-      return d;
+      start = new Date(now);
+      start.setMonth(start.getMonth() - 1);
+      start.setDate(1);
+
+      end = new Date(now);
+      end.setDate(0);
+      break;
     }
     case "Last 3 Months": {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - 3);
-      d.setDate(1);
-      return d;
+      start = new Date(now);
+      start.setMonth(start.getMonth() - 3);
+      start.setDate(1);
+
+      end = new Date(now);
+      end.setDate(0);
+      break;
     }
     case "Last 6 Months": {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - 6);
-      d.setDate(1);
-      return d;
+      start = new Date(now);
+      start.setMonth(start.getMonth() - 6);
+      start.setDate(1);
+
+      end = new Date(now);
+      end.setDate(0);
+      break;
     }
     case "Last Year": {
-      const d = new Date(now);
-      d.setFullYear(d.getFullYear() - 1);
-      d.setMonth(0);
-      d.setDate(1);
-      return d;
+      start = new Date(now);
+      start.setFullYear(start.getFullYear() - 1);
+      start.setMonth(0);
+      start.setDate(1);
+
+      end = new Date(now);
+      end.setFullYear(end.getFullYear() - 1);
+      end.setMonth(11);
+      end.setDate(31);
+      break;
     }
-    default:
-      return null;
   }
-}
 
-function getRangeEnd(timeRange?: TimeRange) {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
-  switch (timeRange) {
-    case "Last Month":
-    case "Last 3 Months":
-    case "Last 6 Months": {
-      const d = new Date(now);
-      d.setDate(0);
-      return d;
-    }
-    case "Last Year": {
-      const d = new Date(now);
-      d.setFullYear(d.getFullYear() - 1);
-      d.setMonth(11);
-      d.setDate(31);
-      return d;
-    }
-    default:
-      return null;
-  }
-}
-
-function buildDate(i: any) {
-  const day = parseInt(i.dateDay || "1");
-  const month = parseInt(i.dateMonth || "1") - 1;
-  const year = parseInt(i.dateYear || "1970");
-  return new Date(year, month, day);
+  return { start, end };
 }
 
 export async function GET(req: NextRequest) {
@@ -85,107 +76,200 @@ export async function GET(req: NextRequest) {
     }
 
     const url = new URL(req.url);
-    const departmentId = url.searchParams.get("departmentId") || undefined;
-    const vendorId = url.searchParams.get("vendorId") || undefined;
-    const timeRange = url.searchParams.get("timeRange") as TimeRange | undefined;
+    const departmentId = url.searchParams.get("departmentId");
+    const vendorId = url.searchParams.get("vendorId");
+    const timeRange = url.searchParams.get("timeRange") as TimeRange;
     const yearParam = url.searchParams.get("year");
-    const year = yearParam ? parseInt(yearParam) : undefined;
+    const year = yearParam ? Number(yearParam) : null;
 
     await connectDB();
 
-    const query: any = {};
-    if (departmentId) query.departmentId = departmentId;
-    if (vendorId) query.vendorId = vendorId;
+    const { start, end } = getRange(timeRange);
 
-    const inspections = await Inspection.find(query).select(
-      "inspectionStatus dateDay dateMonth dateYear"
-    );
+    const pipeline: any[] = [
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $eq: [{ $toString: "$departmentId" }, departmentId] },
+              { $eq: [{ $toString: "$vendorId" }, vendorId] },
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          year: { $toInt: "$dateYear" },
+          month: { $toInt: "$dateMonth" },
+          day: { $toInt: "$dateDay" },
+        },
+      },
+      {
+        $addFields: {
+          fullDate: {
+            $dateFromParts: {
+              year: "$year",
+              month: "$month",
+              day: "$day",
+            },
+          },
+        },
+      },
+    ];
 
-    let dataToUse = inspections;
+    // apply filters
+    if (year) {
+      pipeline.push({
+        $match: { year },
+      });
+    } else if (start || end) {
+      const dateMatch: any = {};
+      if (start) dateMatch.$gte = start;
+      if (end) dateMatch.$lte = end;
 
-    if (typeof year === "number" && !Number.isNaN(year)) {
-      dataToUse = inspections.filter(
-        (i: any) => parseInt(i.dateYear || "0") === year
-      );
-    } else {
-      const rangeStart = getRangeStart(timeRange);
-      const rangeEnd = getRangeEnd(timeRange);
-      dataToUse = inspections.filter((i: any) => {
-        const t = buildDate(i).getTime();
-        const startOk = rangeStart ? t >= rangeStart.getTime() : true;
-        const endOk = rangeEnd ? t <= rangeEnd.getTime() : true;
-        return startOk && endOk;
+      pipeline.push({
+        $match: {
+          fullDate: dateMatch,
+        },
       });
     }
 
-    const total = dataToUse.length;
-    const pass = dataToUse.filter((i: any) => i.inspectionStatus === "pass").length;
-    const fail = dataToUse.filter((i: any) => i.inspectionStatus === "fail").length;
-    const passPct = total ? Number(((pass / total) * 100).toFixed(2)) : 0;
-    const failPct = total ? Number(((fail / total) * 100).toFixed(2)) : 0;
+    // facet everything in one pass
+    pipeline.push({
+      $facet: {
+        status: [
+          {
+            $group: {
+              _id: null,
+              total: { $sum: 1 },
+              pass: {
+                $sum: {
+                  $cond: [{ $eq: ["$inspectionStatus", "pass"] }, 1, 0],
+                },
+              },
+              fail: {
+                $sum: {
+                  $cond: [{ $eq: ["$inspectionStatus", "fail"] }, 1, 0],
+                },
+              },
+            },
+          },
+        ],
 
-    // STATUS (unchanged)
+        quarterly: [
+          {
+            $addFields: {
+              quarter: {
+                $floor: {
+                  $divide: [{ $subtract: ["$month", 1] }, 3],
+                },
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$quarter",
+              total: { $sum: 1 },
+              pass: {
+                $sum: {
+                  $cond: [{ $eq: ["$inspectionStatus", "pass"] }, 1, 0],
+                },
+              },
+              fail: {
+                $sum: {
+                  $cond: [{ $eq: ["$inspectionStatus", "fail"] }, 1, 0],
+                },
+              },
+            },
+          },
+        ],
+
+        monthly: [
+          {
+            $group: {
+              _id: "$month",
+              total: { $sum: 1 },
+              pass: {
+                $sum: {
+                  $cond: [{ $eq: ["$inspectionStatus", "pass"] }, 1, 0],
+                },
+              },
+              fail: {
+                $sum: {
+                  $cond: [{ $eq: ["$inspectionStatus", "fail"] }, 1, 0],
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    const [result] = await Inspection.aggregate(pipeline);
+
+    // ---------- STATUS ----------
+    const s = result.status[0] || { total: 0, pass: 0, fail: 0 };
+    const passPct = s.total ? Number(((s.pass / s.total) * 100).toFixed(2)) : 0;
+    const failPct = s.total ? Number(((s.fail / s.total) * 100).toFixed(2)) : 0;
+
     const status = {
-      total,
-      pass,
-      fail,
+      total: s.total,
+      pass: s.pass,
+      fail: s.fail,
       pie: [
-        { name: "Passed", value: pass, percentage: passPct },
-        { name: "Failed", value: fail, percentage: failPct },
+        { name: "Passed", value: s.pass, percentage: passPct },
+        { name: "Failed", value: s.fail, percentage: failPct },
       ],
     };
 
-    const now = new Date();
-    const selectedYear = year || now.getFullYear();
+    const selectedYear = year || new Date().getFullYear();
 
-    // -----------------------------------------
-    // BREAKDOWN — quarterly volume
-    // -----------------------------------------
-    const quarterlyCounts = Array.from({ length: 4 }, () => ({
+    // ---------- BREAKDOWN ----------
+    const quarterly = Array.from({ length: 4 }, () => ({
+      total: 0,
       pass: 0,
       fail: 0,
-      total: 0,
     }));
 
-    dataToUse.forEach((i: any) => {
-      const d = buildDate(i);
-      const q = Math.floor(d.getMonth() / 3);
-      quarterlyCounts[q].total++;
-      if (i.inspectionStatus === "pass") quarterlyCounts[q].pass++;
-      else if (i.inspectionStatus === "fail") quarterlyCounts[q].fail++;
-    });
+    for (const q of result.quarterly) {
+      if (q._id >= 0 && q._id < 4) {
+        quarterly[q._id] = q;
+      }
+    }
 
-    const breakdown = quarterlyCounts.map((q, idx) => ({
-      period: `Q${idx + 1} '${String(selectedYear).slice(-2)}`,
+    const breakdown = quarterly.map((q, i) => ({
+      period: `Q${i + 1} '${String(selectedYear).slice(-2)}`,
       total: q.total,
       pass: q.pass,
       fail: q.fail,
     }));
 
-    // -----------------------------------------
-    // TRENDS — monthly only (pass rate + volume)
-    // -----------------------------------------
+    // ---------- TRENDS ----------
+    const months = Array.from({ length: 12 }, () => ({
+      total: 0,
+      pass: 0,
+      fail: 0,
+    }));
+
+    for (const m of result.monthly) {
+      const idx = m._id - 1;
+      if (idx >= 0 && idx < 12) {
+        months[idx] = m;
+      }
+    }
+
     const monthNames = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+      "Jan","Feb","Mar","Apr","May","Jun",
+      "Jul","Aug","Sep","Oct","Nov","Dec"
     ];
 
-    const monthlyCounts = Array.from({ length: 12 }, () => ({ pass: 0, fail: 0, total: 0 }));
-    dataToUse.forEach((i: any) => {
-      const d = buildDate(i);
-      const m = d.getMonth();
-      monthlyCounts[m].total++;
-      if (i.inspectionStatus === "pass") monthlyCounts[m].pass++;
-      else if (i.inspectionStatus === "fail") monthlyCounts[m].fail++;
-    });
-
     const trends = {
-      passRate: monthlyCounts.map((m, idx) => ({
-        date: `${monthNames[idx]} '${String(selectedYear).slice(-2)}`,
+      passRate: months.map((m, i) => ({
+        date: `${monthNames[i]} '${String(selectedYear).slice(-2)}`,
         passRate: m.total ? Number(((m.pass / m.total) * 100).toFixed(2)) : 0,
       })),
-      volume: monthlyCounts.map((m, idx) => ({
-        date: `${monthNames[idx]} '${String(selectedYear).slice(-2)}`,
+      volume: months.map((m, i) => ({
+        date: `${monthNames[i]} '${String(selectedYear).slice(-2)}`,
         inspections: m.total,
         pass: m.pass,
         fail: m.fail,
@@ -209,7 +293,12 @@ export async function GET(req: NextRequest) {
     );
   } catch (error: any) {
     return NextResponse.json(
-      { status: 500, success: false, message: error?.message || "Internal Server Error", data: null },
+      {
+        status: 500,
+        success: false,
+        message: error?.message || "Internal Server Error",
+        data: null,
+      },
       { status: 500 }
     );
   }

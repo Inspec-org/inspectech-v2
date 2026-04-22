@@ -115,6 +115,16 @@ const InspectionSchema = new mongoose.Schema({
 */
 
 // New Inspection Schema with updated fields
+
+const getCurrentDateParts = () => {
+  const now = new Date();
+  return {
+    day: String(now.getDate()).padStart(2, '0'),
+    month: String(now.getMonth() + 1).padStart(2, '0'),
+    year: String(now.getFullYear()),
+  };
+};
+
 const InspectionSchema = new mongoose.Schema({
   unitId: { type: String, required: true, trim: true },
   // userId: {type:mongoose.Schema.Types.ObjectId, ref:'User', required: true},
@@ -128,9 +138,9 @@ const InspectionSchema = new mongoose.Schema({
   delivered: { type: String, enum: ['yes', 'no'], default: 'no' },
   durationMin: { type: String, default:"0" },
   durationSec: { type: String, default:"0" },
-  dateDay: { type: String, default:"0" },
-  dateMonth: { type: String , default:"0"},
-  dateYear: { type: String , default:"0"},
+  dateDay: { type: String, default: () => getCurrentDateParts().day },
+  dateMonth: { type: String , default: () => getCurrentDateParts().month },
+  dateYear: { type: String , default: () => getCurrentDateParts().year },
   notes: { type: String },
 
   // New field names based on provided list
