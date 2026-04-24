@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  
   webpack: (config) => {
     const fileLoaderRule = (config.module.rules as any[]).find(
       (rule) => rule.test?.test?.(".svg")
