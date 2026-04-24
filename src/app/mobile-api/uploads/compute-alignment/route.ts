@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
 
         if (!segmentationResp.ok) {
             const errText = await segmentationResp.text().catch(() => '');
+            console.error('Segmentation API error:', segmentationResp);
             return NextResponse.json({ success: false, message: "Segmentation failed", error: errText }, { status: 500 });
         }
 

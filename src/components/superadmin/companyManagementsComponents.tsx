@@ -103,179 +103,202 @@ export const PageHeader: React.FC = () => {
 };
 
 // Admin Departments Section Component
-export const AdminDepartmentsSection: React.FC<{ departments: Department[]; totalCount?: number; currentPage?: number; pageSize?: number; onPageChange?: (page: number) => void; loading?: boolean; onStatusUpdated?: (id: string, status: 'Active' | 'Inactive') => void }> = ({ departments, totalCount: extTotal, currentPage: extPage, pageSize: extSize, onPageChange, loading, onStatusUpdated }) => {
-    const [currentPage, setCurrentPage] = useState(extPage ?? 1);
-    const [pageSize] = useState(extSize ?? 5);
-    const { isOpen, openModal, closeModal } = useModal();
-    const [items, setItems] = useState<Department[]>(departments);
-    const [totalCount, setTotalCount] = useState<number>(extTotal ?? departments.length);
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-    const safePage = Math.min(Math.max(1, extPage ?? currentPage), totalPages);
-    const startIndex = (safePage - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalCount);
-    const displayed = items.slice(startIndex, endIndex);
+export const AdminDepartmentsSection: React.FC<{
+    departments: Department[];
+    totalCount?: number;
+    currentPage?: number;
+    pageSize?: number;
+    onPageChange?: (page: number) => void;
+    loading?: boolean;
+    onStatusUpdated?: (_id: string, status: 'active' | 'inactive') => void;
+    onAdded?: () => void;
+}> = ({
+    departments,
+    totalCount: extTotal,
+    currentPage: extPage,
+    pageSize: extSize,
+    onPageChange,
+    loading,
+    onStatusUpdated,
+    onAdded
+}) => {
+        const [currentPage, setCurrentPage] = useState(extPage ?? 1);
+        const [pageSize] = useState(extSize ?? 5);
+        const { isOpen, openModal, closeModal } = useModal();
+        const totalPages = Math.max(1, Math.ceil((extTotal ?? 0) / pageSize));
+        const safePage = Math.min(Math.max(1, extPage ?? currentPage), totalPages);
+        const startIndex = (safePage - 1) * pageSize;
 
-    useEffect(() => {
-        setItems(departments);
-        setTotalCount(typeof extTotal === 'number' ? extTotal : departments.length);
-    }, [departments, extTotal]);
+        const [deleting, setDeleting] = useState<string | null>(null);
+        const [updating, setUpdating] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (typeof extPage === 'number') {
-            setCurrentPage(extPage);
-        }
-    }, [extPage]);
-    // const getPageList = () => {
-    //     const pages: (number | string)[] = [];
-    //     if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); return pages; }
-    //     if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    //     if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    //     return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-    // };
+        const getId = (d: Department) => d._id || d.id || '';
 
-    // Backend pagination: data loads per page; ignore incoming full list
-    useEffect(() => {
-        const handler = (e: Event) => {
-            const detail = (e as CustomEvent<any>).detail;
-            if (detail && (detail._id || detail.id)) {
-                const dep: Department = { id: String(detail._id || detail.id), name: detail.name, status: 'Active' };
-                setItems(prev => [dep, ...prev]);
-                setTotalCount(prev => prev + 1);
-                setCurrentPage(1);
+        useEffect(() => {
+            if (typeof extPage === 'number') {
+                setCurrentPage(extPage);
+            }
+        }, [extPage]);
+
+        useEffect(() => {
+            const handler = () => {
+                onAdded?.();
+            };
+            window.addEventListener('departmentAdded', handler as EventListener);
+            return () => window.removeEventListener('departmentAdded', handler as EventListener);
+        }, [onAdded]);
+
+        const handleStatusToggle = async (dept: Department) => {
+            const deptId = getId(dept);
+            if (!deptId) return;
+
+            const next = dept.status === 'active' ? 'inactive' : 'active';
+            setUpdating(deptId);
+
+            try {
+                const res = await apiRequest('/api/departments/update_department_status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ departmentId: deptId, status: next })
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    toast.error(json.error || 'Failed to update status');
+                    return;
+                }
+                onStatusUpdated?.(deptId, next);
+                toast.success(next === 'active' ? 'Department activated' : 'Department deactivated');
+            } catch (e: any) {
+                toast.error(e?.message || 'Failed to update status');
+            } finally {
+                setUpdating(null);
             }
         };
-        window.addEventListener('departmentAdded', handler as EventListener);
-        return () => window.removeEventListener('departmentAdded', handler as EventListener);
-    }, []);
 
-    const [deleting, setDeleting] = useState<string | null>(null);
-    const [updating, setUpdating] = useState<string | null>(null);
-    const handleStatusToggle = async (dept: Department) => {
-        if (!dept?.id) return;
-        const next = dept.status === 'Active' ? 'inactive' : 'active';
-        try {
-            setUpdating(dept.id);
-            const res = await apiRequest('/api/departments/update_department_status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ departmentId: dept.id, status: next })
+        const handleDelete = async (id: string) => {
+            if (!id) return;
+            const { isConfirmed } = await Swal.fire({
+                title: "Delete Department?",
+                text: "This will remove related inspections and its data. This action cannot be undone.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Yes, delete",
             });
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok) { toast.error(json.error || 'Failed to update status'); return; }
-            setItems(prev => prev.map(d => d.id === dept.id ? { ...d, status: next === 'active' ? 'Active' : 'Inactive' } : d));
-            onStatusUpdated && onStatusUpdated(dept.id, next === 'active' ? 'Active' : 'Inactive');
-            toast.success(next === 'active' ? 'Department activated' : 'Department deactivated');
-        } catch (e: any) {
-            toast.error(e?.message || 'Failed to update status');
-        } finally {
-            setUpdating(null);
-        }
-    };
-    const handleDelete = async (id: string) => {
-        if (!id) return;
-        const { isConfirmed } = await Swal.fire({
-            title: "Delete Department?",
-            text: "This will remove related inspections and its data. This action cannot be undone.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, delete",
-        });
-        if (!isConfirmed) return;
-        try {
-            setDeleting(id);
-            const res = await apiRequest('/api/departments/delete_department', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ departmentId: id })
-            });
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                toast.error(json.error || 'Failed to delete department');
-                return;
+            if (!isConfirmed) return;
+            try {
+                setDeleting(id);
+                const res = await apiRequest('/api/departments/delete_department', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ departmentId: id })
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    toast.error(json.error || 'Failed to delete department');
+                    return;
+                }
+                // Trigger a refetch from parent after delete
+                onAdded?.();
+                toast.success('Department deleted');
+            } catch (e: any) {
+                toast.error(e?.message || 'Failed to delete department');
+            } finally {
+                setDeleting(null);
             }
-            setItems(prev => prev.filter(d => d.id !== id));
-            setTotalCount(prev => Math.max(0, prev - 1));
-            toast.success('Department deleted');
-        } catch (e: any) {
-            toast.error(e?.message || 'Failed to delete department');
-        } finally {
-            setDeleting(null);
-        }
-    };
+        };
 
-    return (
-        <div className="">
-            <div className="flex justify-between items-start gap-3 py-4">
-                {/* <UserCog2 className="text-gray-700 mt-1" size={20} /> */}
-                <div>
-                    <h2 className="text-sm font-normal text-gray-900">Admin Departments</h2>
-                    <p className="text-xs text-[#6A7282] mt-1">Manage user's departments in the system</p>
-                </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium" onClick={openModal}>
-                    <Plus size={18} />
-                    Add Department
-                </button>
-            </div>
-
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                {loading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <ClipLoader color="#7C3AED" size={28} />
+        return (
+            <div className="">
+                <div className="flex justify-between items-start gap-3 py-4">
+                    <div>
+                        <h2 className="text-sm font-normal text-gray-900">Admin Departments</h2>
+                        <p className="text-xs text-[#6A7282] mt-1">Manage user's departments in the system</p>
                     </div>
-                ) : (
-                    <table className="w-full ">
-                        <thead className='bg-gray-100'>
-                            <tr className="border-b border-gray-200">
-                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
-                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {displayed.map((dept, idx) => (
-                                <tr key={dept.id} className="border-b  hover:bg-gray-50">
-                                    <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
-                                    <td className="py-4 px-4 text-sm text-gray-900">{dept.name}</td>
-                                    <td className="py-4 px-4">
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => handleStatusToggle(dept)}
-                                                disabled={updating === dept.id}
-                                                className={`${updating === dept.id ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                                                aria-pressed={dept.status === 'Active'}
-                                                aria-label="Toggle status"
-                                            >
-                                                <div className={`relative inline-flex items-center h-6 w-11 rounded-full ${dept.status === 'Active' ? 'bg-green-500' : 'bg-gray-300'}`}>
-                                                    <span className={`inline-block h-5 w-5 transform bg-white rounded-full transition ${dept.status === 'Active' ? 'translate-x-5' : 'translate-x-1'}`} />
-                                                </div>
-                                            </button>
-                                            <span className={`${dept.status === 'Active' ? 'text-[#00A63E] bg-[#dcfde6]' : 'text-gray-600 bg-gray-100'} text-sm font-medium px-3 py-1 rounded-2xl`}>
-                                                {dept.status}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-4">
-                                        <button onClick={() => handleDelete(dept.id)} disabled={deleting === dept.id} className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </td>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                        onClick={openModal}
+                    >
+                        <Plus size={18} />
+                        Add Department
+                    </button>
+                </div>
+
+                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <ClipLoader color="#7C3AED" size={28} />
+                        </div>
+                    ) : (
+                        <table className="w-full">
+                            <thead className="bg-gray-100">
+                                <tr className="border-b border-gray-200">
+                                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sr No</th>
+                                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
+                            </thead>
+                            <tbody>
+                                {departments.map((dept, idx) => (
+                                    <tr key={getId(dept)} className="border-b hover:bg-gray-50">
+                                        <td className="py-4 px-4 text-sm text-gray-900">{startIndex + idx + 1}</td>
+                                        <td className="py-4 px-4 text-sm text-gray-900">{dept.name}</td>
+                                        <td className="py-4 px-4">
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => handleStatusToggle(dept)}
+                                                    disabled={updating === getId(dept)}
+                                                    className={`${updating === getId(dept) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                                    aria-pressed={dept.status === 'active'}
+                                                    aria-label="Toggle status"
+                                                >
+                                                    <div className={`relative inline-flex items-center h-6 w-11 rounded-full ${dept.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                                        <span className={`inline-block h-5 w-5 transform bg-white rounded-full transition ${dept.status === 'active' ? 'translate-x-5' : 'translate-x-1'}`} />
+                                                    </div>
+                                                </button>
+                                                <span className={`${dept.status === 'active' ? 'text-[#00A63E] bg-[#dcfde6]' : 'text-gray-600 bg-gray-100'} text-sm font-medium px-3 py-1 rounded-2xl`}>
+                                                    {dept.status ? dept.status.charAt(0).toUpperCase() + dept.status.slice(1) : ''}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                            <button
+                                                onClick={() => handleDelete(getId(dept))}
+                                                disabled={deleting === getId(dept)}
+                                                className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                <TablePagination
+                    currentPage={currentPage}
+                    totalCount={extTotal ?? 0}
+                    pageSize={pageSize}
+                    onPageChange={(p) => {
+                        setCurrentPage(p);
+                        onPageChange?.(p);
+                    }}
+                />
+
+                <AddDepartmentModal
+                    isOpen={isOpen}
+                    onClose={closeModal}
+                    onUpdated={() => {
+                        closeModal();
+                    }}
+                />
             </div>
-            <TablePagination currentPage={currentPage} totalCount={totalCount} pageSize={pageSize} onPageChange={(p) => { setCurrentPage(p); onPageChange && onPageChange(p); }} />
-            <AddDepartmentModal isOpen={isOpen} onClose={closeModal} onUpdated={() => {
-                closeModal();
-                setCurrentPage(1);
-            }} />
-        </div>
-    );
-};
+        );
+    };
 
 // Admin User Management Section Component
 export const AdminUserManagementSection: React.FC<{
@@ -566,7 +589,23 @@ export const AdminUserManagementSection: React.FC<{
 
 
 // Vendors Section (Unified Table)
-export const VendorsSection: React.FC<{ vendors?: Vendor[]; totalCount?: number; currentPage?: number; pageSize?: number; onPageChange?: (page: number) => void; loading?: boolean; onStatusUpdated?: (id: string, status: 'Active' | 'Inactive') => void }> = ({ vendors = [], totalCount: extTotal, currentPage: extPage, pageSize: extSize, onPageChange, loading, onStatusUpdated }) => {
+export const VendorsSection: React.FC<{ 
+    vendors?: Vendor[]; 
+    totalCount?: number; 
+    currentPage?: number; 
+    pageSize?: number; 
+    onPageChange?: (page: number) => void; 
+    loading?: boolean; 
+    onStatusUpdated?: (id: string, status: 'Active' | 'Inactive') => void 
+}> = ({ 
+    vendors = [], 
+    totalCount: extTotal, 
+    currentPage: extPage, 
+    pageSize: extSize, 
+    onPageChange, 
+    loading, 
+    onStatusUpdated 
+}) => {
     const [currentPage, setCurrentPage] = useState(extPage ?? 1);
     const [pageSize] = useState(extSize ?? 5);
     const [items, setItems] = useState<Vendor[]>(vendors);
@@ -791,11 +830,11 @@ export const SuperAdminManagementSection: React.FC<{
                 html: `
                   <div id="otp-wrapper" style="display:flex;justify-content:center;gap:10px;margin-top:12px;">
                     ${Array.from({ length: 6 })
-                      .map(
-                        (_, i) =>
-                          `<input id="swal-otp-${i}" class="swal-otp-input" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" style="width:48px;height:48px;text-align:center;font-size:20px;border:1px solid black;border-radius:8px;outline:none; background: #FAF7FF" />`
-                      )
-                      .join('')}
+                        .map(
+                            (_, i) =>
+                                `<input id="swal-otp-${i}" class="swal-otp-input" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" style="width:48px;height:48px;text-align:center;font-size:20px;border:1px solid black;border-radius:8px;outline:none; background: #FAF7FF" />`
+                        )
+                        .join('')}
                   </div>
                 `,
                 focusConfirm: false,

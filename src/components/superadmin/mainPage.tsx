@@ -161,10 +161,10 @@ const InspecTechOnboarding: React.FC = () => {
 
     const getDepartments = async () => {
         try {
-            const res = await apiRequest('/api/departments/get-departments');
+            const res = await apiRequest('/api/departments/get-all-departments');
             if (res.ok) {
                 const json = await res.json();
-                setDepartments(Array.isArray(json.departments) ? json.departments : []);
+                setDepartments(Array.isArray(json.data) ? json.data : []);
             } else {
                 setDepartments([]);
             }

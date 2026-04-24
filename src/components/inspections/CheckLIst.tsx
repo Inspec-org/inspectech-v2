@@ -680,15 +680,11 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                                 name="panelBranding" label="Panel Branding" value={formData.panelBranding}
                                 w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
                                 options={[
-                                    { value: "N/A", label: "N/A" },
+                                    // { value: "N/A", label: "N/A" },
                                     { value: "Bowman", label: "Bowman" },
                                     { value: "Prime", label: "Prime" },
                                     { value: "Tape on White", label: "Tape on White" },
-                                    { value: "Smile on Blue", label: "Smile on Blue" },
-                                    { value: "Smile on Blue 2016", label: "Smile on Blue 2016" },
-                                    { value: "Smile on Blue 2017", label: "Smile on Blue 2017" },
-                                    { value: "Smile on Blue 2018", label: "Smile on Blue 2018" },
-                                    { value: "Smile on White 2019", label: "Smile on White 2019" },
+                                    { value: "Smile on Blue 2027", label: "Smile on Blue 2027" },
                                     { value: "Unbranded", label: "Unbranded" },
                                     { value: "XTRA Lease", label: "XTRA Lease" },
                                 ]}
@@ -719,14 +715,8 @@ export default function CheckList({ prop, formData, setFormData, missingKeys }: 
                             <DropdownField
                                 name="conspicuityTape" label="Conspicuity Tape" value={formData.conspicuityTape}
                                 w={w} colRow={colRow} handleDropdownChange={handleDropdownChange}
-                                options={isUSTrailer ? [
-                                    { value: "N/A", label: "N/A" },
+                                options={[
                                     { value: "Bottom Rear", label: "Bottom Rear" },
-                                    { value: "Full Rear Perimeter", label: "Full Rear Perimeter" },
-                                ] : [
-                                    { value: "N/A", label: "N/A" },
-                                    { value: "Bottom Rear", label: "Bottom Rear" },
-                                    { value: "Full Perimeter and Sides", label: "Full Perimeter and Sides" },
                                     { value: "Full Rear Perimeter", label: "Full Rear Perimeter" },
                                     { value: "Full Rear Perimeter and Sides", label: "Full Rear Perimeter and Sides" },
                                 ]}

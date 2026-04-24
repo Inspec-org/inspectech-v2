@@ -8,7 +8,6 @@ import Image from 'next/image';
 import Cookies from 'js-cookie';
 import { ClipLoader } from 'react-spinners';
 import { useSearchParams } from 'next/navigation';
-import { evaluateInspectionData } from '../inspections/processing';
 
 type Props = {
     isOpen: boolean;
@@ -108,25 +107,28 @@ const RequestAdminReviewModal: React.FC<Props> = ({
             const detailsRows: string[] = [];
             await Promise.all(selectedInspections.map(async (unitId) => {
                 try {
-                    const res = await apiRequest(`/api/inspections/get-inspection-details?unitId=${encodeURIComponent(unitId)}`);
-                    const json = await res.json();
-                    if (res.ok && json.success && json.inspection) {
-                        const doc = json.inspection;
-                        const checklistStatus = evaluateInspectionData(doc).status.toUpperCase();
-                        const imgs = [
-                            doc.frontLeftSideUrl,
-                            doc.frontRightSideUrl,
-                            doc.rearLeftSideUrl,
-                            doc.rearRightSideUrl,
-                            doc.insideTrailerImageUrl,
-                            doc.doorDetailsImageUrl,
-                        ].map((v: any) => String(v || '').trim());
-                        // const imageStatus = imgs.some(v => !v) ? 'Incomplete Image File' : 'PASS';
-                        const imageStatus= "";
-                        detailsRows.push(`${unitId},${checklistStatus},${imageStatus}`);
-                    } else {
-                        detailsRows.push(`${unitId},N/A,N/A`);
+                    // Call checklist and media APIs in parallel
+                    const [checklistRes, mediaRes] = await Promise.allSettled([
+                        apiRequest(`/mobile-api/inspections/processInspection?unitId=${encodeURIComponent(unitId)}`).then(r => r.json()),
+                        apiRequest(`/mobile-api/inspections/processMedia?unitId=${encodeURIComponent(unitId)}`).then(r => r.json()),
+                    ]);
+
+                    const checklistStatus =
+                        checklistRes.status === 'fulfilled' && checklistRes.value?.success
+                            ? checklistRes.value.data.status.toUpperCase()
+                            : 'N/A';
+
+                    let imageStatus = 'N/A';
+                    if (mediaRes.status === 'fulfilled' && mediaRes.value?.success) {
+                        const { mediaStatus, missingImages } = mediaRes.value.data;
+                        if (missingImages && missingImages.length > 0) {
+                            imageStatus = 'INCOMPLETE IMAGE FILE';
+                        } else {
+                            imageStatus = mediaStatus.toUpperCase(); // PASS or FAIL
+                        }
                     }
+
+                    detailsRows.push(`${unitId},${checklistStatus},${imageStatus}`);
                 } catch {
                     detailsRows.push(`${unitId},N/A,N/A`);
                 }

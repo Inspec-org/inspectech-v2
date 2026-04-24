@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const departmentId = String(body?.departmentId || "");
     const status = String(body?.status || "").toLowerCase();
+    console.log("departmentId", departmentId);
+    console.log("status", status);
     if (!departmentId || !Types.ObjectId.isValid(departmentId)) {
       return NextResponse.json({ error: "Valid departmentId is required" }, { status: 400 });
     }

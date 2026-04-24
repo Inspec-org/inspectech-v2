@@ -36,24 +36,12 @@ const VendorManageAccessModal: React.FC<Props> = ({
             (async () => {
                 try {
                     const limit = 250;
-                    const fetchAllDepartments = async () => {
-                        const out: { _id: string; name: string }[] = [];
-                        const firstRes = await apiRequest(`/api/departments/get-departments?page=1&limit=${limit}`);
-                        if (firstRes.ok) {
-                            const firstJson = await firstRes.json().catch(() => ({}));
-                            const list = Array.isArray(firstJson.departments) ? firstJson.departments : [];
-                            out.push(...list.map((d: any) => ({ _id: String(d._id), name: d.name })));
-                            const totalPages = (firstJson.pagination?.totalPages) || 1;
-                            for (let p = 2; p <= totalPages; p++) {
-                                const r = await apiRequest(`/api/departments/get-departments?page=${p}&limit=${limit}`);
-                                if (r.ok) {
-                                    const j = await r.json().catch(() => ({}));
-                                    const list2 = Array.isArray(j.departments) ? j.departments : [];
-                                    out.push(...list2.map((d: any) => ({ _id: String(d._id), name: d.name })));
-                                }
-                            }
-                        }
-                        return out;
+                    const fetchAllDepartments = async (): Promise<{ _id: string; name: string }[]> => {
+                        const res = await apiRequest(`/api/departments/get-all-departments?pagination=false`);
+                        if (!res.ok) return [];
+                        const json = await res.json().catch(() => ({}));
+                        const list = Array.isArray(json.data) ? json.data : [];
+                        return list.map((d: any) => ({ _id: String(d._id), name: d.name }));
                     };
 
                     const [deptList, vRes] = await Promise.all([
@@ -161,58 +149,58 @@ const VendorManageAccessModal: React.FC<Props> = ({
                     </button>
                 </div> */}
                 <div className="mt-4">
-                        <div className="flex items-center justify-between mb-2">
-                            <div>
-                                <h3 className="text-sm text-gray-900">Department Access</h3>
-                                <p className="text-xs text-gray-500">Select departments this vendor can access</p>
-                            </div>
-                            <div className="text-xs text-gray-500">{selectedDepartments.length} of {departments.length} selected</div>
+                    <div className="flex items-center justify-between mb-2">
+                        <div>
+                            <h3 className="text-sm text-gray-900">Department Access</h3>
+                            <p className="text-xs text-gray-500">Select departments this vendor can access</p>
                         </div>
-                        <div className="mb-3 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                value={deptSearch}
-                                onChange={(e) => setDeptSearch(e.target.value)}
-                                placeholder="Search departments..."
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
-                            />
-                        </div>
-                        <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
-                            {(() => {
-                                if (fetching) {
-                                    return <div className="flex justify-center items-center py-10"><ClipLoader color="#7C3AED" size={24} /></div>;
-                                }
-                                const q = deptSearch.trim().toLowerCase();
-                                const filtered = (departments || []).filter(d => !q || String(d.name).toLowerCase().includes(q));
-                                if (!filtered.length) {
-                                    return <div className="text-center text-sm text-gray-500">No departments found</div>;
-                                }
-                                return filtered.map((d) => {
-                                    const checked = selectedDepartments.includes(String(d._id));
-                                    return (
-                                        <label key={String(d._id)} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${checked ? 'border-[#7C3AED] bg-purple-50' : 'border-gray-200'}`}>
-                                            <div className="flex items-center gap-3">
-                                                <input
-                                                    type="checkbox"
-                                                    className="w-4 h-4 rounded border-gray-300 circle-checkbox"
-                                                    checked={checked}
-                                                    onChange={(e) => {
-                                                        const id = String(d._id);
-                                                        setSelectedDepartments((prev) => e.target.checked ? [...prev, id] : prev.filter(x => x !== id));
-                                                    }}
-                                                />
-                                                <span className="text-sm text-gray-900">{d.name}</span>
-                                            </div>
-                                        </label>
-                                    );
-                                });
-                            })()}
-                        </div>
+                        <div className="text-xs text-gray-500">{selectedDepartments.length} of {departments.length} selected</div>
                     </div>
+                    <div className="mb-3 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            value={deptSearch}
+                            onChange={(e) => setDeptSearch(e.target.value)}
+                            placeholder="Search departments..."
+                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+                        />
+                    </div>
+                    <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
+                        {(() => {
+                            if (fetching) {
+                                return <div className="flex justify-center items-center py-10"><ClipLoader color="#7C3AED" size={24} /></div>;
+                            }
+                            const q = deptSearch.trim().toLowerCase();
+                            const filtered = (departments || []).filter(d => !q || String(d.name).toLowerCase().includes(q));
+                            if (!filtered.length) {
+                                return <div className="text-center text-sm text-gray-500">No departments found</div>;
+                            }
+                            return filtered.map((d) => {
+                                const checked = selectedDepartments.includes(String(d._id));
+                                return (
+                                    <label key={String(d._id)} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${checked ? 'border-[#7C3AED] bg-purple-50' : 'border-gray-200'}`}>
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 rounded border-gray-300 circle-checkbox"
+                                                checked={checked}
+                                                onChange={(e) => {
+                                                    const id = String(d._id);
+                                                    setSelectedDepartments((prev) => e.target.checked ? [...prev, id] : prev.filter(x => x !== id));
+                                                }}
+                                            />
+                                            <span className="text-sm text-gray-900">{d.name}</span>
+                                        </div>
+                                    </label>
+                                );
+                            });
+                        })()}
+                    </div>
+                </div>
             </div>
 
-            
+
 
             {/* Footer Actions */}
             <div className="px-6 pb-6 flex items-center justify-end gap-3 mt-4">

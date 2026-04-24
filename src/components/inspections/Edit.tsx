@@ -14,7 +14,7 @@ import { ClipLoader } from 'react-spinners';
 import ReassignDepartmentModal from '../Modals/ReasssignDepartmentModal';
 import { useModal } from '@/hooks/useModal';
 import Cookies from 'js-cookie';
-import { evaluateInspectionData, openDetailedResults as openDetailedResultsReport, ProcessResult } from './processing';
+import { processInspectionFull, openDetailedResults as openDetailedResultsReport, ProcessResult, ProcessSections, MediaReport } from './processing';
 
 // Old FormData interface - Commented out
 /*
@@ -244,9 +244,12 @@ export default function Edit({ type }: { type: string }) {
   const today = new Date();
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [processLoading, setProcessLoading] = useState(false);
   const { isOpen, openModal, closeModal } = useModal();
   const [department, setDepartment] = useState("");
   const [processResult, setProcessResult] = useState<ProcessResult | null>(null);
+  const [processSections, setProcessSections] = useState<ProcessSections | null>(null);
+  const [mediaReport, setMediaReport] = useState<MediaReport | null>(null);
   const [showProcessDetails, setShowProcessDetails] = useState(false);
   const params = useParams<{ inspection_id: string }>();
   const [formData, setFormData] = useState<FormData>({
@@ -455,10 +458,10 @@ export default function Edit({ type }: { type: string }) {
   }, [formData, lastSaved]);
 
 
-  const saveInspection = async (silent = false) => {
+  const saveInspection = async (silent = false, skipLoadingState = false) => {
     if (!formData.unitId || formData.unitId.trim() === '') return false;
     try {
-      setSaveLoading(true);
+      if (!skipLoadingState) setSaveLoading(true);
       // Check if this is a new inspection (no inspectionId) or an existing one
       const isNewInspection = !inspectionId;
       if (isNewInspection) {
@@ -506,7 +509,7 @@ export default function Edit({ type }: { type: string }) {
       return false;
     }
     finally {
-      setSaveLoading(false);
+      if (!skipLoadingState) setSaveLoading(false);
     }
   };
 
@@ -576,30 +579,37 @@ export default function Edit({ type }: { type: string }) {
 
 
   const processInspectionData = async () => {
-    // Save changes first if there are unsaved changes
     let didSave = false;
     if (!isSaved) {
-      didSave = await saveInspection(true);
+      didSave = await saveInspection(true, true);
     }
-    // Only process if either:
-    // 1. There were no unsaved changes (isSaved was true), or
-    // 2. The save actually saved something (didSave is true)
     if (isSaved || didSave) {
-      const source = lastSaved ?? formData;
-      const res = evaluateInspectionData(source);
-      setProcessResult(res);
-      setShowProcessDetails(false);
+      try {
+        setProcessLoading(true);
+        const unitId = formData.unitId || (params?.inspection_id as string) || '';
+        const { checklistResult, sections, mediaReport: media } = await processInspectionFull(unitId);
+        setProcessResult(checklistResult);
+        setProcessSections(sections);
+        setMediaReport(media);
+        setShowProcessDetails(false);
+      } catch (e: any) {
+        toast.error(e.message || 'Error processing inspection');
+      } finally {
+        setProcessLoading(false);
+      }
     }
   };
 
   // Reset processResult on component mount to clear stale validation results
   useEffect(() => {
     setProcessResult(null);
+    setProcessSections(null);
+    setMediaReport(null);
   }, []);
 
   const openDetailedResults = () => {
-    const source = lastSaved ?? formData;
-    openDetailedResultsReport(source);
+    const unitId = formData.unitId || (params?.inspection_id as string) || '';
+    if (processSections) openDetailedResultsReport(unitId, processSections, mediaReport);
   };
 
 
@@ -672,9 +682,21 @@ export default function Edit({ type }: { type: string }) {
                     )}
                   </button>
 
-                  <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] px-3 py-2 whitespace-nowrap shrink-0' onClick={processInspectionData}>
-                    <CheckCircle size={18} />
-                    <span>Process Inspection Data</span>
+                  <button className='flex gap-2 items-center bg-[#F3EBFF66] hover:bg-[#0075FF] hover:text-white  border border-[#0075FF] text-sm rounded-xl text-[#0075FF] px-3 py-2 whitespace-nowrap shrink-0 disabled:opacity-60' onClick={processInspectionData} disabled={processLoading}>
+                    {processLoading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle size={18} />
+                        <span>Process Inspection Data</span>
+                      </>
+                    )}
                   </button>
                 </>
               ) : (

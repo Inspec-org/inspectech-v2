@@ -43,17 +43,18 @@ const CompanyManagementPage: React.FC = () => {
     const [superAdminPage, setSuperAdminPage] = useState(1);
     const superAdminPageSize = 5;
     const [superAdminSearch, setSuperAdminSearch] = useState('');
+    const [deptReloadFlag, setDeptReloadFlag] = useState(0);
+
     // get departments api
     useEffect(() => {
         (async () => {
             setDeptLoading(true);
             try {
-                const res = await apiRequest(`/api/departments/get-departments?page=${deptPage}&limit=${deptPageSize}`);
+                const res = await apiRequest(`/api/departments/get-all-departments?pagination=true&page=${deptPage}&limit=${deptPageSize}`);
                 if (res.ok) {
                     const json = await res.json();
-                    const mapped = (json.departments || []).map((d: any) => ({ id: String(d._id), name: d.name, status: String(d.status).toLowerCase() === 'inactive' ? 'Inactive' : 'Active' }));
-                    setDepartments(mapped);
-                    setDepartmentsTotal(Number((json?.pagination?.total) ?? json.total ?? json.totalCount ?? mapped.length));
+                    setDepartments(json.data);
+                    setDepartmentsTotal(Number((json?.pagination?.total) ?? json.total ?? json.totalCount));
                 } else {
                     setDepartments([]);
                     setDepartmentsTotal(0);
@@ -65,7 +66,7 @@ const CompanyManagementPage: React.FC = () => {
                 setDeptLoading(false);
             }
         })();
-    }, [deptPage]);
+    }, [deptPage, deptReloadFlag]);
     // get vendors api
     useEffect(() => {
         (async () => {
@@ -233,7 +234,15 @@ const CompanyManagementPage: React.FC = () => {
                                 pageSize={deptPageSize}
                                 onPageChange={setDeptPage}
                                 loading={deptLoading}
-                                onStatusUpdated={(id, status) => setDepartments(prev => prev.map(d => d.id === id ? { ...d, status } : d))}
+                                onStatusUpdated={(id, status) =>
+                                    setDepartments(prev => prev.map(d =>
+                                        (d._id === id || d.id === id) ? { ...d, status } : d
+                                    ))
+                                }
+                                onAdded={() => {
+                                    setDeptPage(1);
+                                    setDeptReloadFlag(p => p + 1);
+                                }}
                             />
                         )}
                         {activeTab === 'admin-users' && (

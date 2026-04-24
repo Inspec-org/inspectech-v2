@@ -26,11 +26,12 @@ export interface AlertBannerProps {
 }
 
 export interface Department {
+  _id?: string;
   id: string;
   name: string;
   company?: string;
   checked?: boolean;
-  status?: 'Active' | 'Inactive';
+  status?: 'Active' | 'Inactive' | 'active' | 'inactive';
 }
 
 export interface User {
@@ -66,8 +67,8 @@ export interface AdminUser {
 }
 
 export type TablePaginationProps = {
-    currentPage: number;
-    totalCount: number;
-    pageSize: number;
-    onPageChange: (page: number) => void;
+  currentPage: number;
+  totalCount: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 };
