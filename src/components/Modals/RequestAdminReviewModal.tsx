@@ -34,7 +34,7 @@ const RequestAdminReviewModal: React.FC<Props> = ({
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [inspections, setInspections] = useState<{ unitId: string; inspectionStatus: string }[]>([]);
     const [totalInspections, setTotalInspections] = useState(0);
-    const [recipientsInput, setRecipientsInput] = useState('inspectech@nectarsix.com, jposten@amazon.com');
+    const [recipientsInput, setRecipientsInput] = useState('inspectech@nectarsix.com, johposte@amazon.com');
     const [err, setErr] = useState('');
 
     const totalPages = Math.ceil(totalInspections / rowsPerPage);
