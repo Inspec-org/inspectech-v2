@@ -11,54 +11,47 @@ export type ProcessSections = {
   sensors: { missingKeys: string[]; missing: string[] };
 };
 
-export type MediaImageResult = {
+export type CvComponent = Record<string, string | { status: string; count?: string; [key: string]: any }>;
+
+export type CvGroup = {
   label: string;
-  status: 'pass' | 'fail' | 'error';
-  message: string;
-  issues: string[];
-  details: string[]; // All component-level lines from CV (pass + fail)
+  images_provided: string[];
+  components: CvComponent;
+  notes: string[];
+};
+
+export type CvReport = {
+  status: 'success' | 'fail';
+  images_received: string[];
+  labels_missing: string[];
+  report: Record<string, CvGroup>; // keyed by cvGroup: "front" | "rear" | "inside" | "door"
 };
 
 export type MediaReport = {
   mediaStatus: 'pass' | 'fail';
   missingImages: string[];
-  imageResults: MediaImageResult[];
+  cvReport: CvReport | null;
 };
 
-/**
- * Calls the checklist-only processInspection API.
- * Media inspection is handled separately via processMediaInspection().
- */
 export const processInspection = async (unitId: string): Promise<ProcessResult> => {
   const res = await apiRequest(
     `/mobile-api/inspections/processInspection?unitId=${encodeURIComponent(unitId)}`
   );
   const json = await res.json();
-  if (!res.ok || !json.success) {
-    throw new Error(json.message || 'Failed to process inspection');
-  }
+  if (!res.ok || !json.success) throw new Error(json.message || 'Failed to process inspection');
   const { status, missing, missingKeys } = json.data;
   return { status, missing, missingKeys };
 };
 
-/**
- * Calls the processMedia API for CV + missing-image validation.
- */
 export const processMediaInspection = async (unitId: string): Promise<MediaReport> => {
   const res = await apiRequest(
     `/mobile-api/inspections/processMedia?unitId=${encodeURIComponent(unitId)}`
   );
   const json = await res.json();
-  if (!res.ok || !json.success) {
-    throw new Error(json.message || 'Failed to process media inspection');
-  }
+  if (!res.ok || !json.success) throw new Error(json.message || 'Failed to process media inspection');
   return json.data as MediaReport;
 };
 
-/**
- * Runs checklist + media inspection in parallel for a given unitId.
- * Returns both results independently so a failure in one doesn't block the other.
- */
 export const processInspectionFull = async (
   unitId: string
 ): Promise<{
@@ -67,12 +60,8 @@ export const processInspectionFull = async (
   mediaReport: MediaReport | null;
 }> => {
   const [checklistRes, mediaRes] = await Promise.allSettled([
-    apiRequest(`/mobile-api/inspections/processInspection?unitId=${encodeURIComponent(unitId)}`).then(
-      (r) => r.json()
-    ),
-    apiRequest(`/mobile-api/inspections/processMedia?unitId=${encodeURIComponent(unitId)}`).then(
-      (r) => r.json()
-    ),
+    apiRequest(`/mobile-api/inspections/processInspection?unitId=${encodeURIComponent(unitId)}`).then((r) => r.json()),
+    apiRequest(`/mobile-api/inspections/processMedia?unitId=${encodeURIComponent(unitId)}`).then((r) => r.json()),
   ]);
 
   if (checklistRes.status === 'rejected' || !checklistRes.value?.success) {
@@ -90,17 +79,9 @@ export const processInspectionFull = async (
     mediaReport = mediaRes.value.data as MediaReport;
   }
 
-  return {
-    checklistResult: { status, missing, missingKeys },
-    sections,
-    mediaReport,
-  };
+  return { checklistResult: { status, missing, missingKeys }, sections, mediaReport };
 };
 
-/**
- * Opens a new tab with a detailed HTML report showing both
- * checklist validation and media inspection results.
- */
 export const openDetailedResults = (
   unitId: string,
   sections: ProcessSections,
@@ -109,72 +90,128 @@ export const openDetailedResults = (
   const win = window.open('', '_blank');
   if (!win) return;
 
-  const sectionDefs = [
-    { name: 'Identification & Registration', data: sections.identification },
-    { name: 'Physical Dimensions & Components', data: sections.physicalDimension },
-    { name: 'Tire Location', data: sections.tireLocation },
-    { name: 'Features & Appearance', data: sections.features },
-    { name: 'Sensors & Electrical', data: sections.sensors },
-  ];
+  try {
+    const sectionDefs = [
+      { name: 'Identification & Registration',    data: sections.identification    },
+      { name: 'Physical Dimensions & Components', data: sections.physicalDimension },
+      { name: 'Tire Location',                    data: sections.tireLocation      },
+      { name: 'Features & Appearance',            data: sections.features          },
+      { name: 'Sensors & Electrical',             data: sections.sensors           },
+    ];
 
-  const allPass = sectionDefs.every((s) => s.data.missing.length === 0);
+    const allPass = sectionDefs.every((s) => s.data.missing.length === 0);
 
-  const checklistHtml = sectionDefs
-    .map((s) => {
-      const pass = s.data.missing.length === 0;
-      const missHtml = pass
-        ? `<div class="ok">All fields present</div>`
-        : `<div class="miss"><div class="muted">Missing fields:</div><ul>${s.data.missing
-            .map((m) => `<li>${m}</li>`)
-            .join('')}</ul></div>`;
-      return `<div class="sub"><div class="sub-head"><div>${pass ? '✅' : '❌'} <strong>${s.name}</strong></div></div>${missHtml}</div>`;
-    })
-    .join('');
-
-  // --- Media section HTML ---
-  let mediaHtml = '';
-  let mediaPillClass = 'pending';
-  let mediaPillText = 'PENDING';
-
-  if (!mediaReport) {
-    mediaHtml = `<div class="sub"><p style="color:#6b7280;font-size:13px;">Media inspection result unavailable.</p></div>`;
-  } else {
-    mediaPillClass = mediaReport.mediaStatus === 'pass' ? 'pass' : 'fail';
-    mediaPillText = mediaReport.mediaStatus.toUpperCase();
-
-    mediaHtml = mediaReport.imageResults
-      .map((img) => {
-        const icon = img.status === 'pass' ? '✅' : img.status === 'error' ? '⚠️' : '❌';
-        const statusColor =
-          img.status === 'pass' ? '#059669' : img.status === 'error' ? '#b45309' : '#dc2626';
-
-        // Show all component detail lines; highlight ones that are also issues
-        const issueSet = new Set(img.issues ?? []);
-        const detailLines = (img.details && img.details.length > 0) ? img.details : img.issues ?? [];
-
-        const detailsHtml = detailLines.length > 0
-          ? `<ul class="detail-list">${detailLines
-              .map((d) => {
-                const isIssue = issueSet.has(d);
-                return `<li class="${isIssue ? 'issue-item' : 'ok-item'}">${d}</li>`;
-              })
-              .join('')}</ul>`
-          : '';
-
-        return `
-          <div class="sub">
-            <div class="sub-head">
-              <div>${icon} <strong>${img.label}</strong></div>
-              <span style="font-size:12px;color:${statusColor};font-weight:600;">${img.status.toUpperCase()}</span>
-            </div>
-            <div class="muted" style="margin-bottom:6px;">${img.message}</div>
-            ${detailsHtml}
-          </div>`;
+    const checklistHtml = sectionDefs
+      .map((s) => {
+        const pass = s.data.missing.length === 0;
+        const missHtml = pass
+          ? `<div class="ok">All fields present</div>`
+          : `<div class="miss"><div class="muted">Missing fields:</div><ul>${s.data.missing.map((m) => `<li>${m}</li>`).join('')}</ul></div>`;
+        return `<div class="sub"><div class="sub-head"><div>${pass ? '✅' : '❌'} <strong>${s.name}</strong></div></div>${missHtml}</div>`;
       })
       .join('');
-  }
 
-  const html = `
+    // ── helpers ──────────────────────────────────────────────────
+    const getStatusStr = (val: any): string => {
+      if (typeof val === 'string') return val.toLowerCase();
+      if (val && typeof val === 'object') return String(val.status ?? '').toLowerCase();
+      return String(val ?? '').toLowerCase();
+    };
+
+    const getDisplayVal = (val: any): string => {
+      if (typeof val === 'string') return val;
+      if (val && typeof val === 'object') {
+        const v = val as any;
+        return v.count ? `${v.status} (${v.count})` : String(v.status ?? '');
+      }
+      return String(val ?? '');
+    };
+
+    const isIssueVal = (val: any): boolean => {
+      const s = getStatusStr(val);
+      return s === 'missing' || s.startsWith('partially');
+    };
+
+    // ── Media section ─────────────────────────────────────────────
+    let mediaHtml = '';
+    let mediaPillClass = 'pending';
+    let mediaPillText = 'PENDING';
+
+    if (!mediaReport) {
+      mediaHtml = `
+        <div class="sub" style="display:flex;align-items:center;gap:10px;color:#92400e;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="#d97706" stroke-width="3" stroke-dasharray="40 20">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+          <span style="font-size:13px;">Media analysis is still in progress. Re-open this report after it completes.</span>
+        </div>`;
+    } else {
+      mediaPillClass = mediaReport.mediaStatus === 'pass' ? 'pass' : 'fail';
+      mediaPillText  = mediaReport.mediaStatus.toUpperCase();
+
+      const cv = mediaReport.cvReport;
+
+      // Missing images
+      if (mediaReport.missingImages.length > 0) {
+        mediaHtml += `
+          <div class="sub">
+            <div class="sub-head"><div>⚠️ <strong>Images Not Uploaded</strong></div></div>
+            <ul class="detail-list">${mediaReport.missingImages.map((m) => `<li class="issue-item">${m}</li>`).join('')}</ul>
+          </div>`;
+      }
+
+      // CV report groups
+      if (cv && cv.report) {
+        for (const [, group] of Object.entries(cv.report) as [string, CvGroup][]) {
+          const components = group.components ?? {};
+          const notes      = group.notes ?? [];
+
+          const componentRows = Object.entries(components)
+            .map(([name, val]) => {
+              const isIssue = isIssueVal(val);
+              return `<li class="${isIssue ? 'issue-item' : 'ok-item'}">${name}: ${getDisplayVal(val)}</li>`;
+            })
+            .join('');
+
+          const noteRows = notes
+            .map((n) => `<li class="issue-item">${n}</li>`)
+            .join('');
+
+          // Safe groupHasIssues — no .toLowerCase() on unknown shapes
+          const groupHasIssues =
+            Object.values(components).some((v) => isIssueVal(v)) || notes.length > 0;
+
+          mediaHtml += `
+            <div class="sub">
+              <div class="sub-head">
+                <div>${groupHasIssues ? '❌' : '✅'} <strong>${group.label}</strong></div>
+                <span class="muted">Provided: ${group.images_provided.join(', ')}</span>
+              </div>
+              ${componentRows || noteRows
+                ? `<ul class="detail-list">${componentRows}${noteRows}</ul>`
+                : '<div class="ok">All checks passed</div>'
+              }
+            </div>`;
+        }
+      }
+
+      // Labels CV couldn't process
+      if (cv && cv.labels_missing.length > 0) {
+        mediaHtml += `
+          <div class="sub">
+            <div class="sub-head"><div>⚠️ <strong>Labels Not Processed by CV</strong></div></div>
+            <ul class="detail-list">${cv.labels_missing.map((l) => `<li class="issue-item">${l}</li>`).join('')}</ul>
+          </div>`;
+      }
+
+      if (!cv) {
+        mediaHtml += `<div class="sub muted">CV analysis unavailable.</div>`;
+      }
+    }
+
+    const html = `
 <!doctype html>
 <html>
   <head>
@@ -185,8 +222,8 @@ export const openDetailedResults = (
       .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; margin-top: 16px; }
       .card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #eef2f7; }
       .pill { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid; }
-      .pill.pass { background: #ecfdf5; color: #065f46; border-color: #34d399; }
-      .pill.fail { background: #fee2e2; color: #7f1d1d; border-color: #fca5a5; }
+      .pill.pass    { background: #ecfdf5; color: #065f46; border-color: #34d399; }
+      .pill.fail    { background: #fee2e2; color: #7f1d1d; border-color: #fca5a5; }
       .pill.pending { background: #fefce8; color: #713f12; border-color: #fde047; }
       .section { padding: 16px; }
       .title { font-weight: 600; }
@@ -198,7 +235,7 @@ export const openDetailedResults = (
       .muted { font-size: 12px; color: #6b7280; }
       .ok { font-size: 13px; color: #059669; }
       .detail-list { font-size: 13px; list-style: disc; }
-      .ok-item { color: #059669; }
+      .ok-item    { color: #059669; }
       .issue-item { color: #b91c1c; font-weight: 500; }
     </style>
   </head>
@@ -224,6 +261,12 @@ export const openDetailedResults = (
   </body>
 </html>`;
 
-  win.document.write(html);
-  win.document.close();
+    win.document.write(html);
+    win.document.close();
+
+  } catch (err) {
+    // Write the error into the tab so you can see exactly what went wrong
+    win.document.write(`<pre style="color:red;padding:24px;">${String(err)}\n\n${(err as any)?.stack ?? ''}</pre>`);
+    win.document.close();
+  }
 };

@@ -60,8 +60,6 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        console.log("departmentsByVendor", departmentsByVendor);
-
         return NextResponse.json({ 
           message: "success", 
           departmentsByVendor,
@@ -155,7 +153,6 @@ export async function GET(req: NextRequest) {
       payload.pagination = { page, limit, total, totalPages: Math.ceil(total / limit) };
     }
 
-    console.log("payload", payload);
     return NextResponse.json(payload);
 
   } catch (error: any) {

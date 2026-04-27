@@ -584,19 +584,45 @@ export default function Edit({ type }: { type: string }) {
       didSave = await saveInspection(true, true);
     }
     if (isSaved || didSave) {
-      try {
-        setProcessLoading(true);
-        const unitId = formData.unitId || (params?.inspection_id as string) || '';
-        const { checklistResult, sections, mediaReport: media } = await processInspectionFull(unitId);
-        setProcessResult(checklistResult);
-        setProcessSections(sections);
-        setMediaReport(media);
-        setShowProcessDetails(false);
-      } catch (e: any) {
-        toast.error(e.message || 'Error processing inspection');
-      } finally {
-        setProcessLoading(false);
-      }
+      const unitId = formData.unitId || (params?.inspection_id as string) || '';
+
+      setProcessLoading(true);
+      setProcessResult(null);
+      setProcessSections(null);
+      setMediaReport(null);
+      setShowProcessDetails(false);
+
+      // ── 1. Checklist (fast ~1-2s) ─────────────────────────────────
+      // Fire and handle immediately when it resolves
+      const checklistPromise = apiRequest(
+        `/mobile-api/inspections/processInspection?unitId=${encodeURIComponent(unitId)}`
+      )
+        .then((r) => r.json())
+        .then((json) => {
+          if (!json.success) throw new Error(json.message || 'Failed to process inspection');
+          const { status, missing, missingKeys, sections } = json.data;
+          setProcessResult({ status, missing, missingKeys });
+          setProcessSections(sections);
+        })
+        .catch((e: any) => {
+          toast.error(e.message || 'Error processing inspection');
+        })
+        .finally(() => {
+          setProcessLoading(false); // stop spinner as soon as checklist is done
+        });
+
+      // ── 2. Media (slow ~30s) ──────────────────────────────────────
+      // Fire in parallel; update media state when it eventually resolves
+      apiRequest(
+        `/mobile-api/inspections/processMedia?unitId=${encodeURIComponent(unitId)}`
+      )
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.success) setMediaReport(json.data as MediaReport);
+        })
+        .catch(() => {
+          // Non-fatal – media banner simply won't show
+        });
     }
   };
 
@@ -751,31 +777,32 @@ export default function Edit({ type }: { type: string }) {
                 ) : (
                   <XCircle size={18} className="text-red-600" />
                 )}
-                <span className="font-semibold">{processResult.status.toUpperCase()} - Inspection Data Processing Complete</span>
+                <span className="font-semibold">
+                  {processResult.status.toUpperCase()} – Inspection Checklist Complete
+                </span>
               </div>
-              <button
-                className={`flex items-center gap-2 px-3 py-1 text-sm rounded-lg border ${processResult.status === 'pass' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}
-                onClick={openDetailedResults}
-              >
-                <span>View Detailed Results</span>
-              </button>
-            </div>
-            {showProcessDetails && (
-              <div className="mt-3 text-sm text-gray-700">
-                {processResult.missing.length ? (
-                  <>
-                    <p className="mb-2">Missing fields:</p>
-                    <ul className="list-disc pl-5">
-                      {processResult.missing.map((m, i) => (
-                        <li key={i}>{m}</li>
-                      ))}
-                    </ul>
-                  </>
-                ) : (
-                  <p>All required checklist and media data are present.</p>
+              <div className="flex items-center gap-2">
+                {/* Media still loading indicator */}
+                {!mediaReport && (
+                  <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">
+                    <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Analysing media…
+                  </span>
+                )}
+                {/* View Detailed Results — shown immediately for checklist; media section inside shows spinner until ready */}
+                {processSections && (
+                  <button
+                    className={`flex items-center gap-2 px-3 py-1 text-sm rounded-lg border ${processResult.status === 'pass' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}
+                    onClick={openDetailedResults}
+                  >
+                    <span>View Detailed Results</span>
+                  </button>
                 )}
               </div>
-            )}
+            </div>
           </div>
         )}
 
